@@ -18,17 +18,17 @@ class AIState():
         * stars - number
         * tappable_objects - list of (x,y,w,h) tuples
     """
-    def __init__(self):
+    def __init__(self, money=0, stars=0):
         self.image = tf.placeholder(shape=Iphone7PlusRawImageShape, dtype=tf.uint8)
-        self.money = 0
-        self.stars = 0
+        self.money = money
+        self.stars = stars
         self.tappable_objects = []
 
     def read_image_scores(self):
         pass
 
     def log(self):
-        pass
+        print('Money: {} | Stars: {}'.format(self.money, self.stars))
 
     def to_input(self):
         """
@@ -77,6 +77,21 @@ class AIGameplayImageProcessor():
         return self.output_image, self.grayscale_image
 
 class AIStateProcessor():
+    def read_num_from_img(self, image):
+        """ Performs OCR on image and converts text to number """
+        text = tesserocr.image_to_text(image).strip()
+        try:
+            val = int(''.join(filter(str.isdigit, text)))
+            return val
+        except:
+            return 0
+
+    def read_hud_value(self, image, left):
+        item_crop_box = (left, HudMenuPadding, left + HudItemWidth, HudMenuHeight - HudMenuPadding)
+        hud_image = image.crop(item_crop_box)
+        value = self.read_num_from_img(hud_image)
+        return value
+
     def process_from_file(self, sess, filename):
         """
         Args:
@@ -94,14 +109,13 @@ class AIStateProcessor():
         image_shape = (width, height, 3)
 
         # get OCR text from known HUD elements
-        money_left = 0.53 * width
-        money_crop_box = (money_left, HudMenuPadding, money_left + HudItemWidth, HudMenuHeight - HudMenuPadding)
-        money_hud_image = image.crop(money_crop_box)
-        money_text = tesserocr.image_to_text(money_hud_image)
+        money = self.read_hud_value(image, 0.53 * width)
+        stars = self.read_hud_value(image, 0.71 * width)
+        return AIState(money=money, stars=stars)
 
         # Decode image for tensorflow
         tf_image_file = tf.read_file(filename)
-        tf_image = tf.image.decode_png(tf_image_file)
+        tf_image = tf.image.decode_image(tf_image_file)
 
         # Process gameplay section with tensorflow
         gameplay_image_processor = AIGameplayImageProcessor(image_shape=image_shape)
@@ -112,11 +126,11 @@ def get_image_state(filename):
     processor = AIStateProcessor()
 
     with tf.Session() as sess:
-        tf.initialize_all_variables().run()
+        tf.global_variables_initializer().run()
 
-        state = processor.process(sess, filename)
+        state = processor.process_from_file(sess, filename)
         state.log()
 
         return state
 
-get_image_state('src/img/ios_screenshot_1.png')
+get_image_state('src/img/ios_screenshot_1.jpg')
