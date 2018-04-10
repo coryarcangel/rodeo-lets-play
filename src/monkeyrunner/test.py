@@ -36,15 +36,25 @@ Here's a nice test to launch the browser and then restart it.
 def browser_launch_and_restart():
     print('Launching Browser...')
     device_manager.launch_browser()
-    print('Sleeping for 10 seconds, then restarting...')
+    print('Sleeping for 2 seconds, then restarting...')
     sleep(2)
     print('Restarting!')
     device_manager.restart_browser()
     sleep(2)
 
+def hollywood_launch_and_restart():
+    print('Launching Hollywood...')
+    device_manager.launch_hollywood()
+    print('Sleeping for 2 seconds, then restarting...')
+    sleep(2)
+    print('Restarting!')
+    device_manager.restart_hollywood()
+    sleep(2)
+
 def test():
     # measure_screenshot_performance()
-    browser_launch_and_restart()
+    # browser_launch_and_restart()
+    hollywood_launch_and_restart()
 
 if __name__ == "__main__":
     test()

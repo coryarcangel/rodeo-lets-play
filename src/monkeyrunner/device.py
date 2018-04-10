@@ -4,6 +4,9 @@ from com.android.monkeyrunner import MonkeyDevice
 BrowserPackage = 'com.android.chrome'
 BrowserComponent = '%s/com.google.android.apps.chrome.Main' % BrowserPackage
 
+KKHollywoodPackage = 'com.glu.stardomkim'
+KKHollywoodComponent = '%s/com.google.android.vending.expansion.downloader_impl.DownloaderActivity' % KKHollywoodPackage
+
 '''
 Wrapper around MonkeyDevice with some higher-level controls.
 '''
@@ -31,3 +34,9 @@ class DeviceManager:
 
     def restart_browser(self):
         self.restart_app(BrowserPackage, BrowserComponent)
+
+    def launch_hollywood(self):
+        self.launch_app(KKHollywoodComponent)
+
+    def restart_hollywood(self):
+        self.restart_app(KKHollywoodPackage, KKHollywoodComponent)
