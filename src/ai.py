@@ -4,8 +4,8 @@ import tensorflow as tf
 from datetime import datetime
 
 # Local Imports
-from estimator import QEstimator
-from state import AIStateProcessor
+from ai_estimator import QEstimator
+from ai_state import AIStateProcessor
 
 # Simple variables
 start_time = datetime.now()

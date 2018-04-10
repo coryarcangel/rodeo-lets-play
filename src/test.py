@@ -1,30 +1,19 @@
-from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from time import sleep
 from util import measure_task
-from device import DeviceManager
+from device import get_default_device_manager
 
-# Connects to the current device, returning a MonkeyDevice object
-# the first argument is a timeout in seconds
-# the second argument is a regular expression describing the device ID (all can be found with "adb devices" command) - it can be left blank
-print('Connecting to device...')
-# device = MonkeyRunner.waitForConnection(10, 'emulator-\d+') # connect to emulator
-device = MonkeyRunner.waitForConnection(10) # connect to physical device
-
-device_manager = DeviceManager(device)
-print('Connected!')
-print('device name: %s' % device.getProperty('build.product'))
-print('device size: %sx%s' % (device.getProperty('display.width'), device.getProperty('display.height')))
+device_manager = get_default_device_manager()
 
 '''
 Here's a nice performance test for different types of device screenshots.
 '''
 def measure_screenshot_performance():
     def screenshot_with_writeFile_png(i):
-        img = device.takeSnapshot()
+        img = device_manager.device.takeSnapshot()
         img.writeToFile('test_screenshot_%s.png' % (i + 1))
 
     def screenshot_with_convertToBytes_png(i):
-        img = device.takeSnapshot()
+        img = device_manager.device.takeSnapshot()
         bytes = img.convertToBytes('png')
 
     measure_task(screenshot_with_writeFile_png, 'take screenshot with writeFile png')
@@ -42,6 +31,9 @@ def browser_launch_and_restart():
     device_manager.restart_browser()
     sleep(2)
 
+'''
+Here's a nice test to launch the KK:Hollywood app and then restart it.
+'''
 def hollywood_launch_and_restart():
     print('Launching Hollywood...')
     device_manager.launch_hollywood()
@@ -51,10 +43,24 @@ def hollywood_launch_and_restart():
     device_manager.restart_hollywood()
     sleep(2)
 
+'''
+Here's a nice test to take a few screenshots of the KK:Hollywood app and print their state.
+'''
+def hollywood_screenshot_loop_test():
+    print('Launching Hollywood...')
+    device_manager.launch_hollywood()
+    print('Sleeping for 20 seconds...')
+    sleep(20)
+    print('Setting up screenshot loop...')
+    for i in range(100):
+        filename = device_manager.get_screenshot()
+        print('Saved %s' % filename)
+
 def test():
     # measure_screenshot_performance()
     # browser_launch_and_restart()
-    hollywood_launch_and_restart()
+    # hollywood_launch_and_restart()
+    hollywood_screenshot_loop_test()
 
 if __name__ == "__main__":
     test()
