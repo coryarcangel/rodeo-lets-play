@@ -133,4 +133,5 @@ def get_image_state(filename):
 
         return state
 
-get_image_state('src/img/ios_screenshot_1.jpg')
+if __name__ == "__main__":
+    get_image_state('src/img/ios_screenshot_1.jpg')

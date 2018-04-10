@@ -7,7 +7,9 @@ from device import DeviceManager
 # the first argument is a timeout in seconds
 # the second argument is a regular expression describing the device ID (all can be found with "adb devices" command) - it can be left blank
 print('Connecting to device...')
-device = MonkeyRunner.waitForConnection(10, 'emulator-\d+')
+# device = MonkeyRunner.waitForConnection(10, 'emulator-\d+') # connect to emulator
+device = MonkeyRunner.waitForConnection(10) # connect to physical device
+
 device_manager = DeviceManager(device)
 print('Connected!')
 print('device name: %s' % device.getProperty('build.product'))
