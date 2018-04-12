@@ -1,3 +1,4 @@
+import logging
 import tensorflow as tf
 import tesserocr
 from PIL import Image
@@ -23,12 +24,16 @@ class AIState():
         self.money = money
         self.stars = stars
         self.tappable_objects = []
+        self.logger = logging.getLogger('AIState')
 
     def read_image_scores(self):
         pass
 
+    def to_text(self):
+        return 'Money: {} | Stars: {}'.format(self.money, self.stars)
+
     def log(self):
-        print('Money: {} | Stars: {}'.format(self.money, self.stars))
+        self.logger.info(self.to_text())
 
     def to_input(self):
         """

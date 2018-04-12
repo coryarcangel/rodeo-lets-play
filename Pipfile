@@ -4,12 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-tensorflow = "*"
 numpy = "*"
-tesserocr = "*"
+tensorflow = "*"
 pillow = "*"
+tesserocr = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.6"
+python_version = "2"

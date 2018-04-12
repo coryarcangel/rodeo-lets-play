@@ -1,27 +1,29 @@
+import logging
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from random import randint
 
 ### Constants
-DefaultCommunicationIP = '127.0.0.1'
-DefaultCommunicationPort = 5005
-
 BrowserPackage = 'com.android.chrome'
 BrowserComponent = '%s/com.google.android.apps.chrome.Main' % BrowserPackage
 
 KKHollywoodPackage = 'com.glu.stardomkim'
 KKHollywoodComponent = '%s/com.google.android.vending.expansion.downloader_impl.DownloaderActivity' % KKHollywoodPackage
 
-'''
-Wrapper around MonkeyDevice with some higher-level controls.
-'''
+default_logger = logging.getLogger('default')
+
 class DeviceManager:
+    '''
+    Wrapper around MonkeyDevice with some higher-level controls.
+    '''
+
     def __init__(self, device):
         self.device = device
         self.frame_count = 0
+        self.logger = logging.getLogger('DeviceManager')
 
     def log_info(self):
-        print('device name: %s' % self.device.getProperty('build.product'))
-        print('device size: %sx%s' % (self.device.getProperty('display.width'), self.device.getProperty('display.height')))
+        self.logger.debug('device name: %s' % self.device.getProperty('build.product'))
+        self.logger.debug('device size: %sx%s' % (self.device.getProperty('display.width'), self.device.getProperty('display.height')))
 
     # component must be in the form: `PACKAGE_NAME/MAIN_ACTIVITY_NAME`
     def launch_app(self, component):
@@ -51,31 +53,28 @@ class DeviceManager:
         self.restart_app(KKHollywoodPackage, KKHollywoodComponent)
 
     def get_screenshot(self):
-        # get filename, increment frame count 
+        # get filename, increment frame count
         filename = 'current_screen_%s.png' % self.frame_count
         self.frame_count += 1
+        return self.save_screenshot(filename)
 
+    def save_screenshot(self, filename):
         # acquire and save image
         img = self.device.takeSnapshot()
         img.writeToFile(filename)
-
         return filename
-
-class DeviceMessageReceiver:
-    def __init__(self, device_manager, ip = DefaultCommunicationIP, port = DefaultCommunicationPort):
-        self.device_manager = device_manager
 
 def get_default_device():
     ''' Connects to default android device (either emulator or physical phone) and returns monkeyrunner device'''
-    
-    print('Connecting to device...')
+
+    default_logger.info('Connecting to device...')
     # Connects to the current device, returning a MonkeyDevice object
     # the first argument is a timeout in seconds
     # the second argument is a regular expression describing the device ID (all can be found with "adb devices" command) - it can be left blank
     # d = MonkeyRunner.waitForConnection(10, 'emulator-\d+') # connect to emulator
     d = MonkeyRunner.waitForConnection(10) # connect to default device
-    print('Connected!')
-    
+    default_logger.info('Connected to device!!')
+
     return d
 
 def get_default_device_manager():
