@@ -82,6 +82,10 @@ class AIGameplayImageProcessor():
         return self.output_image, self.grayscale_image
 
 class AIStateProcessor():
+    def __init__(self, money_width_mult = 0.53, stars_width_mult = 0.71):
+        self.money_width_mult = money_width_mult
+        self.stars_width_mult = stars_width_mult
+
     def read_num_from_img(self, image):
         """ Performs OCR on image and converts text to number """
         text = tesserocr.image_to_text(image).strip()
@@ -114,8 +118,8 @@ class AIStateProcessor():
         image_shape = (width, height, 3)
 
         # get OCR text from known HUD elements
-        money = self.read_hud_value(image, 0.53 * width)
-        stars = self.read_hud_value(image, 0.71 * width)
+        money = self.read_hud_value(image, self.money_width_mult * width)
+        stars = self.read_hud_value(image, self.stars_width_mult * width)
         return AIState(money=money, stars=stars)
 
         # Decode image for tensorflow
