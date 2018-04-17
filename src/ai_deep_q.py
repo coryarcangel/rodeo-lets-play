@@ -1,4 +1,15 @@
-from ai_actions import Action, NumActions
+"""Implements the "Deep Q Learning" algorithm"""
+
+import itertools
+import logging
+import os
+import random
+import sys
+from collections import namedtuple
+import numpy as np
+import tensorflow as tf
+import plotting
+from ai_actions import Actions, NumActions
 
 def copy_model_parameters(sess, estimator1, estimator2):
     """
@@ -21,22 +32,22 @@ def copy_model_parameters(sess, estimator1, estimator2):
     sess.run(update_ops)
 
 
-def make_epsilon_greedy_policy(estimator, nA):
+def make_epsilon_greedy_policy(estimator, na):
     """
     Creates an epsilon-greedy policy based on a given Q-function approximator and epsilon.
     Args:
         estimator: An estimator that returns q values for a given state
-        nA: Number of actions in the environment.
+        na: Number of actions in the environment.
     Returns:
         A function that takes the (sess, observation, epsilon) as an argument and returns
         the probabilities for each action in the form of a numpy array of length nA.
     """
     def policy_fn(sess, observation, epsilon):
-        A = np.ones(nA, dtype=float) * epsilon / nA
+        a = np.ones(na, dtype=float) * epsilon / na
         q_values = estimator.predict(sess, np.expand_dims(observation, 0))[0]
         best_action = np.argmax(q_values)
-        A[best_action] += (1.0 - epsilon)
-        return A
+        a[best_action] += (1.0 - epsilon)
+        return a
     return policy_fn
 
 
@@ -44,7 +55,6 @@ def deep_q_learning(sess,
                     env,
                     q_estimator,
                     target_estimator,
-                    state_processor,
                     num_episodes,
                     experiment_dir,
                     replay_memory_size=500000,
@@ -54,17 +64,15 @@ def deep_q_learning(sess,
                     epsilon_start=1.0,
                     epsilon_end=0.1,
                     epsilon_decay_steps=500000,
-                    batch_size=32,
-                    record_video_every=50):
+                    batch_size=32):
     """
     Q-Learning algorithm for off-policy TD control using Function Approximation.
     Finds the optimal greedy policy while following an epsilon-greedy policy.
     Args:
         sess: Tensorflow Session object
-        env: OpenAI environment
+        env: AiEnv environment
         q_estimator: Estimator object used for the q values
         target_estimator: Estimator object used for the targets
-        state_processor: A StateProcessor object
         num_episodes: Number of episodes to run for
         experiment_dir: Directory to save Tensorflow summaries in
         replay_memory_size: Size of the replay memory
@@ -78,12 +86,13 @@ def deep_q_learning(sess,
         epsilon_end: The final minimum value of epsilon after decaying is done
         epsilon_decay_steps: Number of steps to decay epsilon over
         batch_size: Size of batches to sample from the replay memory
-        record_video_every: Record a video every N episodes
     Returns:
         An EpisodeStats object with two numpy arrays for episode_lengths and episode_rewards.
     """
 
     Transition = namedtuple("Transition", ["state", "action", "reward", "next_state", "done"])
+
+    logger = logging.getLogger('deep_q_learning')
 
     # The replay memory
     replay_memory = []
@@ -107,7 +116,7 @@ def deep_q_learning(sess,
     # Load a previous checkpoint if we find one
     latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
     if latest_checkpoint:
-        print("Loading model checkpoint {}...\n".format(latest_checkpoint))
+        logger.debug("Loading model checkpoint %s...\n", latest_checkpoint)
         saver.restore(sess, latest_checkpoint)
 
     total_t = sess.run(tf.contrib.framework.get_global_step())
@@ -119,30 +128,24 @@ def deep_q_learning(sess,
     policy = make_epsilon_greedy_policy(q_estimator, NumActions)
 
     # Populate the replay memory with initial experience
-    print("Populating replay memory...")
+    logger.info("Populating replay memory...")
     state = env.reset()
-    state = state_processor.process(sess, state)
     state = np.stack([state] * 4, axis=2)
-    for i in range(replay_memory_init_size):
+    for _ in range(replay_memory_init_size):
+        # Choose action
         action_probs = policy(sess, state, epsilons[min(total_t, epsilon_decay_steps-1)])
         action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
-        next_state, reward, done, _ = env.step(VALID_ACTIONS[action])
-        next_state = state_processor.process(sess, next_state)
-        next_state = np.append(state[:,:,1:], np.expand_dims(next_state, 2), axis=2)
+
+        # Perform action
+        next_state, reward, done, _ = env.step(Actions[action])
+        next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
         replay_memory.append(Transition(state, action, reward, next_state, done))
+
         if done:
             state = env.reset()
-            state = state_processor.process(sess, state)
             state = np.stack([state] * 4, axis=2)
         else:
             state = next_state
-
-    # Record videos
-    # Use the gym env Monitor wrapper
-    env = Monitor(env,
-                  directory=monitor_path,
-                  resume=True,
-                  video_callable=lambda count: count % record_video_every ==0)
 
     for i_episode in range(num_episodes):
 
@@ -151,12 +154,11 @@ def deep_q_learning(sess,
 
         # Reset the environment
         state = env.reset()
-        state = state_processor.process(sess, state)
         state = np.stack([state] * 4, axis=2)
         loss = None
 
         # One step in the environment
-        for t in itertools.count():
+        for step in itertools.count():
 
             # Epsilon for this time step
             epsilon = epsilons[min(total_t, epsilon_decay_steps-1)]
@@ -169,19 +171,19 @@ def deep_q_learning(sess,
             # Maybe update the target estimator
             if total_t % update_target_estimator_every == 0:
                 copy_model_parameters(sess, q_estimator, target_estimator)
-                print("\nCopied model parameters to target network.")
+                logger.debug("\nCopied model parameters to target network.")
 
             # Print out which step we're on, useful for debugging.
-            print("\rStep {} ({}) @ Episode {}/{}, loss: {}".format(
-                    t, total_t, i_episode + 1, num_episodes, loss), end="")
+            logger.info("\rStep %d (%d) @ Episode %d/%d, loss: %.2f", step, total_t, i_episode + 1, num_episodes, loss)
             sys.stdout.flush()
 
-            # Take a step
+            # Choose action
             action_probs = policy(sess, state, epsilon)
             action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
-            next_state, reward, done, _ = env.step(VALID_ACTIONS[action])
-            next_state = state_processor.process(sess, next_state)
-            next_state = np.append(state[:,:,1:], np.expand_dims(next_state, 2), axis=2)
+
+            # Take a step
+            next_state, reward, done, _ = env.step(Actions[action])
+            next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
 
             # If our replay memory is full, pop the first element
             if len(replay_memory) == replay_memory_size:
@@ -192,7 +194,7 @@ def deep_q_learning(sess,
 
             # Update statistics
             stats.episode_rewards[i_episode] += reward
-            stats.episode_lengths[i_episode] = t
+            stats.episode_lengths[i_episode] = step
 
             # Sample a minibatch from the replay memory
             samples = random.sample(replay_memory, batch_size)
@@ -226,5 +228,4 @@ def deep_q_learning(sess,
             episode_lengths=stats.episode_lengths[:i_episode+1],
             episode_rewards=stats.episode_rewards[:i_episode+1])
 
-    env.monitor.close()
     return stats

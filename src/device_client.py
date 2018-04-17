@@ -24,7 +24,7 @@ class DeviceClient(asynchat.async_chat):
         self.command_ack_map = {}
 
     def start(self):
-        self.logger.debug('Connecting to %s:%d' % (self.ip, self.port))
+        self.logger.debug('Connecting to %s:%d', self.ip, self.port)
 
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((self.ip, self.port))
@@ -40,7 +40,7 @@ class DeviceClient(asynchat.async_chat):
 
     def found_terminator(self):
         msg = ''.join(self.buffer)
-        self.logger.debug('received message: %s' % msg)
+        self.logger.debug('received message: %s', msg)
         self.buffer = []
         self.handle_message(msg)
 
@@ -58,7 +58,7 @@ class DeviceClient(asynchat.async_chat):
         # grab current command id and send message
         id = str(self.command_id)
         msg = CommandSep.join((id,) + args) + '\n'
-        self.logger.debug('Sending message: %s' % msg.rstrip())
+        self.logger.debug('Sending message: %s', msg.rstrip())
         self.push(msg.encode('utf-8'))
 
         # increment id for next command

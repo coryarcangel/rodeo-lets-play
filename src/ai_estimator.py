@@ -1,7 +1,8 @@
 import os
 import tensorflow as tf
+from ai_actions import NumActions
 
-class QEstimator():
+class QEstimator(object):
     """Q-Value Estimator neural network.
     This network is used for both the Q-Network and the Target Network.
     """
@@ -26,18 +27,18 @@ class QEstimator():
 
         # Placeholders for our input
         # Our input are 4 RGB frames of shape 160, 160 each
-        self.X_pl = tf.placeholder(shape=[None, 84, 84, 4], dtype=tf.uint8, name="X")
+        self.x_pl = tf.placeholder(shape=[None, 84, 84, 4], dtype=tf.uint8, name="X")
         # The TD target value
         self.y_pl = tf.placeholder(shape=[None], dtype=tf.float32, name="y")
         # Integer id of which action was selected
         self.actions_pl = tf.placeholder(shape=[None], dtype=tf.int32, name="actions")
 
-        X = tf.to_float(self.X_pl) / 255.0
-        batch_size = tf.shape(self.X_pl)[0]
+        x = tf.to_float(self.x_pl) / 255.0
+        batch_size = tf.shape(self.x_pl)[0]
 
         # Three convolutional layers
         conv1 = tf.contrib.layers.conv2d(
-            X, 32, 8, 4, activation_fn=tf.nn.relu)
+            x, 32, 8, 4, activation_fn=tf.nn.relu)
         conv2 = tf.contrib.layers.conv2d(
             conv1, 64, 4, 2, activation_fn=tf.nn.relu)
         conv3 = tf.contrib.layers.conv2d(
@@ -46,7 +47,7 @@ class QEstimator():
         # Fully connected layers
         flattened = tf.contrib.layers.flatten(conv3)
         fc1 = tf.contrib.layers.fully_connected(flattened, 512)
-        self.predictions = tf.contrib.layers.fully_connected(fc1, len(VALID_ACTIONS))
+        self.predictions = tf.contrib.layers.fully_connected(fc1, NumActions)
 
         # Get the predictions for the chosen actions only
         gather_indices = tf.range(batch_size) * tf.shape(self.predictions)[1] + self.actions_pl
@@ -79,7 +80,7 @@ class QEstimator():
           Tensor of shape [batch_size, NUM_VALID_ACTIONS] containing the estimated
           action values.
         """
-        return sess.run(self.predictions, { self.X_pl: s })
+        return sess.run(self.predictions, { self.x_pl: s })
 
     def update(self, sess, s, a, y):
         """
@@ -92,7 +93,7 @@ class QEstimator():
         Returns:
           The calculated loss on the batch.
         """
-        feed_dict = { self.X_pl: s, self.y_pl: y, self.actions_pl: a }
+        feed_dict = { self.x_pl: s, self.y_pl: y, self.actions_pl: a }
         summaries, global_step, _, loss = sess.run(
             [self.summaries, tf.contrib.framework.get_global_step(), self.train_op, self.loss],
             feed_dict)

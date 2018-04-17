@@ -22,8 +22,8 @@ class DeviceManager:
         self.logger = logging.getLogger('DeviceManager')
 
     def log_info(self):
-        self.logger.debug('device name: %s' % self.device.getProperty('build.product'))
-        self.logger.debug('device size: %sx%s' % (self.device.getProperty('display.width'), self.device.getProperty('display.height')))
+        self.logger.debug('device name: %s', self.device.getProperty('build.product'))
+        self.logger.debug('device size: %sx%s', self.device.getProperty('display.width'), self.device.getProperty('display.height'))
 
     # component must be in the form: `PACKAGE_NAME/MAIN_ACTIVITY_NAME`
     def launch_app(self, component):

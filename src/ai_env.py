@@ -1,0 +1,94 @@
+"""
+Contains KimEnv class for controlling the game via the learning algorithm.
+"""
+
+import logging
+import os
+from ai_actions import Action
+
+class KimEnv(object):
+    """Abstract class which Controls a device running KK:Hollywood via a minimal interface.
+    Modeled after the OpenAI Env API.
+	"""
+    def __init__(self):
+        self.step_num = 0
+        self.logger = logging.getLogger('KimEnv')
+
+    def reset(self):
+        """Resets the state of the environment and returns an initial observation.
+
+        Returns:
+            Initial AIState object
+        """
+        pass
+
+    def step(self, action=Action.PASS):
+        """Performs given action on environment, attempting to run 1 timestep. When end of
+        episode is reached, you are responsible for calling `reset()`
+        to reset this environment's state.
+        Accepts an action and returns a tuple (observation, reward, done, info).
+        Args:
+            action (object): an action provided by the environment
+        Returns:
+            observation (np array): agent's observation of the current environment
+            reward (float) : amount of reward returned after previous action
+            done (boolean): whether the episode has ended, in which case further step() calls will return undefined results
+            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
+        """
+
+        self._cleanup_current_step()
+
+        self.step_num += 1
+
+        # Perform relevant action
+        actions_map = {
+            Action.PASS: self._perform_pass_action
+        }
+        actions_map[action]()
+
+        # Get new state
+        self.logger.debug('Getting state for Step #%d', self.step_num)
+        next_state = self._get_state()
+        self.logger.info('State for Step #%d: %s', self.step_num, next_state.to_text())
+
+        reward = next_state.get_reward()
+        done = False
+        info = {}
+
+        return next_state.to_input(), reward, done, info
+
+    def _cleanup_current_step(self):
+        pass
+
+    def _get_state(self):
+        pass
+
+    def _perform_pass_action(self):
+        pass
+
+
+class DeviceClientKimEnv(KimEnv):
+    """
+    Implements KimEnv with a DeviceClient
+    """
+    def __init__(self, client, state_processor):
+        KimEnv.__init__(self)
+        self.client = client
+        self.state_processor = state_processor
+
+    def _cleanup_current_step(self):
+        if self.step_num == 0:
+            return
+
+        filename = self._cur_filename()
+        self.logger.debug('Removing used file: %s', filename)
+        os.remove(filename)
+
+    def _get_state(self):
+        filename = self._cur_filename()
+        self.client.send_screenshot_command(filename)
+        state = self.state_processor.process_from_file(None, filename)
+        return state
+
+    def _cur_filename(self):
+        return 'screen_%d.jpg' % self.step_num

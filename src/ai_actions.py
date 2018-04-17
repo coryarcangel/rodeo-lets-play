@@ -1,9 +1,11 @@
+"""Defines Constants for available game actions."""
 
-class Action():
-    NULL = 0
+class Action(object):
+    """Enum-like iteration of all available actions"""
+    PASS = 0
 
 Actions = [
-    Action.NULL
+    Action.PASS
 ]
 
 NumActions = len(Actions)

@@ -1,11 +1,14 @@
+"""Glues all of the modules together and runs the ai gamer on a device."""
+
 import logging
 import os
 import sys
-import time
-import tensorflow as tf
 from datetime import datetime
+import tensorflow as tf
 
 # Local Imports
+from ai_deep_q import deep_q_learning
+from ai_env import DeviceClientKimEnv
 from ai_estimator import QEstimator
 from ai_state import AIStateProcessor
 from device_client import get_default_device_client
@@ -13,41 +16,45 @@ from device_client import get_default_device_client
 # Config
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-# Simple variables
-start_time = datetime.now()
-experiment_dir = os.path.abspath("./experiments/{}".format(start_time)) # Where we save our checkpoints and graphs
-logger = logging.getLogger('default')
+def main():
+    """
+    Runs the ai infinitely.
+    """
 
-# Tensorflow setup
-tf.reset_default_graph()
-global_step = tf.Variable(0, name="global_step", trainable=False) # Create a global step variable
+    # Simple variables
+    start_time = datetime.now()
+    experiment_dir = os.path.abspath("./experiments/{}".format(start_time)) # Where we save our checkpoints and graphs
+    logger = logging.getLogger('default')
 
-# Create estimators
-# q_estimator = QEstimator(scope="q", summaries_dir=experiment_dir)
-# target_estimator = QEstimator(scope="target_q")
+    # Tensorflow setup
+    tf.reset_default_graph()
+    global_step = tf.Variable(0, name="global_step", trainable=False) # Create a global step variable
 
-# State processor
-state_processor = AIStateProcessor()
+    # Create estimators
+    q_estimator = QEstimator(scope="q", summaries_dir=experiment_dir)
+    target_estimator = QEstimator(scope="target_q")
 
-# Device Client
-device_client = get_default_device_client()
+    # State processor
+    state_processor = AIStateProcessor()
 
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    device_client.start()
+    # Device Client
+    device_client = get_default_device_client()
 
-    # Loop
-    frame = 0
-    while True:
-        logger.debug('Loop Frame #%d' % frame)
-        filename = 'screen_%d.jpg' % frame
-        device_client.send_screenshot_command(filename)
+    # Env
+    env = DeviceClientKimEnv(client=device_client, state_processor=state_processor)
 
-        # Analyze screenshot
-        state = state_processor.process_from_file(sess, filename)
-        logger.info('%s: %s' % (filename, state.to_text()))
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        device_client.start()
 
-        # Remove used file
-        os.remove(filename)
+        for step, stats in deep_q_learning(sess=sess,
+                                           env=env,
+                                           q_estimator=q_estimator,
+                                           target_estimator=target_estimator,
+                                           experiment_dir=experiment_dir,
+                                           num_episodes=10000):
+            logger.info("\n%d Episode Reward: %s", step, stats.episode_rewards[-1])
 
-        frame += 1
+
+if __name__ == "__main__":
+    main()

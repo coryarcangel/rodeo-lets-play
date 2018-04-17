@@ -25,13 +25,13 @@ class DeviceMessageHandler(asynchat.async_chat):
     def found_terminator(self):
         '''We have received a full message'''
         msg = ''.join(self.buffer)
-        self.logger.debug('received message: %s' % msg)
+        self.logger.debug('received message: %s', msg)
         self.buffer = []
         self.handle_command(msg)
 
     def send_ack(self, id):
         ''' Sends ACK of completed command with given id to client '''
-        self.logger.debug('Sending ACK for command id %s' % id)
+        self.logger.debug('Sending ACK for command id %s', id)
         msg = device_client.CommandSep.join([device_client.CommandAck, id]) + '\n'
         self.push(msg.encode())
 
@@ -44,12 +44,12 @@ class DeviceMessageHandler(asynchat.async_chat):
         if command == device_client.CommandScreenshot:
             self.handle_screenshot(data[0])
         else:
-            self.logger.error('Received unknown command: %s' % command)
+            self.logger.error('Received unknown command: %s', command)
 
         self.send_ack(id)
 
     def handle_screenshot(self, filename):
-        self.logger.debug('Handling screenshot command with filename: %s' % filename)
+        self.logger.debug('Handling screenshot command with filename: %s', filename)
 
         self.device_manager.save_screenshot(filename)
 

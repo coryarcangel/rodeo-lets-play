@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 import tensorflow as tf
 import tesserocr
 from PIL import Image
@@ -31,8 +32,8 @@ class AIState():
         self.tappable_objects = []
         self.logger = logging.getLogger('AIState')
 
-    def read_image_scores(self):
-        pass
+    def get_reward(self):
+        return self.money + self.stars
 
     def to_text(self):
         return 'Money: {} | Stars: {}'.format(self.money, self.stars)
@@ -44,7 +45,7 @@ class AIState():
         """
         Converts high-level object into numbers with shape StateInputShape
         """
-        return []
+        return np.array([1, 2, 3])
 
 class AIGameplayImageProcessor():
     """
