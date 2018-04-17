@@ -10,7 +10,6 @@ import tensorflow as tf
 from ai_deep_q import deep_q_learning
 from ai_env import DeviceClientKimEnv
 from ai_estimator import QEstimator
-from ai_state import AIStateProcessor
 from device_client import get_default_device_client
 
 # Config
@@ -34,14 +33,11 @@ def main():
     q_estimator = QEstimator(scope="q", summaries_dir=experiment_dir)
     target_estimator = QEstimator(scope="target_q")
 
-    # State processor
-    state_processor = AIStateProcessor()
-
     # Device Client
     device_client = get_default_device_client()
 
     # Env
-    env = DeviceClientKimEnv(client=device_client, state_processor=state_processor)
+    env = DeviceClientKimEnv(client=device_client)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())

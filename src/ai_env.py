@@ -5,6 +5,7 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 import logging
 import os
 from ai_actions import Action
+from ai_state import AIStateProcessor
 
 class KimEnv(object):
     """Abstract class which Controls a device running KK:Hollywood via a minimal interface.
@@ -68,13 +69,11 @@ class KimEnv(object):
 
 
 class DeviceClientKimEnv(KimEnv):
-    """
-    Implements KimEnv with a DeviceClient
-    """
-    def __init__(self, client, state_processor):
+    """Implements KimEnv with a DeviceClient"""
+    def __init__(self, client):
         KimEnv.__init__(self)
         self.client = client
-        self.state_processor = state_processor
+        self.state_processor = AIStateProcessor()
 
     def _cleanup_current_step(self):
         if self.step_num == 0:
@@ -92,3 +91,15 @@ class DeviceClientKimEnv(KimEnv):
 
     def _cur_filename(self):
         return 'screen_%d.jpg' % self.step_num
+
+
+class ScreenshotKimEnv(KimEnv):
+    """Implements KimEnv with a static screenshot"""
+    def __init__(self, screenshot_filename="src/img/ios_screenshot_1.jpg"):
+        KimEnv.__init__(self)
+        self.screenshot_filename = screenshot_filename
+        self.state_processor = AIStateProcessor()
+
+    def _get_state(self):
+        state = self.state_processor.process_from_file(None, self.screenshot_filename)
+        return state
