@@ -4,7 +4,11 @@ import tesserocr
 from PIL import Image
 
 # Constants
-Iphone7PlusRawImageShape = [2208, 1242, 3]
+Iphone7PlusImageConfig = {
+    'shape': [2208, 1242, 3],
+    'money_width_mult': 0.53,
+    'stars_width_mult': 0.71
+}
 OutputImageSize = [160, 80] # width x height
 StateInputShape = [4]
 HudMenuHeight = 115 # pixels
@@ -19,10 +23,11 @@ class AIState():
         * stars - number
         * tappable_objects - list of (x,y,w,h) tuples
     """
-    def __init__(self, money=0, stars=0):
-        self.image = tf.placeholder(shape=Iphone7PlusRawImageShape, dtype=tf.uint8)
+    def __init__(self, image_shape, money=0, stars=0):
+        self.image_shape = image_shape
         self.money = money
         self.stars = stars
+        self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
         self.tappable_objects = []
         self.logger = logging.getLogger('AIState')
 
@@ -47,7 +52,7 @@ class AIGameplayImageProcessor():
     For now, resizes it and converts it to grayscale.
     In the future: use YOLO to translate image into object locations, and read known fixed-position HUD elements
     """
-    def __init__(self, image_shape=Iphone7PlusRawImageShape, output_image_size=OutputImageSize):
+    def __init__(self, image_shape, output_image_size=OutputImageSize):
         self.image_shape = image_shape
         self.output_image_size = output_image_size
 
@@ -73,7 +78,7 @@ class AIGameplayImageProcessor():
         """
         Args:
             sess: A Tensorflow session object
-            image: An image tensor with shape equal to `self.image_shape`
+            image: An image tensor with shape equal to `self.image_config['image_shape']`
         Returns:
             Tuple of (output_image, grayscale_image)
         """
@@ -82,9 +87,8 @@ class AIGameplayImageProcessor():
         return self.output_image, self.grayscale_image
 
 class AIStateProcessor():
-    def __init__(self, money_width_mult = 0.53, stars_width_mult = 0.71):
-        self.money_width_mult = money_width_mult
-        self.stars_width_mult = stars_width_mult
+    def __init__(self, image_config=Iphone7PlusImageConfig):
+        self.image_config = image_config
 
     def read_num_from_img(self, image):
         """ Performs OCR on image and converts text to number """
@@ -118,9 +122,9 @@ class AIStateProcessor():
         image_shape = (width, height, 3)
 
         # get OCR text from known HUD elements
-        money = self.read_hud_value(image, self.money_width_mult * width)
-        stars = self.read_hud_value(image, self.stars_width_mult * width)
-        return AIState(money=money, stars=stars)
+        money = self.read_hud_value(image, self.image_config['money_width_mult'] * width)
+        stars = self.read_hud_value(image, self.image_config['stars_width_mult'] * width)
+        return AIState(image_shape=image_shape, money=money, stars=stars)
 
         # Decode image for tensorflow
         tf_image_file = tf.read_file(filename)
