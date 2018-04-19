@@ -1,3 +1,4 @@
+import os
 from time import sleep
 from util import measure_task
 from device import get_default_device_manager
@@ -51,8 +52,9 @@ def hollywood_screenshot_loop_test():
     device_manager.launch_hollywood()
     print('Sleeping for 20 seconds...')
     sleep(20)
+
     print('Setting up screenshot loop...')
-    for i in range(100):
+    for i in range(10):
         filename = device_manager.get_screenshot()
         print('Saved %s' % filename)
 

@@ -24,6 +24,7 @@ class KimEnv(object):
         """
         self._cleanup_current_step()
         self._do_reset()
+        self.logger.debug('Reset AI Environment')
 
         state = self._get_state()
         return state
@@ -101,7 +102,7 @@ class DeviceClientKimEnv(KimEnv):
         return state
 
     def _cur_filename(self):
-        return 'screen_%d.jpg' % self.step_num
+        return 'screen_%d.png' % self.step_num
 
 
 class ScreenshotKimEnv(KimEnv):

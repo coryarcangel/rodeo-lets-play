@@ -101,7 +101,11 @@ def get_default_device_server():
 
 def main():
     """ Starts the default server if file is run as a script """
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logging.basicConfig(
+        stream=sys.stdout,
+        format='%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s:%(message)s',
+        level=logging.DEBUG,
+        datefmt='%Y-%m-%d %H:%M:%S')
 
     server = get_default_device_server()
     server.start()

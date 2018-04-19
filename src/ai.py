@@ -14,9 +14,15 @@ from ai_estimator import QEstimator
 from device_client import get_default_device_client
 
 # Config
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 RANDOM = True
-STATIC_SCREENSHOT = True
+STATIC_SCREENSHOT = False
+
+logging.basicConfig(
+    stream=sys.stdout,
+    format='%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s:%(message)s',
+    level=logging.DEBUG,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 def main():
     """
@@ -48,7 +54,7 @@ def main():
 
         learning_gen = None
         if RANDOM:
-            learning_gen = random_learning(sess=sess, env=env, max_episode_length=10)
+            learning_gen = random_learning(sess=sess, env=env, max_episode_length=1000)
         else:
             learning_gen = deep_q_learning(sess=sess,
                                            env=env,

@@ -26,8 +26,8 @@ class DeviceManager(object):
         self.logger.debug('device name: %s', self.device.getProperty('build.product'))
         self.logger.debug('device size: %sx%s', self.device.getProperty('display.width'), self.device.getProperty('display.height'))
 
-    # component must be in the form: `PACKAGE_NAME/MAIN_ACTIVITY_NAME`
     def _launch_app(self, component):
+        # component must be in the form: `PACKAGE_NAME/MAIN_ACTIVITY_NAME`
         categories = ['android.intent.category.LAUNCHER']
         self.device.startActivity(component=component, categories=categories)
 
@@ -60,7 +60,7 @@ class DeviceManager(object):
     def reset_hollywood(self):
         """ Restarts the KK:Hollywood app, and waits until game is playable """
         self.restart_hollywood()
-        sleep(5)
+        sleep(45)
 
     def get_screenshot(self):
         """ Calls save_screenshot with an auto-incrementing filename """
@@ -72,6 +72,7 @@ class DeviceManager(object):
         """ Takes screenshot of current state of device and saves to given filename """
         img = self.device.takeSnapshot()
         img.writeToFile(filename)
+        self.logger.debug('Wrote image to file: %s', filename)
         return filename
 
 def get_default_device():
@@ -84,7 +85,12 @@ def get_default_device():
     # the first argument is a timeout in seconds
     # the second argument is a regular expression describing the device ID (all can be found with "adb devices" command)
     # d = MonkeyRunner.waitForConnection(10, 'emulator-\d+') # connect to emulator
-    device = MonkeyRunner.waitForConnection(10) # connect to default device
+    device = None
+    attempts = 0
+    while device is None and attempts < 10:
+        device = MonkeyRunner.waitForConnection(10) # connect to default device
+        if device.getProperty('display.width') is None:
+            device = None
     default_logger.info('Connected to device!!')
 
     return device

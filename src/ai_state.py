@@ -12,6 +12,12 @@ IMAGE_CONFIG_IPHONE7PLUS = {
     'money_width_mult': 0.53,
     'stars_width_mult': 0.71
 }
+IMAGE_CONFIG_STUDIO_BLU = {
+    'shape': [1280, 720, 3],
+    'money_width_mult': 0.53,
+    'stars_width_mult': 0.71
+}
+
 OUTPUT_IMAGE_SIZE = [160, 80] # width x height
 STATE_INPUT_SHAPE = [4]
 HUD_MENU_HEIGHT = 115 # pixels
@@ -96,7 +102,7 @@ class AIGameplayImageProcessor():
         return self.output_image, self.grayscale_image
 
 class AIStateProcessor(object):
-    def __init__(self, image_config=IMAGE_CONFIG_IPHONE7PLUS):
+    def __init__(self, image_config=IMAGE_CONFIG_STUDIO_BLU):
         self.image_config = image_config
 
     def _read_num_from_img(self, image):
@@ -124,7 +130,7 @@ class AIStateProcessor(object):
         """
 
         # Read image with pillow
-        image = Image.open(filename)
+        image = Image.open(filename).convert('RGB')
 
         # Get shape
         width, height = image.size
@@ -145,17 +151,12 @@ class AIStateProcessor(object):
         output_image, grayscale_image = gameplay_image_processor.process_image(sess, tf_image)
 
 
-def get_image_state(filename):
+def get_image_state(filename, image_config=IMAGE_CONFIG_STUDIO_BLU):
     """ Utility function to get state from a single image """
-    processor = AIStateProcessor()
+    processor = AIStateProcessor(image_config=image_config)
 
     with tf.Session() as sess:
         tf.global_variables_initializer().run()
 
         state = processor.process_from_file(sess, filename)
-        state.log()
-
         return state
-
-if __name__ == "__main__":
-    get_image_state('src/img/ios_screenshot_1.jpg')
