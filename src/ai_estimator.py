@@ -26,7 +26,6 @@ class QEstimator(object):
         """
 
         # Placeholders for our input
-        # Our input are 4 RGB frames of shape 160, 160 each
         self.x_pl = tf.placeholder(shape=[None, 84, 84, 4], dtype=tf.uint8, name="X")
         # The TD target value
         self.y_pl = tf.placeholder(shape=[None], dtype=tf.float32, name="y")

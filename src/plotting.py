@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-EpisodeStats = namedtuple("Stats",["episode_lengths", "episode_rewards"])
+EpisodeStats = namedtuple("Stats", ["episode_lengths", "episode_rewards"])
 
 
 def plot_episode_stats(stats, smoothing_window=10, noshow=False):

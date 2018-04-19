@@ -26,28 +26,28 @@ def copy_model_parameters(sess, estimator1, estimator2):
 
     update_ops = []
     for e1_v, e2_v in zip(e1_params, e2_params):
-        op = e2_v.assign(e1_v)
-        update_ops.append(op)
+        operation = e2_v.assign(e1_v)
+        update_ops.append(operation)
 
     sess.run(update_ops)
 
 
-def make_epsilon_greedy_policy(estimator, na):
+def make_epsilon_greedy_policy(estimator, num_actions):
     """
     Creates an epsilon-greedy policy based on a given Q-function approximator and epsilon.
     Args:
         estimator: An estimator that returns q values for a given state
-        na: Number of actions in the environment.
+        num_actions: Number of actions in the environment.
     Returns:
         A function that takes the (sess, observation, epsilon) as an argument and returns
         the probabilities for each action in the form of a numpy array of length nA.
     """
     def policy_fn(sess, observation, epsilon):
-        a = np.ones(na, dtype=float) * epsilon / na
+        actions = np.ones(num_actions, dtype=float) * epsilon / num_actions
         q_values = estimator.predict(sess, np.expand_dims(observation, 0))[0]
         best_action = np.argmax(q_values)
-        a[best_action] += (1.0 - epsilon)
-        return a
+        actions[best_action] += (1.0 - epsilon)
+        return actions
     return policy_fn
 
 
@@ -76,13 +76,10 @@ def deep_q_learning(sess,
         num_episodes: Number of episodes to run for
         experiment_dir: Directory to save Tensorflow summaries in
         replay_memory_size: Size of the replay memory
-        replay_memory_init_size: Number of random experiences to sampel when initializing
-          the reply memory.
-        update_target_estimator_every: Copy parameters from the Q estimator to the
-          target estimator every N steps
+        replay_memory_init_size: Number of random experiences to sample when initializing the replay memory.
+        update_target_estimator_every: Copy parameters from the Q estimator to the target estimator every N steps
         discount_factor: Gamma discount factor
-        epsilon_start: Chance to sample a random action when taking an action.
-          Epsilon is decayed over time and this is the start value
+        epsilon_start: Chance to sample a random action when taking an action. Epsilon is decayed over time and this is the start value
         epsilon_end: The final minimum value of epsilon after decaying is done
         epsilon_decay_steps: Number of steps to decay epsilon over
         batch_size: Size of batches to sample from the replay memory
@@ -90,7 +87,7 @@ def deep_q_learning(sess,
         An EpisodeStats object with two numpy arrays for episode_lengths and episode_rewards.
     """
 
-    Transition = namedtuple("Transition", ["state", "action", "reward", "next_state", "done"])
+    Transition = namedtuple("Transition", ["state", "action", "reward", "next_state", "done"]) #pylint: disable=C0103
 
     logger = logging.getLogger('deep_q_learning')
 
@@ -105,12 +102,8 @@ def deep_q_learning(sess,
     # Create directories for checkpoints and summaries
     checkpoint_dir = os.path.join(experiment_dir, "checkpoints")
     checkpoint_path = os.path.join(checkpoint_dir, "model")
-    monitor_path = os.path.join(experiment_dir, "monitor")
-
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-    if not os.path.exists(monitor_path):
-        os.makedirs(monitor_path)
 
     saver = tf.train.Saver()
     # Load a previous checkpoint if we find one
@@ -175,7 +168,6 @@ def deep_q_learning(sess,
 
             # Print out which step we're on, useful for debugging.
             logger.info("\rStep %d (%d) @ Episode %d/%d, loss: %.2f", step, total_t, i_episode + 1, num_episodes, loss)
-            sys.stdout.flush()
 
             # Choose action
             action_probs = policy(sess, state, epsilon)

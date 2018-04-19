@@ -1,3 +1,5 @@
+""" Code to transform images from KK:Hollywood into numerical state """
+
 import logging
 import numpy as np
 import tensorflow as tf
@@ -5,16 +7,16 @@ import tesserocr
 from PIL import Image
 
 # Constants
-Iphone7PlusImageConfig = {
+IMAGE_CONFIG_IPHONE7PLUS = {
     'shape': [2208, 1242, 3],
     'money_width_mult': 0.53,
     'stars_width_mult': 0.71
 }
-OutputImageSize = [160, 80] # width x height
-StateInputShape = [4]
-HudMenuHeight = 115 # pixels
-HudMenuPadding = 30 # pixels
-HudItemWidth = 240 # pixels
+OUTPUT_IMAGE_SIZE = [160, 80] # width x height
+STATE_INPUT_SHAPE = [4]
+HUD_MENU_HEIGHT = 115 # pixels
+HUD_MENU_PADDING = 30 # pixels
+HUD_MENU_ITEM_WIDTH = 240 # pixels
 
 class AIState():
     """
@@ -43,7 +45,7 @@ class AIState():
 
     def to_input(self):
         """
-        Converts high-level object into numbers with shape StateInputShape
+        Converts high-level object into numbers with shape STATE_INPUT_SHAPE
         """
         return np.array([1, 2, 3])
 
@@ -53,7 +55,7 @@ class AIGameplayImageProcessor():
     For now, resizes it and converts it to grayscale.
     In the future: use YOLO to translate image into object locations, and read known fixed-position HUD elements
     """
-    def __init__(self, image_shape, output_image_size=OutputImageSize):
+    def __init__(self, image_shape, output_image_size=OUTPUT_IMAGE_SIZE):
         self.image_shape = image_shape
         self.output_image_size = output_image_size
 
@@ -66,7 +68,7 @@ class AIGameplayImageProcessor():
 
             # Crop to non-menu area
             image_width, image_height, _ = self.image_shape
-            self.output_image = tf.image.crop_to_bounding_box(self.grayscale_image, HudMenuHeight, 0, image_height - HudMenuHeight, image_width)
+            self.output_image = tf.image.crop_to_bounding_box(self.grayscale_image, HUD_MENU_HEIGHT, 0, image_height - HUD_MENU_HEIGHT, image_width)
 
             # Resize for performance
             resize_method = tf.image.ResizeMethod.NEAREST_NEIGHBOR
@@ -84,14 +86,14 @@ class AIGameplayImageProcessor():
             Tuple of (output_image, grayscale_image)
         """
         # get processed image for gameplay area
-        sess.run(self.output_image, { self.input_image: image })
+        sess.run(self.output_image, {self.input_image: image})
         return self.output_image, self.grayscale_image
 
 class AIStateProcessor():
-    def __init__(self, image_config=Iphone7PlusImageConfig):
+    def __init__(self, image_config=IMAGE_CONFIG_IPHONE7PLUS):
         self.image_config = image_config
 
-    def read_num_from_img(self, image):
+    def _read_num_from_img(self, image):
         """ Performs OCR on image and converts text to number """
         text = tesserocr.image_to_text(image).strip()
         try:
@@ -100,8 +102,8 @@ class AIStateProcessor():
         except:
             return 0
 
-    def read_hud_value(self, image, left):
-        item_crop_box = (left, HudMenuPadding, left + HudItemWidth, HudMenuHeight - HudMenuPadding)
+    def _read_hud_value(self, image, left):
+        item_crop_box = (left, HUD_MENU_PADDING, left + HUD_MENU_ITEM_WIDTH, HUD_MENU_HEIGHT - HUD_MENU_PADDING)
         hud_image = image.crop(item_crop_box)
         value = self.read_num_from_img(hud_image)
         return value
@@ -123,8 +125,8 @@ class AIStateProcessor():
         image_shape = (width, height, 3)
 
         # get OCR text from known HUD elements
-        money = self.read_hud_value(image, self.image_config['money_width_mult'] * width)
-        stars = self.read_hud_value(image, self.image_config['stars_width_mult'] * width)
+        money = self._read_hud_value(image, self.image_config['money_width_mult'] * width)
+        stars = self._read_hud_value(image, self.image_config['stars_width_mult'] * width)
         return AIState(image_shape=image_shape, money=money, stars=stars)
 
         # Decode image for tensorflow
@@ -137,6 +139,7 @@ class AIStateProcessor():
 
 
 def get_image_state(filename):
+    """ Utility function to get state from a single image """
     processor = AIStateProcessor()
 
     with tf.Session() as sess:

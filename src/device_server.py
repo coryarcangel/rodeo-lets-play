@@ -1,3 +1,5 @@
+""" DeviceServer class to communicate with DeviceManager by commands over network """
+
 import asynchat
 import asyncore
 import logging
@@ -10,6 +12,7 @@ class DeviceMessageHandler(asynchat.async_chat):
     '''
     Allows socket-based commands to control a DeviceManager
     '''
+
     def __init__(self, device_manager, sock):
         asynchat.async_chat.__init__(self, sock)
         self.device_manager = device_manager
@@ -27,37 +30,45 @@ class DeviceMessageHandler(asynchat.async_chat):
         msg = ''.join(self.buffer)
         self.logger.debug('received message: %s', msg)
         self.buffer = []
-        self.handle_command(msg)
+        self._handle_command(msg)
 
-    def send_ack(self, id):
+    def send_ack(self, command_id):
         ''' Sends ACK of completed command with given id to client '''
-        self.logger.debug('Sending ACK for command id %s', id)
-        msg = device_client.CommandSep.join([device_client.CommandAck, id]) + '\n'
+        self.logger.debug('Sending ACK for command id %s', command_id)
+        msg = device_client.COMMAND_SEP.join([device_client.COMMAND_ACK, command_id]) + '\n'
         self.push(msg.encode())
 
-    def handle_command(self, msg):
-        parts = msg.split(device_client.CommandSep)
-        id = parts[0]
+    def _handle_command(self, msg):
+        parts = msg.split(device_client.COMMAND_SEP)
+        command_id = parts[0]
         command = parts[1]
         data = parts[2:]
 
-        if command == device_client.CommandScreenshot:
-            self.handle_screenshot(data[0])
+        if command == device_client.COMMAND_SCREENSHOT:
+            self._handle_screenshot(data[0])
+        elif command == device_client.COMMAND_RESET:
+            self._handle_reset()
         else:
             self.logger.error('Received unknown command: %s', command)
 
-        self.send_ack(id)
+        self.send_ack(command_id)
 
-    def handle_screenshot(self, filename):
+    def _handle_screenshot(self, filename):
         self.logger.debug('Handling screenshot command with filename: %s', filename)
 
         self.device_manager.save_screenshot(filename)
+
+    def _handle_reset(self):
+        self.logger.debug('Handling reset command')
+
+        self.device_manager.reset_hollywood()
 
 class DeviceServer(asyncore.dispatcher):
     '''
     Manages the creation of DeviceMessageHandlers for every incoming Socket client
     '''
-    def __init__(self, device_manager, ip = device_client.DefaultCommunicationIP, port = device_client.DefaultCommunicationPort):
+
+    def __init__(self, device_manager, ip=device_client.DEFAULT_DEVICE_IP, port=device_client.DEFAULT_DEVICE_PORT):
         asyncore.dispatcher.__init__(self)
         self.device_manager = device_manager
         self.logger = logging.getLogger('DeviceServer')
@@ -68,6 +79,7 @@ class DeviceServer(asyncore.dispatcher):
         self.listen(1)
 
     def start(self):
+        """ Starts the server for listening to commands """
         self.logger.debug('Starting Device Server...')
         asyncore.loop()
 
@@ -82,11 +94,13 @@ class DeviceServer(asyncore.dispatcher):
         self.close()
 
 def get_default_device_server():
-    dm = get_default_device_manager()
-    server = DeviceServer(dm)
+    """ Creates server with default port and ip and default device manager """
+    manager = get_default_device_manager()
+    server = DeviceServer(manager)
     return server
 
 def main():
+    """ Starts the default server if file is run as a script """
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
     server = get_default_device_server()

@@ -5,12 +5,13 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 import logging
 import os
 from ai_actions import Action
-from ai_state import AIStateProcessor
+from ai_state import AIStateProcessor, IMAGE_CONFIG_IPHONE7PLUS
 
 class KimEnv(object):
     """Abstract class which Controls a device running KK:Hollywood via a minimal interface.
     Modeled after the OpenAI Env API.
-	"""
+    """
+
     def __init__(self):
         self.step_num = 0
         self.logger = logging.getLogger('KimEnv')
@@ -21,7 +22,11 @@ class KimEnv(object):
         Returns:
             Initial AIState object
         """
-        pass
+        self._cleanup_current_step()
+        self._do_reset()
+
+        state = self._get_state()
+        return state
 
     def step(self, action=Action.PASS):
         """Performs given action on environment, attempting to run 1 timestep. When end of
@@ -56,9 +61,12 @@ class KimEnv(object):
         done = False
         info = {}
 
-        return next_state.to_input(), reward, done, info
+        return next_state, reward, done, info
 
     def _cleanup_current_step(self):
+        pass
+
+    def _do_reset(self):
         pass
 
     def _get_state(self):
@@ -74,6 +82,9 @@ class DeviceClientKimEnv(KimEnv):
         KimEnv.__init__(self)
         self.client = client
         self.state_processor = AIStateProcessor()
+
+    def _do_reset(self):
+        self.client.send_reset_command()
 
     def _cleanup_current_step(self):
         if self.step_num == 0:
@@ -98,7 +109,7 @@ class ScreenshotKimEnv(KimEnv):
     def __init__(self, screenshot_filename="src/img/ios_screenshot_1.jpg"):
         KimEnv.__init__(self)
         self.screenshot_filename = screenshot_filename
-        self.state_processor = AIStateProcessor()
+        self.state_processor = AIStateProcessor(image_config=IMAGE_CONFIG_IPHONE7PLUS)
 
     def _get_state(self):
         state = self.state_processor.process_from_file(None, self.screenshot_filename)

@@ -8,12 +8,15 @@ import tensorflow as tf
 
 # Local Imports
 from ai_deep_q import deep_q_learning
-from ai_env import DeviceClientKimEnv
+from ai_random import random_learning
+from ai_env import DeviceClientKimEnv, ScreenshotKimEnv
 from ai_estimator import QEstimator
 from device_client import get_default_device_client
 
 # Config
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+RANDOM = True
+STATIC_SCREENSHOT = True
 
 def main():
     """
@@ -33,23 +36,25 @@ def main():
     q_estimator = QEstimator(scope="q", summaries_dir=experiment_dir)
     target_estimator = QEstimator(scope="target_q")
 
-    # Device Client
-    device_client = get_default_device_client()
-
-    # Env
-    env = DeviceClientKimEnv(client=device_client)
+    # Device Client and Env
+    device_client = get_default_device_client() if not STATIC_SCREENSHOT else None
+    env = DeviceClientKimEnv(client=device_client) if not STATIC_SCREENSHOT else ScreenshotKimEnv()
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         device_client.start()
 
-        for step, stats in deep_q_learning(sess=sess,
-                                           env=env,
-                                           q_estimator=q_estimator,
-                                           target_estimator=target_estimator,
-                                           experiment_dir=experiment_dir,
-                                           num_episodes=10000):
-            logger.info("\n%d Episode Reward: %s", step, stats.episode_rewards[-1])
+        if RANDOM:
+            for step, stats in random_learning(sess=sess, env=env):
+                logger.info("\n%d Episode Reward: %s", step, stats.episode_rewards[-1])
+        else:
+            for step, stats in deep_q_learning(sess=sess,
+                                               env=env,
+                                               q_estimator=q_estimator,
+                                               target_estimator=target_estimator,
+                                               experiment_dir=experiment_dir,
+                                               num_episodes=10000):
+                logger.info("\n%d Episode Reward: %s", step, stats.episode_rewards[-1])
 
 
 if __name__ == "__main__":
