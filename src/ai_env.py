@@ -5,7 +5,7 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 import logging
 import os
 from ai_actions import Action
-from ai_state import AIStateProcessor, IMAGE_CONFIG_IPHONE7PLUS
+from ai_state import AIStateProcessor, IMG_CONFIG_STUDIOBLU
 
 class KimEnv(object):
     """Abstract class which Controls a device running KK:Hollywood via a minimal interface.
@@ -107,10 +107,10 @@ class DeviceClientKimEnv(KimEnv):
 
 class ScreenshotKimEnv(KimEnv):
     """Implements KimEnv with a static screenshot"""
-    def __init__(self, screenshot_filename="src/img/ios_screenshot_1.jpg"):
+    def __init__(self, screenshot_filename="src/img/blu_screenshot_1.png", image_config=IMG_CONFIG_STUDIOBLU):
         KimEnv.__init__(self)
         self.screenshot_filename = screenshot_filename
-        self.state_processor = AIStateProcessor(image_config=IMAGE_CONFIG_IPHONE7PLUS)
+        self.state_processor = AIStateProcessor(image_config=image_config)
 
     def _get_state(self):
         state = self.state_processor.process_from_file(None, self.screenshot_filename)

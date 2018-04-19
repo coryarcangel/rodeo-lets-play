@@ -1,28 +1,46 @@
 """ Code to transform images from KK:Hollywood into numerical state """
 
 import logging
+from collections import namedtuple
 import numpy as np #pylint: disable=E0401
 import tensorflow as tf #pylint: disable=E0401
 import tesserocr #pylint: disable=E0401
 from PIL import Image #pylint: disable=E0401
 
-# Constants
-IMAGE_CONFIG_IPHONE7PLUS = {
-    'shape': [2208, 1242, 3],
-    'money_width_mult': 0.53,
-    'stars_width_mult': 0.71
-}
-IMAGE_CONFIG_STUDIO_BLU = {
-    'shape': [1280, 720, 3],
-    'money_width_mult': 0.53,
-    'stars_width_mult': 0.71
-}
+# Image Configs
+ImageConfig = namedtuple("ImageConfig", [
+    "width",
+    "height",
+    "top_menu_height",
+    "top_menu_padding",
+    "top_menu_item_width",
+    "money_item_left",
+    "stars_item_left"
+])
 
+IMG_CONFIG_IPHONE7PLUS = ImageConfig(
+    width=2208,
+    height=1242,
+    money_item_left=1170,
+    stars_item_left=1568,
+    top_menu_height=115,
+    top_menu_padding=30,
+    top_menu_item_width=240
+)
+
+IMG_CONFIG_STUDIOBLU = ImageConfig(
+    width=1280,
+    height=720,
+    money_item_left=680,
+    stars_item_left=884,
+    top_menu_height=60,
+    top_menu_padding=10,
+    top_menu_item_width=120
+)
+
+# Constants
 OUTPUT_IMAGE_SIZE = [160, 80] # width x height
 STATE_INPUT_SHAPE = [4]
-HUD_MENU_HEIGHT = 115 # pixels
-HUD_MENU_PADDING = 30 # pixels
-HUD_MENU_ITEM_WIDTH = 240 # pixels
 
 class AIState(object):
     """
@@ -55,14 +73,14 @@ class AIState(object):
         """ Converts high-level object into numbers with shape STATE_INPUT_SHAPE """
         return np.array([1, 2, 3])
 
-class AIGameplayImageProcessor():
+class AIGameplayImageProcessor(object):
     """
     Processes raw KK:H images into state.
     For now, resizes it and converts it to grayscale.
     In the future: use YOLO to translate image into object locations, and read known fixed-position HUD elements
     """
-    def __init__(self, image_shape, output_image_size=OUTPUT_IMAGE_SIZE):
-        self.image_shape = image_shape
+    def __init__(self, image_config, output_image_size=OUTPUT_IMAGE_SIZE):
+        self.image_shape = [image_config.width, image_config.height, 3]
         self.output_image_size = output_image_size
 
         # Build the Tensorflow graph
@@ -76,9 +94,9 @@ class AIGameplayImageProcessor():
             image_width, image_height, _ = self.image_shape
             self.output_image = tf.image.crop_to_bounding_box(
                 self.grayscale_image,
-                HUD_MENU_HEIGHT,
+                image_config.top_menu_height,
                 0,
-                image_height - HUD_MENU_HEIGHT,
+                image_height - image_config.top_menu_height,
                 image_width
             )
 
@@ -93,7 +111,7 @@ class AIGameplayImageProcessor():
         """
         Args:
             sess: A Tensorflow session object
-            image: An image tensor with shape equal to `self.image_config['image_shape']`
+            image: An image tensor with shape equal to `self.image_config.width and self.image_config.height`
         Returns:
             Tuple of (output_image, grayscale_image)
         """
@@ -101,23 +119,27 @@ class AIGameplayImageProcessor():
         sess.run(self.output_image, {self.input_image: image})
         return self.output_image, self.grayscale_image
 
+def read_num_from_img(image):
+    """ Performs OCR on image and converts text to number """
+    text = tesserocr.image_to_text(image).strip()
+    try:
+        val = int(''.join(filter(str.isdigit, text.encode('ascii', 'ignore'))))
+        return val
+    except: #pylint: disable=W0702
+        return 0
+
 class AIStateProcessor(object):
-    def __init__(self, image_config=IMAGE_CONFIG_STUDIO_BLU):
+    """ Top-level class for translating an image into state """
+    def __init__(self, image_config=IMG_CONFIG_STUDIOBLU):
         self.image_config = image_config
 
-    def _read_num_from_img(self, image):
-        """ Performs OCR on image and converts text to number """
-        text = tesserocr.image_to_text(image).strip()
-        try:
-            val = int(''.join(filter(str.isdigit, text.encode('ascii', 'ignore'))))
-            return val
-        except:
-            return 0
-
     def _read_hud_value(self, image, left):
-        item_crop_box = (left, HUD_MENU_PADDING, left + HUD_MENU_ITEM_WIDTH, HUD_MENU_HEIGHT - HUD_MENU_PADDING)
+        padding = self.image_config.top_menu_padding
+        height = self.image_config.top_menu_height
+        width = self.image_config.top_menu_item_width
+        item_crop_box = (left, padding, left + width, height - padding)
         hud_image = image.crop(item_crop_box)
-        value = self._read_num_from_img(hud_image)
+        value = read_num_from_img(hud_image)
         return value
 
     def process_from_file(self, sess, filename):
@@ -137,21 +159,21 @@ class AIStateProcessor(object):
         image_shape = (width, height, 3)
 
         # get OCR text from known HUD elements
-        money = self._read_hud_value(image, self.image_config['money_width_mult'] * width)
-        stars = self._read_hud_value(image, self.image_config['stars_width_mult'] * width)
+        money = self._read_hud_value(image, self.image_config.money_item_left)
+        stars = self._read_hud_value(image, self.image_config.stars_item_left)
 
         return AIState(image_shape=image_shape, money=money, stars=stars)
 
         # Decode image for tensorflow
-        tf_image_file = tf.read_file(filename)
-        tf_image = tf.image.decode_image(tf_image_file)
+        # tf_image_file = tf.read_file(filename)
+        # tf_image = tf.image.decode_image(tf_image_file)
+        #
+        # # Process gameplay section with tensorflow
+        # gameplay_image_processor = AIGameplayImageProcessor(image_config=self.image_config)
+        # output_image, grayscale_image = gameplay_image_processor.process_image(sess, tf_image)
 
-        # Process gameplay section with tensorflow
-        gameplay_image_processor = AIGameplayImageProcessor(image_shape=image_shape)
-        output_image, grayscale_image = gameplay_image_processor.process_image(sess, tf_image)
 
-
-def get_image_state(filename, image_config=IMAGE_CONFIG_STUDIO_BLU):
+def get_image_state(filename, image_config=IMG_CONFIG_STUDIOBLU):
     """ Utility function to get state from a single image """
     processor = AIStateProcessor(image_config=image_config)
 
