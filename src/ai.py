@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 from datetime import datetime
-import tensorflow as tf
+import tensorflow as tf #pylint: disable=E0401
 
 # Local Imports
 from ai_deep_q import deep_q_learning
@@ -14,7 +14,7 @@ from ai_estimator import QEstimator
 from device_client import get_default_device_client
 
 # Config
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 RANDOM = True
 STATIC_SCREENSHOT = True
 
@@ -26,15 +26,15 @@ def main():
     # Simple variables
     start_time = datetime.now()
     experiment_dir = os.path.abspath("./experiments/{}".format(start_time)) # Where we save our checkpoints and graphs
-    logger = logging.getLogger('default')
+    logger = logging.getLogger('main')
 
     # Tensorflow setup
     tf.reset_default_graph()
-    global_step = tf.Variable(0, name="global_step", trainable=False) # Create a global step variable
+    global_step = tf.Variable(0, name="global_step", trainable=False) # Create a global step variable pylint: disable=W0612
 
     # Create estimators
-    q_estimator = QEstimator(scope="q", summaries_dir=experiment_dir)
-    target_estimator = QEstimator(scope="target_q")
+    q_estimator = QEstimator(scope="q", summaries_dir=experiment_dir) if not RANDOM else None
+    target_estimator = QEstimator(scope="target_q") if not RANDOM else None
 
     # Device Client and Env
     device_client = get_default_device_client() if not STATIC_SCREENSHOT else None
@@ -42,19 +42,23 @@ def main():
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        device_client.start()
 
+        if device_client is not None:
+            device_client.start()
+
+        learning_gen = None
         if RANDOM:
-            for step, stats in random_learning(sess=sess, env=env):
-                logger.info("\n%d Episode Reward: %s", step, stats.episode_rewards[-1])
+            learning_gen = random_learning(sess=sess, env=env, max_episode_length=10)
         else:
-            for step, stats in deep_q_learning(sess=sess,
-                                               env=env,
-                                               q_estimator=q_estimator,
-                                               target_estimator=target_estimator,
-                                               experiment_dir=experiment_dir,
-                                               num_episodes=10000):
-                logger.info("\n%d Episode Reward: %s", step, stats.episode_rewards[-1])
+            learning_gen = deep_q_learning(sess=sess,
+                                           env=env,
+                                           q_estimator=q_estimator,
+                                           target_estimator=target_estimator,
+                                           experiment_dir=experiment_dir,
+                                           num_episodes=10000)
+
+        for _, episode_idx, stats in learning_gen:
+            logger.info("EPISODE #%d: Reward: %.0f, Steps: %d", episode_idx, stats.episode_rewards[-1], stats.episode_lengths[-1])
 
 
 if __name__ == "__main__":

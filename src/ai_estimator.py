@@ -1,5 +1,5 @@
 import os
-import tensorflow as tf
+import tensorflow as tf #pylint: disable=E0401
 from ai_actions import NumActions
 
 class QEstimator(object):

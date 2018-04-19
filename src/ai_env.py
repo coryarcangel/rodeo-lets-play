@@ -55,7 +55,7 @@ class KimEnv(object):
         # Get new state
         self.logger.debug('Getting state for Step #%d', self.step_num)
         next_state = self._get_state()
-        self.logger.info('State for Step #%d: %s', self.step_num, next_state.to_text())
+        self.logger.debug('State for Step #%d: %s', self.step_num, next_state)
 
         reward = next_state.get_reward()
         done = False

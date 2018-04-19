@@ -4,10 +4,9 @@ import itertools
 import logging
 import os
 import random
-import sys
 from collections import namedtuple
-import numpy as np
-import tensorflow as tf
+import numpy as np #pylint: disable=E0401
+import tensorflow as tf #pylint: disable=E0401
 import plotting
 from ai_actions import Actions, NumActions
 
@@ -219,5 +218,3 @@ def deep_q_learning(sess,
         yield total_t, plotting.EpisodeStats(
             episode_lengths=stats.episode_lengths[:i_episode+1],
             episode_rewards=stats.episode_rewards[:i_episode+1])
-
-    return stats

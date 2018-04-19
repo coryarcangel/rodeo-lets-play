@@ -2,12 +2,12 @@
 
 import itertools
 import logging
-import numpy as np
-import tensorflow as tf
+import numpy as np #pylint: disable=E0401
+import tensorflow as tf #pylint: disable=E0401
 import plotting
 from ai_actions import Actions
 
-def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
+def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
     """
     Q-Learning algorithm for off-policy TD control using Function Approximation.
     Finds the optimal greedy policy while following an epsilon-greedy policy.
@@ -26,17 +26,16 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
         episode_lengths=np.zeros(num_episodes),
         episode_rewards=np.zeros(num_episodes))
 
-    total_t = sess.run(tf.contrib.framework.get_global_step())
+    total_t = sess.run(tf.train.get_global_step())
 
     for i_episode in range(num_episodes):
         # Reset the environment
         state = env.reset()
-        logger.info("\nEpisode %d/%d, initial state: %s\n", i_episode, num_episodes, state.to_text())
 
         # One step in the environment
         for step in itertools.count():
             # Print out which step we're on, useful for debugging.
-            logger.info("\rStep %d (%d) @ Episode %d/%d, state: %s", step, total_t, i_episode + 1, num_episodes, state.to_text())
+            logger.info("Step %d (%d) @ Episode %d/%d, state: %s", step, total_t, i_episode + 1, num_episodes, state)
 
             # Choose action randomly
             action = np.random.choice(Actions)
@@ -45,7 +44,7 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
             next_state, reward, done, _ = env.step(action)
 
             # Update statistics
-            stats.episode_rewards[i_episode] += reward
+            stats.episode_rewards[i_episode] = reward
             stats.episode_lengths[i_episode] = step
 
             if done or step >= max_episode_length:
@@ -59,8 +58,6 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
         episode_summary.value.add(simple_value=stats.episode_rewards[i_episode], node_name="episode_reward", tag="episode_reward")
         episode_summary.value.add(simple_value=stats.episode_lengths[i_episode], node_name="episode_length", tag="episode_length")
 
-        yield total_t, plotting.EpisodeStats(
+        yield total_t, i_episode, plotting.EpisodeStats(
             episode_lengths=stats.episode_lengths[:i_episode+1],
             episode_rewards=stats.episode_rewards[:i_episode+1])
-
-    return stats

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-pipenv run python src/ai.py
+pipenv run python2 src/ai.py

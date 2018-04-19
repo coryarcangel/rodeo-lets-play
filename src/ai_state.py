@@ -1,10 +1,10 @@
 """ Code to transform images from KK:Hollywood into numerical state """
 
 import logging
-import numpy as np
-import tensorflow as tf
-import tesserocr
-from PIL import Image
+import numpy as np #pylint: disable=E0401
+import tensorflow as tf #pylint: disable=E0401
+import tesserocr #pylint: disable=E0401
+from PIL import Image #pylint: disable=E0401
 
 # Constants
 IMAGE_CONFIG_IPHONE7PLUS = {
@@ -18,7 +18,7 @@ HUD_MENU_HEIGHT = 115 # pixels
 HUD_MENU_PADDING = 30 # pixels
 HUD_MENU_ITEM_WIDTH = 240 # pixels
 
-class AIState():
+class AIState(object):
     """
     Incorporates all known information about a frame of KK:H, including:
         * image -
@@ -34,19 +34,19 @@ class AIState():
         self.tappable_objects = []
         self.logger = logging.getLogger('AIState')
 
-    def get_reward(self):
-        return self.money + self.stars
-
-    def to_text(self):
+    def __str__(self):
         return 'Money: {} | Stars: {}'.format(self.money, self.stars)
 
+    def get_reward(self):
+        """ Returns total value of state """
+        return self.money + self.stars
+
     def log(self):
-        self.logger.info(self.to_text())
+        """ Logs string representation of state to INFO """
+        self.logger.info(self)
 
     def to_input(self):
-        """
-        Converts high-level object into numbers with shape STATE_INPUT_SHAPE
-        """
+        """ Converts high-level object into numbers with shape STATE_INPUT_SHAPE """
         return np.array([1, 2, 3])
 
 class AIGameplayImageProcessor():
@@ -68,7 +68,13 @@ class AIGameplayImageProcessor():
 
             # Crop to non-menu area
             image_width, image_height, _ = self.image_shape
-            self.output_image = tf.image.crop_to_bounding_box(self.grayscale_image, HUD_MENU_HEIGHT, 0, image_height - HUD_MENU_HEIGHT, image_width)
+            self.output_image = tf.image.crop_to_bounding_box(
+                self.grayscale_image,
+                HUD_MENU_HEIGHT,
+                0,
+                image_height - HUD_MENU_HEIGHT,
+                image_width
+            )
 
             # Resize for performance
             resize_method = tf.image.ResizeMethod.NEAREST_NEIGHBOR
@@ -89,7 +95,7 @@ class AIGameplayImageProcessor():
         sess.run(self.output_image, {self.input_image: image})
         return self.output_image, self.grayscale_image
 
-class AIStateProcessor():
+class AIStateProcessor(object):
     def __init__(self, image_config=IMAGE_CONFIG_IPHONE7PLUS):
         self.image_config = image_config
 
@@ -97,7 +103,7 @@ class AIStateProcessor():
         """ Performs OCR on image and converts text to number """
         text = tesserocr.image_to_text(image).strip()
         try:
-            val = int(''.join(filter(str.isdigit, text)))
+            val = int(''.join(filter(str.isdigit, text.encode('ascii', 'ignore'))))
             return val
         except:
             return 0
@@ -105,7 +111,7 @@ class AIStateProcessor():
     def _read_hud_value(self, image, left):
         item_crop_box = (left, HUD_MENU_PADDING, left + HUD_MENU_ITEM_WIDTH, HUD_MENU_HEIGHT - HUD_MENU_PADDING)
         hud_image = image.crop(item_crop_box)
-        value = self.read_num_from_img(hud_image)
+        value = self._read_num_from_img(hud_image)
         return value
 
     def process_from_file(self, sess, filename):
@@ -127,6 +133,7 @@ class AIStateProcessor():
         # get OCR text from known HUD elements
         money = self._read_hud_value(image, self.image_config['money_width_mult'] * width)
         stars = self._read_hud_value(image, self.image_config['stars_width_mult'] * width)
+
         return AIState(image_shape=image_shape, money=money, stars=stars)
 
         # Decode image for tensorflow
