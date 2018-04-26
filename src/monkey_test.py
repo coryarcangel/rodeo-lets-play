@@ -1,7 +1,7 @@
 import os
 from time import sleep
 from util import measure_task
-from device import get_default_device_manager
+from device_manager import get_default_device_manager
 
 device_manager = get_default_device_manager()
 

@@ -6,7 +6,7 @@ import logging
 import socket
 import sys
 import device_client
-from device import get_default_device_manager
+from device_manager import get_default_device_manager
 
 class DeviceMessageHandler(asynchat.async_chat):
     '''
