@@ -5,7 +5,7 @@ import logging
 import numpy as np #pylint: disable=E0401
 import tensorflow as tf #pylint: disable=E0401
 import plotting
-from ai_actions import Actions
+from ai_actions import ACTIONS
 
 def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
     """
@@ -38,7 +38,7 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
             logger.info("Step %d (%d) @ Episode %d/%d, state: %s", step, total_t, i_episode + 1, num_episodes, state)
 
             # Choose action randomly
-            action = np.random.choice(Actions)
+            action = np.random.choice(ACTIONS)
 
             # Take a step
             next_state, reward, done, _ = env.step(action)

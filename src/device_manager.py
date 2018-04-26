@@ -41,6 +41,19 @@ class DeviceManager(object):
         # launch the app
         self._launch_app(component)
 
+    def drag(self, start_pos, end_pos, duration=1, steps=10):
+        ''' Drags a finger along the device screen '''
+        self.device.drag(start_pos, end_pos, duration, steps)
+        sleep(duration) # always want to behave synchronously, so wait until action is complete
+
+    def drag_delta(self, start_pos=None, delta_x=0, delta_y=0, duration=1, steps=10):
+        ''' Drags a finger along the device screen a given distance '''
+        if start_pos is None:
+            start_pos = (100, 100)
+
+        end_pos = (start_pos[0] + delta_x, start_pos[1] + delta_y)
+        self.drag(start_pos, end_pos, duration, steps)
+
     def launch_browser(self):
         """ Launches Google Chrome """
         self._launch_app(BROWSER_COMPONENT)

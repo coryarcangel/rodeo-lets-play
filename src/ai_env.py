@@ -49,7 +49,9 @@ class KimEnv(object):
 
         # Perform relevant action
         actions_map = {
-            Action.PASS: self._perform_pass_action
+            Action.PASS: self._perform_pass_action,
+            Action.SWIPE_LEFT: self._perform_swipe_left_action,
+            Action.SWIPE_RIGHT: self._perform_swipe_right_action
         }
         actions_map[action]()
 
@@ -74,6 +76,12 @@ class KimEnv(object):
         pass
 
     def _perform_pass_action(self):
+        pass
+
+    def _perform_swipe_left_action(self):
+        pass
+
+    def _perform_swipe_right_action(self):
         pass
 
 
@@ -104,6 +112,11 @@ class DeviceClientKimEnv(KimEnv):
     def _cur_filename(self):
         return 'screen_%d.png' % self.step_num
 
+    def _perform_swipe_left_action(self):
+        self.client.send_drag_x_command(distance=-100)
+
+    def _perform_perform_swipe_right_action(self):
+        self.client.send_drag_x_command(distance=100)
 
 class ScreenshotKimEnv(KimEnv):
     """Implements KimEnv with a static screenshot"""

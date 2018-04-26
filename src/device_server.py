@@ -48,6 +48,8 @@ class DeviceMessageHandler(asynchat.async_chat):
             self._handle_screenshot(data[0])
         elif command == device_client.COMMAND_RESET:
             self._handle_reset()
+        elif command == device_client.COMMAND_DRAG_X:
+            self._handle_drag_x(data[0], data[1])
         else:
             self.logger.error('Received unknown command: %s', command)
 
@@ -62,6 +64,11 @@ class DeviceMessageHandler(asynchat.async_chat):
         self.logger.debug('Handling reset command')
 
         self.device_manager.reset_hollywood()
+
+    def _handle_drag_x(self, distance, duration):
+        self.logger.debug('Handling Drag X Command')
+
+        self.device_manager.drag_delta(delta_x=distance, duration=duration)
 
 class DeviceServer(asyncore.dispatcher):
     '''
