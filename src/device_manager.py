@@ -54,6 +54,18 @@ class DeviceManager(object):
         end_pos = (start_pos[0] + delta_x, start_pos[1] + delta_y)
         self.drag(start_pos, end_pos, duration, steps)
 
+    def tap(self, x, y): #pylint: disable=C0103
+        ''' Taps device at given location '''
+        self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
+
+    def touch_down(self, x, y): #pylint: disable=C0103
+        ''' Presses finger down at given location '''
+        self.device.touch(x, y, MonkeyDevice.DOWN)
+
+    def touch_up(self, x, y): #pylint: disable=C0103
+        ''' Removes finger down from given location '''
+        self.device.touch(x, y, MonkeyDevice.UP)
+
     def launch_browser(self):
         """ Launches Google Chrome """
         self._launch_app(BROWSER_COMPONENT)
