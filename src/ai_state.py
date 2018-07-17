@@ -79,9 +79,9 @@ class AIGameplayImageProcessor(object):
     For now, resizes it and converts it to grayscale.
     In the future: use YOLO to translate image into object locations, and read known fixed-position HUD elements
     """
-    def __init__(self, image_config, output_image_size=OUTPUT_IMAGE_SIZE):
+    def __init__(self, image_config):
         self.image_shape = [image_config.width, image_config.height, 3]
-        self.output_image_size = output_image_size
+        self.output_image_size = OUTPUT_IMAGE_SIZE
 
         # Build the Tensorflow graph
         with tf.variable_scope("state_processor"):

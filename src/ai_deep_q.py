@@ -8,7 +8,7 @@ from collections import namedtuple
 import numpy as np #pylint: disable=E0401
 import tensorflow as tf #pylint: disable=E0401
 import plotting
-from ai_actions import Actions, NumActions
+from ai_actions import ACTIONS, NUM_ACTIONS
 
 def copy_model_parameters(sess, estimator1, estimator2):
     """
@@ -117,7 +117,7 @@ def deep_q_learning(sess,
     epsilons = np.linspace(epsilon_start, epsilon_end, epsilon_decay_steps)
 
     # The policy we're following
-    policy = make_epsilon_greedy_policy(q_estimator, NumActions)
+    policy = make_epsilon_greedy_policy(q_estimator, NUM_ACTIONS)
 
     # Populate the replay memory with initial experience
     logger.info("Populating replay memory...")
@@ -129,7 +129,7 @@ def deep_q_learning(sess,
         action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
 
         # Perform action
-        next_state, reward, done, _ = env.step(Actions[action])
+        next_state, reward, done, _ = env.step(ACTIONS[action])
         next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
         replay_memory.append(Transition(state, action, reward, next_state, done))
 
@@ -173,7 +173,7 @@ def deep_q_learning(sess,
             action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
 
             # Take a step
-            next_state, reward, done, _ = env.step(Actions[action])
+            next_state, reward, done, _ = env.step(ACTIONS[action])
             next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
 
             # If our replay memory is full, pop the first element

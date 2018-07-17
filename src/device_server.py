@@ -6,7 +6,7 @@ import logging
 import socket
 import sys
 import device_client
-from device import get_default_device_manager
+from device_manager import get_default_device_manager
 
 class DeviceMessageHandler(asynchat.async_chat):
     '''
@@ -48,6 +48,10 @@ class DeviceMessageHandler(asynchat.async_chat):
             self._handle_screenshot(data[0])
         elif command == device_client.COMMAND_RESET:
             self._handle_reset()
+        elif command == device_client.COMMAND_DRAG_X:
+            self._handle_drag_x(data[0], data[1])
+        elif command == device_client.COMMAND_TAP:
+            self._handle_tap(data[0], data[1])
         else:
             self.logger.error('Received unknown command: %s', command)
 
@@ -55,13 +59,19 @@ class DeviceMessageHandler(asynchat.async_chat):
 
     def _handle_screenshot(self, filename):
         self.logger.debug('Handling screenshot command with filename: %s', filename)
-
         self.device_manager.save_screenshot(filename)
 
     def _handle_reset(self):
         self.logger.debug('Handling reset command')
-
         self.device_manager.reset_hollywood()
+
+    def _handle_drag_x(self, distance, duration):
+        self.logger.debug('Handling Drag X Command with (distance, duration): (%d, %.1f)', distance, duration)
+        self.device_manager.drag_delta(delta_x=distance, duration=duration)
+
+    def _handle_tap(self, x, y): #pylint: disable=C0103
+        self.logger.debug('Handling Tap Command with (x, y): (%d, %d)', x, y)
+        self.device_manager.tap(x, y)
 
 class DeviceServer(asyncore.dispatcher):
     '''

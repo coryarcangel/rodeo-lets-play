@@ -29,7 +29,7 @@ class KimEnv(object):
         state = self._get_state()
         return state
 
-    def step(self, action=Action.PASS):
+    def step(self, action=Action.PASS, action_args=None):
         """Performs given action on environment, attempting to run 1 timestep. When end of
         episode is reached, you are responsible for calling `reset()`
         to reset this environment's state.
@@ -49,7 +49,10 @@ class KimEnv(object):
 
         # Perform relevant action
         actions_map = {
-            Action.PASS: self._perform_pass_action
+            Action.PASS: self._perform_pass_action,
+            Action.SWIPE_LEFT: self._perform_swipe_left_action,
+            Action.SWIPE_RIGHT: self._perform_swipe_right_action,
+            Action.TAP_LOCATION: lambda _: self._perform_tap_action((action_args['x'], action_args['y']))
         }
         actions_map[action]()
 
@@ -74,6 +77,15 @@ class KimEnv(object):
         pass
 
     def _perform_pass_action(self):
+        pass
+
+    def _perform_swipe_left_action(self):
+        pass
+
+    def _perform_swipe_right_action(self):
+        pass
+
+    def _perform_tap_action(self, pos):
         pass
 
 
@@ -103,6 +115,15 @@ class DeviceClientKimEnv(KimEnv):
 
     def _cur_filename(self):
         return 'screen_%d.png' % self.step_num
+
+    def _perform_swipe_left_action(self):
+        self.client.send_drag_x_command(distance=-100)
+
+    def _perform_perform_swipe_right_action(self):
+        self.client.send_drag_x_command(distance=100)
+
+    def _perform_tap_action(self, pos):
+        self.client.send_tap_command(pos[0], pos[1])
 
 
 class ScreenshotKimEnv(KimEnv):

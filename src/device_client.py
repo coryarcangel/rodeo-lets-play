@@ -9,9 +9,12 @@ import threading
 # Constants
 DEFAULT_DEVICE_IP = '127.0.0.1'
 DEFAULT_DEVICE_PORT = 5005
+
 COMMAND_SEP = '|'
 COMMAND_SCREENSHOT = 'SCREENSHOT'
 COMMAND_RESET = 'RESET'
+COMMAND_DRAG_X = 'DRAG'
+COMMAND_TAP = 'TAP'
 COMMAND_ACK = 'ACK'
 
 class DeviceClient(asynchat.async_chat):
@@ -82,6 +85,14 @@ class DeviceClient(asynchat.async_chat):
     def send_reset_command(self):
         """ Sends a command to restart the game """
         self._send_command(COMMAND_RESET)
+
+    def send_drag_x_command(self, distance=100, duration=0.5):
+        """ Sends a command to swipe left for given duration / distance """
+        self._send_command(COMMAND_DRAG_X, distance, duration)
+
+    def send_tap_command(self, x, y): #pylint: disable=C0103
+        ''' Sends command to tap device at given location '''
+        self._send_command(COMMAND_TAP, x, y)
 
 def get_default_device_client():
     """ Returns DeviceClient connected to default host and port """
