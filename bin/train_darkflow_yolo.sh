@@ -1,0 +1,1 @@
+flow --train --model cfg/yolo.cfg --gpu 1.0 --dataset "/home/cory/pascal/VOC2012/JPEGImages" --annotation "/home/cory/pascal/VOC2012/Annotations/"

@@ -2,27 +2,38 @@ import time
 import numpy as np
 import cv2
 import mss
+from darkflow.net.build import TFNet
 from window import set_window_rect
 
-def show_image_test(x = 0, y = 0, width = 200, height = 200):
-    with mss.mss() as sct:
-        mon = {'top': y, 'left': x, 'width': width, 'height': height}
+def show_image_test(x=0, y = 0, width = 200, height = 200):
+    sct = mss.mss()
+    tfnet = TFNet({
+        'model': 'cfg/yolo.cfg',
+        'load': 'bin/yolo.weights',
+        'threshold': 0.1
+    })
 
-        while 'Screen Capturing':
-            last_time = time.time()
+    mon = {'top': y, 'left': x, 'width': width, 'height': height}
 
-            # Get raw pixels from the screen, save it to a Numpy array
-            img = np.array(sct.grab(mon))
+    while 'Screen Capturing':
+        last_time = time.time()
 
-            # Display the picture
-            cv2.imshow('OpenCV/Numpy normal', img)
+        # Get raw pixels from the screen, save it to a Numpy array
+        img = np.array(sct.grab(mon))
 
-            print('fps: {0}'.format(1 / (time.time()-last_time)))
+        # Display the picture
+        cv2.imshow('OpenCV/Numpy normal', img)
 
-            # Press "q" to quit
-            if cv2.waitKey(25) & 0xFF == ord('q'):
-                cv2.destroyAllWindows()
-                break
+        # Get YOLO results
+        yolo_result = tfnet.return_predict(img)
+        print(yolo_result)
+
+        print('fps: {0}'.format(1 / (time.time()-last_time)))
+
+        # Press "q" to quit
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            cv2.destroyAllWindows()
+            break
 
 
 def vysor_show_image_test():
