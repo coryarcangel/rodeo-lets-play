@@ -49,9 +49,6 @@ def main():
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
-        if device_client is not None:
-            device_client.start()
-
         learning_gen = None
         if RANDOM:
             learning_gen = random_learning(sess=sess, env=env, max_episode_length=1000)

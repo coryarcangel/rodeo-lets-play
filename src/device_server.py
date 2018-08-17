@@ -1,45 +1,42 @@
 """ DeviceServer class to communicate with DeviceManager by commands over network """
 
-import asynchat
-import asyncore
 import logging
-import socket
 import sys
+import redis
+from config import REDIS_HOST, REDIS_PORT
 import device_client
 from device_manager import get_default_device_manager
 
-class DeviceMessageHandler(asynchat.async_chat):
+class DeviceServer():
     '''
-    Allows socket-based commands to control a DeviceManager
+    Allows redis-based commands to control a DeviceManager
     '''
 
-    def __init__(self, device_manager, sock):
-        asynchat.async_chat.__init__(self, sock)
+    def __init__(self, device_manager, host=REDIS_HOST, port=REDIS_PORT):
         self.device_manager = device_manager
-        self.logger = logging.getLogger('DeviceMessageHandler')
+        self.logger = logging.getLogger('DeviceServer')
+        self.logger.debug('Starting Device Server...')
 
-        self.set_terminator('\n')
-        self.buffer = []
+        self.r = redis.StrictRedis(host=host, port=port, db=0, decode_responses=True)
+        self.p = self.r.pubsub(ignore_subscribe_messages=True)
+        self.p_thread = None
 
-    def collect_incoming_data(self, data):
-        '''Add data to buffer until we see \n'''
-        self.buffer.append(data)
-
-    def found_terminator(self):
-        '''We have received a full message'''
-        msg = ''.join(self.buffer)
-        self.logger.debug('received message: %s', msg)
-        self.buffer = []
-        self._handle_command(msg)
+    def start(self):
+        ''' starts pubsub to listen to commands '''
+        self.p.subscribe(**{'device-commands': self._handle_command})
+        self.p_thread = self.p.run_in_thread(sleep_time=0.001)
 
     def send_ack(self, command_id):
         ''' Sends ACK of completed command with given id to client '''
         self.logger.debug('Sending ACK for command id %s', command_id)
-        msg = device_client.COMMAND_SEP.join([device_client.COMMAND_ACK, command_id]) + '\n'
-        self.push(msg.encode())
+        msg = device_client.COMMAND_SEP.join([device_client.COMMAND_ACK, command_id])
+        self.r.publish('device-command-acks', msg)
 
-    def _handle_command(self, msg):
-        parts = msg.split(device_client.COMMAND_SEP)
+    def _handle_command(self, message):
+        if (message['type'] != 'message'):
+            return
+
+        parts = message['data'].split(device_client.COMMAND_SEP)
         command_id = parts[0]
         command = parts[1]
         data = parts[2:]
@@ -72,36 +69,6 @@ class DeviceMessageHandler(asynchat.async_chat):
     def _handle_tap(self, x, y): #pylint: disable=C0103
         self.logger.debug('Handling Tap Command with (x, y): (%d, %d)', x, y)
         self.device_manager.tap(x, y)
-
-class DeviceServer(asyncore.dispatcher):
-    '''
-    Manages the creation of DeviceMessageHandlers for every incoming Socket client
-    '''
-
-    def __init__(self, device_manager, ip=device_client.DEFAULT_DEVICE_IP, port=device_client.DEFAULT_DEVICE_PORT):
-        asyncore.dispatcher.__init__(self)
-        self.device_manager = device_manager
-        self.logger = logging.getLogger('DeviceServer')
-
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.bind((ip, port))
-        self.address = self.socket.getsockname()
-        self.listen(1)
-
-    def start(self):
-        """ Starts the server for listening to commands """
-        self.logger.debug('Starting Device Server...')
-        asyncore.loop()
-
-    def handle_accept(self):
-        '''Called when a client (like DeviceClient) connects to our socket'''
-
-        self.logger.debug('Connected to a new client...')
-        client_info = self.accept()
-        DeviceMessageHandler(device_manager=self.device_manager, sock=client_info[0])
-
-    def handle_close(self):
-        self.close()
 
 def get_default_device_server():
     """ Creates server with default port and ip and default device manager """
