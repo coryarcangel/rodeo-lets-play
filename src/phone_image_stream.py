@@ -5,20 +5,15 @@ import cv2
 import mss
 import redis
 from darkflow.net.build import TFNet
-from config import REDIS_HOST, REDIS_PORT
+from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
+from ai_state import AIStateProcessor, IMG_CONFIG_GALAXY8
 from window import set_window_rect
 
 vysor_rect = (0, 0, 473, 1028)
 
-tfnet_config = {
-    'model': 'cfg/yolo.cfg',
-    'load': 'bin/yolo.weights',
-    'threshold': 0.1
-}
-
 def show_image_test(x=0, y = 0, width = 200, height = 200):
     sct = mss.mss()
-    tfnet = TFNet(tfnet_config)
+    tfnet = TFNet(TFNET_CONFIG)
 
     mon = {'top': y, 'left': x, 'width': width, 'height': height}
 
@@ -58,22 +53,31 @@ def setup_vysor_data_stream():
     r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
 
     sct = mss.mss()
-    tfnet = TFNet(tfnet_config)
+    processor = AIStateProcessor(image_config=IMG_CONFIG_GALAXY8)
 
     x, y, w, h = vysor_rect
     mon = {'top': y, 'left': x, 'width': w, 'height': h}
 
-    while 'Screen Capturing':
-        last_time = time.time()
+    with tf.Session() as sess:
+        screen_num = 0
+        while 'Screen Capturing':
+            last_time = time.time()
 
-        # Get raw pixels from the screen, save it to a Numpy array
-        img = np.array(sct.grab(mon))
+            # Get raw pixels from the screen, save it to a Numpy array
+            img = np.array(sct.grab(mon))
 
-        # Get YOLO results
-        yolo_result = tfnet.return_predict(img)
-        r.set('cur_screen_img', json.dumps(yolo_result))
+            # Get State!
+            ai_state = processor.process_from_np_img(sess, img)
 
-        # Just Give It A Break
-        time.sleep(0.001)
+            # Publish to redis (:
+            message = {
+                'index': screen_num,
+                'state': ai_state.serialize()
+            }
+            r.publish('phone-image-states', json.dumps(yolo_result))
+
+            # increment then Just Give It A Break
+            screen_num += 1
+            time.sleep(0.001)
 
 vysor_show_image_test()

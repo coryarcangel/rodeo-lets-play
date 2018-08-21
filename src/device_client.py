@@ -1,8 +1,11 @@
 """ Connects to a DeviceServer over network to control a DeviceManager, somewhere """
 
+import json
 import logging
+import time
 import redis
 from config import REDIS_HOST, REDIS_PORT
+from ai_state import AIState
 
 # Constants
 COMMAND_SEP = '|'
@@ -12,7 +15,7 @@ COMMAND_DRAG_X = 'DRAG'
 COMMAND_TAP = 'TAP'
 COMMAND_ACK = 'ACK'
 
-class DeviceClient():
+class DeviceClient(object):
     '''
     Allows any python process (like ai.py) to send commands to a DeviceServer
     '''
@@ -21,11 +24,28 @@ class DeviceClient():
         self.host = host
         self.port = port
         self.logger = logging.getLogger('DeviceClient')
+
         self.command_id = 0
+        self.command_ack_map = {}
+
+        self.cur_screen_index = 0
+        self.cur_screen_state = None
 
         self.logger.debug('Connecting to %s:%d', host, port)
         self.r = redis.StrictRedis(host=host, port=port, db=0, decode_responses=True)
         self.p = self.r.pubsub(ignore_subscribe_messages=True)
+        self.p_thread = None
+
+    def start(self):
+        ''' starts pubsub to listen to commands '''
+        self.p.subscribe(**{
+            'device-commands': self._handle_command,
+            'phone-image-states': self._handle_phone_yolo
+        })
+        self.p_thread = self.p.run_in_thread(sleep_time=0.001)
+
+    def _has_ack(self, cmd_id):
+        return cmd_id in self.command_ack_map
 
     def _send_command(self, *args):
         # grab current command id and send message
@@ -36,6 +56,28 @@ class DeviceClient():
 
         # increment id for next command
         self.command_id += 1
+
+        # Wait for ack for "consistency!!"
+        while not self._has_ack(command_id):
+            time.sleep(0.001)
+
+    def _handle_command(self, message):
+        if message['type'] != 'message':
+            return
+
+        command_id, command = message['data'].split(COMMAND_SEP)
+        if command != COMMAND_ACK:
+            return
+
+        self.command_ack_map[command_id] = True
+
+    def _handle_phone_yolo(self, message):
+        if message['type'] != 'message':
+            return
+
+        data = json.loads(message)
+        self.cur_screen_index = data['index']
+        self.cur_screen_state = AIState.deserialize(data['state'])
 
     def send_screenshot_command(self, filename):
         """ Sends a command to save screenshot to given filename """

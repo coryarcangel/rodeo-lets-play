@@ -1,11 +1,14 @@
 """ Code to transform images from KK:Hollywood into numerical state """
 
+import json
 import logging
 from collections import namedtuple
 import numpy as np #pylint: disable=E0401
 import tensorflow as tf #pylint: disable=E0401
 import tesserocr #pylint: disable=E0401
 from PIL import Image #pylint: disable=E0401
+from darkflow.net.build import TFNet
+from config import TFNET_CONFIG
 
 # Image Configs
 ImageConfig = namedtuple("ImageConfig", [
@@ -38,6 +41,16 @@ IMG_CONFIG_STUDIOBLU = ImageConfig(
     top_menu_item_width=120
 )
 
+IMG_CONFIG_GALAXY8 = ImageConfig(
+    width=1280,
+    height=720,
+    money_item_left=680,
+    stars_item_left=884,
+    top_menu_height=60,
+    top_menu_padding=10,
+    top_menu_item_width=120
+)
+
 # Constants
 OUTPUT_IMAGE_SIZE = [160, 80] # width x height
 STATE_INPUT_SHAPE = [4]
@@ -48,18 +61,44 @@ class AIState(object):
         * image -
         * money - number
         * stars - number
-        * tappable_objects - list of (x,y,w,h) tuples
+        * image_objects - list of {label: str, confience: num rect: (x,y,w,h)} objects
     """
-    def __init__(self, image_shape, money=0, stars=0):
+    def __init__(self, image_shape, money=0, stars=0, image_objects=[]):
         self.image_shape = image_shape
         self.money = money
         self.stars = stars
         self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
-        self.tappable_objects = []
+        self.image_objects = self._process_image_objects(image_objects)
         self.logger = logging.getLogger('AIState')
+
+    @classmethod
+    def deserialize(cls, data):
+        return cls(**json.loads(data))
 
     def __str__(self):
         return 'Money: {} | Stars: {}'.format(self.money, self.stars)
+
+    def _process_image_objects(self, image_objects):
+        ''' Expects output from darkflow like {'label', 'confidence', 'topleft', 'bottomright'}[] '''
+        def process_obj(obj):
+            x = obj['topleft']['x']
+            y = obj['topleft']['y']
+            w = obj['bottomright']['x'] - x
+            h = obj['bottomright']['y'] - y
+            return {
+                'label': obj['label'],
+                'confidence': obj['confidence'],
+                'rect': (x, y, w, h)
+            }
+
+        return map(image_objects, process_obj)
+
+    def serialize(self):
+        return json.dumps({
+            'money': self.money,
+            'stars': self.stars,
+            'image_objects': self.image_objects
+        })
 
     def get_reward(self):
         """ Returns total value of state """
@@ -132,6 +171,7 @@ class AIStateProcessor(object):
     """ Top-level class for translating an image into state """
     def __init__(self, image_config=IMG_CONFIG_STUDIOBLU):
         self.image_config = image_config
+        self.tfnet = TFNet(TFNET_CONFIG)
 
     def _read_hud_value(self, image, left):
         padding = self.image_config.top_menu_padding
@@ -141,6 +181,21 @@ class AIStateProcessor(object):
         hud_image = image.crop(item_crop_box)
         value = read_num_from_img(hud_image)
         return value
+
+    def _get_pil_image_state_data(self, image):
+        # Get shape
+        width, height = image.size
+        image_shape = (width, height, 3)
+
+        # get OCR text from known HUD elements
+        money = self._read_hud_value(image, self.image_config.money_item_left)
+        stars = self._read_hud_value(image, self.image_config.stars_item_left)
+
+        return {
+            'image_shape': image_shape,
+            'money': money,
+            'stars': stars
+        }
 
     def process_from_file(self, sess, filename):
         """
@@ -153,16 +208,9 @@ class AIStateProcessor(object):
 
         # Read image with pillow
         image = Image.open(filename).convert('RGB')
+        pil_data = self._get_pil_image_state_data(image)
 
-        # Get shape
-        width, height = image.size
-        image_shape = (width, height, 3)
-
-        # get OCR text from known HUD elements
-        money = self._read_hud_value(image, self.image_config.money_item_left)
-        stars = self._read_hud_value(image, self.image_config.stars_item_left)
-
-        return AIState(image_shape=image_shape, money=money, stars=stars)
+        return AIState(**pil_data)
 
         # Decode image for tensorflow
         # tf_image_file = tf.read_file(filename)
@@ -172,8 +220,26 @@ class AIStateProcessor(object):
         # gameplay_image_processor = AIGameplayImageProcessor(image_config=self.image_config)
         # output_image, grayscale_image = gameplay_image_processor.process_image(sess, tf_image)
 
+    def process_from_np_img(self, sess, np_img):
+        """
+        Args:
+            sess: A Tensorflow session object
+            np_img: np array of image pixels
+        Returns:
+            A processed AIState object.
+        """
 
-def get_image_state(filename, image_config=IMG_CONFIG_STUDIOBLU):
+        # Get PIL stuff
+        image = Image.fromarray(np_img).convert('RGB')
+        state_data = self._get_pil_image_state_data(image)
+
+        # Get YOLO stuff
+        yolo_result = self.tfnet.return_predict(np_img)
+        state_data['image_objects'] = yolo_result
+
+        return AIState(**state_data)
+
+def get_image_state(filename, image_config=IMG_CONFIG_GALAXY8):
     """ Utility function to get state from a single image """
     processor = AIStateProcessor(image_config=image_config)
 

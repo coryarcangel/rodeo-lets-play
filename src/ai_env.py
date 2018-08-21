@@ -94,24 +94,12 @@ class DeviceClientKimEnv(KimEnv):
     def __init__(self, client):
         KimEnv.__init__(self)
         self.client = client
-        self.state_processor = AIStateProcessor()
 
     def _do_reset(self):
         self.client.send_reset_command()
 
-    def _cleanup_current_step(self):
-        if self.step_num == 0:
-            return
-
-        filename = self._cur_filename()
-        self.logger.debug('Removing used file: %s', filename)
-        os.remove(filename)
-
     def _get_state(self):
-        filename = self._cur_filename()
-        self.client.send_screenshot_command(filename)
-        state = self.state_processor.process_from_file(None, filename)
-        return state
+        return self.client.cur_screen_state()
 
     def _cur_filename(self):
         return 'screen_%d.png' % self.step_num

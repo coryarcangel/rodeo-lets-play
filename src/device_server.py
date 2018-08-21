@@ -7,7 +7,7 @@ from config import REDIS_HOST, REDIS_PORT
 import device_client
 from device_manager import get_default_device_manager
 
-class DeviceServer():
+class DeviceServer(object):
     '''
     Allows redis-based commands to control a DeviceManager
     '''
@@ -29,17 +29,15 @@ class DeviceServer():
     def send_ack(self, command_id):
         ''' Sends ACK of completed command with given id to client '''
         self.logger.debug('Sending ACK for command id %s', command_id)
-        msg = device_client.COMMAND_SEP.join([device_client.COMMAND_ACK, command_id])
+        msg = device_client.COMMAND_SEP.join([command_id, device_client.COMMAND_ACK])
         self.r.publish('device-command-acks', msg)
 
     def _handle_command(self, message):
-        if (message['type'] != 'message'):
+        if message['type'] != 'message':
             return
 
         parts = message['data'].split(device_client.COMMAND_SEP)
-        command_id = parts[0]
-        command = parts[1]
-        data = parts[2:]
+        command_id, command, data = parts[0], parts[1], parts[2:]
 
         if command == device_client.COMMAND_SCREENSHOT:
             self._handle_screenshot(data[0])

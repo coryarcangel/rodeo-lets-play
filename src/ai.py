@@ -42,8 +42,11 @@ def main():
     q_estimator = QEstimator(scope="q", summaries_dir=experiment_dir) if not RANDOM else None
     target_estimator = QEstimator(scope="target_q") if not RANDOM else None
 
-    # Device Client and Env
+    # Device Client
     device_client = get_default_device_client() if not STATIC_SCREENSHOT else None
+    device_client.start()
+
+    # Env
     env = DeviceClientKimEnv(client=device_client) if not STATIC_SCREENSHOT else ScreenshotKimEnv()
 
     with tf.Session() as sess:
