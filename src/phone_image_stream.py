@@ -8,6 +8,7 @@ from darkflow.net.build import TFNet
 from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
 from ai_state import AIStateProcessor, IMG_CONFIG_GALAXY8
 from window import set_window_rect
+from image_annotation import AnnotatedImageStream
 
 vysor_rect = (0, 0, 473, 1028)
 
@@ -55,6 +56,8 @@ def setup_vysor_data_stream():
     sct = mss.mss()
     processor = AIStateProcessor(image_config=IMG_CONFIG_GALAXY8)
 
+    annotation_stream = AnnotatedImageStream()
+
     x, y, w, h = vysor_rect
     mon = {'top': y, 'left': x, 'width': w, 'height': h}
 
@@ -75,6 +78,9 @@ def setup_vysor_data_stream():
                 'state': ai_state.serialize()
             }
             r.publish('phone-image-states', json.dumps(yolo_result))
+
+            # Display
+            annotation_stream.show_image(img, ai_state)
 
             # increment then Just Give It A Break
             screen_num += 1

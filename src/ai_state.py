@@ -61,7 +61,7 @@ class AIState(object):
         * image -
         * money - number
         * stars - number
-        * image_objects - list of {label: str, confience: num rect: (x,y,w,h)} objects
+        * image_objects - list of {label: str, confidence: num, rect: (x,y,w,h)} objects
     """
     def __init__(self, image_shape, money=0, stars=0, image_objects=[]):
         self.image_shape = image_shape
