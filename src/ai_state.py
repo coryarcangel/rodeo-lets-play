@@ -57,7 +57,14 @@ STATE_INPUT_SHAPE = [4]
 
 
 def _process_image_objects(image_objects):
-    ''' Expects output from darkflow like {'label', 'confidence', 'topleft', 'bottomright'}[] '''
+    '''
+    Expects output from darkflow like {
+        'label',
+        'confidence',
+        'topleft',
+        'bottomright'
+    }[]
+    '''
     def process_obj(obj):
         x = obj['topleft']['x']
         y = obj['topleft']['y']
@@ -65,11 +72,11 @@ def _process_image_objects(image_objects):
         h = obj['bottomright']['y'] - y
         return {
             'label': obj['label'],
-            'confidence': obj['confidence'],
+            'confidence': float(obj['confidence']),
             'rect': (x, y, w, h)
         }
 
-    return map(image_objects, process_obj)
+    return [process_obj(i) for i in image_objects]
 
 
 class AIState(object):
@@ -78,7 +85,11 @@ class AIState(object):
         * image -
         * money - number
         * stars - number
-        * image_objects - list of {label: str, confidence: num, rect: (x,y,w,h)} objects
+        * image_objects - list of {
+            label: str,
+            confidence: num,
+            rect: (x,y,w,h)
+          } objects
     """
 
     def __init__(self, image_shape, money=0, stars=0, image_objects=None):
@@ -123,7 +134,8 @@ class AIGameplayImageProcessor(object):
     """
     Processes raw KK:H images into state.
     For now, resizes it and converts it to grayscale.
-    In the future: use YOLO to translate image into object locations, and read known fixed-position HUD elements
+    In the future: use YOLO to translate image into object locations,
+    and read known fixed-position HUD elements
     """
 
     def __init__(self, image_config):
@@ -160,7 +172,8 @@ class AIGameplayImageProcessor(object):
         """
         Args:
             sess: A Tensorflow session object
-            image: An image tensor with shape equal to `self.image_config.width and self.image_config.height`
+            image: An image tensor with shape equal to
+            `[self.image_config.width, self.image_config.height]`
         Returns:
             Tuple of (output_image, grayscale_image)
         """
@@ -247,7 +260,8 @@ class AIStateProcessor(object):
         state_data = self._get_pil_image_state_data(image)
 
         # Get YOLO stuff
-        yolo_result = self.tfnet.return_predict(np_img)
+        np_img_3chan = np_img[:, :, :3]
+        yolo_result = self.tfnet.return_predict(np_img_3chan)
         state_data['image_objects'] = yolo_result
 
         return AIState(**state_data)

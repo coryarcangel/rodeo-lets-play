@@ -4,7 +4,8 @@ from datetime import datetime
 
 
 def measure_task(task, label, count=10, print_every_time=False):
-    ''' utility for measuring the computation time of given function task, which takes index as argument '''
+    ''' utility for measuring the computation time of given function task,
+        which takes index as argument '''
     times = []
     for i in range(count):
         before = datetime.now()

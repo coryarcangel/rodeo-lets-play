@@ -21,7 +21,8 @@ def set_window_size(win_id, width, height):
 
 def set_window_rect(name, x, y, width, height):
     ''' moves rect with given name to specified location and size '''
-    win_id = run_cmd("xdotool search --onlyvisible --name {}".format(name))
+    win_id = run_cmd(
+        "xdotool search --onlyvisible --name {}".format(name)).strip().decode('UTF-8')
     if not win_id:
         return
 

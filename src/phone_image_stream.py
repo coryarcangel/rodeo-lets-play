@@ -52,11 +52,13 @@ def show_image_test(x=0, y=0, width=200, height=200):
 def setup_vysor_window():
     ''' Moves the Vysor window to fixed location for capture via mss '''
     x, y, w, h = VYSOR_RECT
-    set_window_rect('Kim', x, y, w, h)
+    name = 'Vysor'  # 'Kim'
+    set_window_rect(name, x, y, w, h)
 
 
 def vysor_show_image_test():
-    ''' a basic test of capturing from vysor and showing the image in opencv '''
+    ''' a basic test of capturing from vysor
+        and showing the image in opencv '''
     setup_vysor_window()
 
     x, y, w, h = VYSOR_RECT
