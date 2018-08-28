@@ -2,14 +2,15 @@
 
 import logging
 from time import sleep
-from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice #pylint: disable=E0401
+from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 
-### Constants
+# Constants
 BROWSER_PACKAGE = 'com.android.chrome'
 BROWSER_COMPONENT = '%s/com.google.android.apps.chrome.Main' % BROWSER_PACKAGE
 
 KK_HOLLYWOOD_PACKAGE = 'com.glu.stardomkim'
 KK_HOLLYWOOD_COMPONENT = '%s/com.google.android.vending.expansion.downloader_impl.DownloaderActivity' % KK_HOLLYWOOD_PACKAGE
+
 
 class DeviceManager(object):
     '''
@@ -23,8 +24,11 @@ class DeviceManager(object):
 
     def log_info(self):
         """ Logs information about the connected device """
-        self.logger.debug('device name: %s', self.device.getProperty('build.product'))
-        self.logger.debug('device size: %sx%s', self.device.getProperty('display.width'), self.device.getProperty('display.height'))
+        self.logger.debug(
+            'device name: %s',
+            self.device.getProperty('build.product'))
+        self.logger.debug('device size: %sx%s', self.device.getProperty(
+            'display.width'), self.device.getProperty('display.height'))
 
     def _launch_app(self, component):
         # component must be in the form: `PACKAGE_NAME/MAIN_ACTIVITY_NAME`
@@ -44,9 +48,11 @@ class DeviceManager(object):
     def drag(self, start_pos, end_pos, duration=1, steps=10):
         ''' Drags a finger along the device screen '''
         self.device.drag(start_pos, end_pos, duration, steps)
-        sleep(duration) # always want to behave synchronously, so wait until action is complete
+        # always want to behave synchronously, so wait until action is complete
+        sleep(duration)
 
-    def drag_delta(self, start_pos=None, delta_x=0, delta_y=0, duration=1, steps=10):
+    def drag_delta(self, start_pos=None, delta_x=0,
+                   delta_y=0, duration=1, steps=10):
         ''' Drags a finger along the device screen a given distance '''
         if start_pos is None:
             start_pos = (100, 100)
@@ -54,15 +60,15 @@ class DeviceManager(object):
         end_pos = (start_pos[0] + delta_x, start_pos[1] + delta_y)
         self.drag(start_pos, end_pos, duration, steps)
 
-    def tap(self, x, y): #pylint: disable=C0103
+    def tap(self, x, y):
         ''' Taps device at given location '''
         self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
 
-    def touch_down(self, x, y): #pylint: disable=C0103
+    def touch_down(self, x, y):
         ''' Presses finger down at given location '''
         self.device.touch(x, y, MonkeyDevice.DOWN)
 
-    def touch_up(self, x, y): #pylint: disable=C0103
+    def touch_up(self, x, y):
         ''' Removes finger down from given location '''
         self.device.touch(x, y, MonkeyDevice.UP)
 
@@ -100,6 +106,7 @@ class DeviceManager(object):
         self.logger.debug('Wrote image to file: %s', filename)
         return filename
 
+
 def get_default_device():
     ''' Connects to default android device (either emulator or physical phone) and returns monkeyrunner device'''
 
@@ -109,16 +116,19 @@ def get_default_device():
     # Connects to the current device, returning a MonkeyDevice object
     # the first argument is a timeout in seconds
     # the second argument is a regular expression describing the device ID (all can be found with "adb devices" command)
-    # d = MonkeyRunner.waitForConnection(10, 'emulator-\d+') # connect to emulator
+    # d = MonkeyRunner.waitForConnection(10, 'emulator-\d+') # connect to
+    # emulator
     device = None
     attempts = 0
     while device is None and attempts < 10:
-        device = MonkeyRunner.waitForConnection(10) # connect to default device
+        device = MonkeyRunner.waitForConnection(
+            10)  # connect to default device
         if device.getProperty('display.width') is None:
             device = None
     default_logger.info('Connected to device!!')
 
     return device
+
 
 def get_default_device_manager():
     ''' Connects to default android device and returns DeviceManager'''

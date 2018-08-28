@@ -3,10 +3,10 @@
 import json
 import logging
 from collections import namedtuple
-import numpy as np #pylint: disable=E0401
-import tensorflow as tf #pylint: disable=E0401
-import tesserocr #pylint: disable=E0401
-from PIL import Image #pylint: disable=E0401
+import numpy as np
+import tensorflow as tf
+import tesserocr
+from PIL import Image
 from darkflow.net.build import TFNet
 from config import TFNET_CONFIG
 
@@ -52,8 +52,25 @@ IMG_CONFIG_GALAXY8 = ImageConfig(
 )
 
 # Constants
-OUTPUT_IMAGE_SIZE = [160, 80] # width x height
+OUTPUT_IMAGE_SIZE = [160, 80]  # width x height
 STATE_INPUT_SHAPE = [4]
+
+
+def _process_image_objects(image_objects):
+    ''' Expects output from darkflow like {'label', 'confidence', 'topleft', 'bottomright'}[] '''
+    def process_obj(obj):
+        x = obj['topleft']['x']
+        y = obj['topleft']['y']
+        w = obj['bottomright']['x'] - x
+        h = obj['bottomright']['y'] - y
+        return {
+            'label': obj['label'],
+            'confidence': obj['confidence'],
+            'rect': (x, y, w, h)
+        }
+
+    return map(image_objects, process_obj)
+
 
 class AIState(object):
     """
@@ -63,37 +80,26 @@ class AIState(object):
         * stars - number
         * image_objects - list of {label: str, confidence: num, rect: (x,y,w,h)} objects
     """
-    def __init__(self, image_shape, money=0, stars=0, image_objects=[]):
+
+    def __init__(self, image_shape, money=0, stars=0, image_objects=None):
         self.image_shape = image_shape
         self.money = money
         self.stars = stars
         self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
-        self.image_objects = self._process_image_objects(image_objects)
+        self.image_objects = _process_image_objects(
+            image_objects if image_objects is not None else [])
         self.logger = logging.getLogger('AIState')
 
     @classmethod
     def deserialize(cls, data):
+        ''' loads AIState from serialized json '''
         return cls(**json.loads(data))
 
     def __str__(self):
         return 'Money: {} | Stars: {}'.format(self.money, self.stars)
 
-    def _process_image_objects(self, image_objects):
-        ''' Expects output from darkflow like {'label', 'confidence', 'topleft', 'bottomright'}[] '''
-        def process_obj(obj):
-            x = obj['topleft']['x']
-            y = obj['topleft']['y']
-            w = obj['bottomright']['x'] - x
-            h = obj['bottomright']['y'] - y
-            return {
-                'label': obj['label'],
-                'confidence': obj['confidence'],
-                'rect': (x, y, w, h)
-            }
-
-        return map(image_objects, process_obj)
-
     def serialize(self):
+        ''' serializes AIState into json '''
         return json.dumps({
             'money': self.money,
             'stars': self.stars,
@@ -110,7 +116,8 @@ class AIState(object):
 
     def to_input(self):
         """ Converts high-level object into numbers with shape STATE_INPUT_SHAPE """
-        return np.array([1, 2, 3])
+        return np.array([1, self.money, self.stars])
+
 
 class AIGameplayImageProcessor(object):
     """
@@ -118,13 +125,15 @@ class AIGameplayImageProcessor(object):
     For now, resizes it and converts it to grayscale.
     In the future: use YOLO to translate image into object locations, and read known fixed-position HUD elements
     """
+
     def __init__(self, image_config):
         self.image_shape = [image_config.width, image_config.height, 3]
         self.output_image_size = OUTPUT_IMAGE_SIZE
 
         # Build the Tensorflow graph
         with tf.variable_scope("state_processor"):
-            self.input_image = tf.placeholder(shape=self.image_shape, dtype=tf.uint8)
+            self.input_image = tf.placeholder(
+                shape=self.image_shape, dtype=tf.uint8)
 
             # Convert to grayscale
             self.grayscale_image = tf.image.rgb_to_grayscale(self.input_image)
@@ -141,7 +150,8 @@ class AIGameplayImageProcessor(object):
 
             # Resize for performance
             resize_method = tf.image.ResizeMethod.NEAREST_NEIGHBOR
-            self.output_image = tf.image.resize_images(self.output_image, self.output_image_size, method=resize_method)
+            self.output_image = tf.image.resize_images(
+                self.output_image, self.output_image_size, method=resize_method)
 
             # Remove 1-dimensional components
             self.output_image = tf.squeeze(self.output_image)
@@ -158,17 +168,20 @@ class AIGameplayImageProcessor(object):
         sess.run(self.output_image, {self.input_image: image})
         return self.output_image, self.grayscale_image
 
+
 def read_num_from_img(image):
     """ Performs OCR on image and converts text to number """
     text = tesserocr.image_to_text(image).strip()
     try:
         val = int(''.join(filter(str.isdigit, text.encode('ascii', 'ignore'))))
         return val
-    except: #pylint: disable=W0702
+    except BaseException:
         return 0
+
 
 class AIStateProcessor(object):
     """ Top-level class for translating an image into state """
+
     def __init__(self, image_config=IMG_CONFIG_STUDIOBLU):
         self.image_config = image_config
         self.tfnet = TFNet(TFNET_CONFIG)
@@ -238,6 +251,7 @@ class AIStateProcessor(object):
         state_data['image_objects'] = yolo_result
 
         return AIState(**state_data)
+
 
 def get_image_state(filename, image_config=IMG_CONFIG_GALAXY8):
     """ Utility function to get state from a single image """

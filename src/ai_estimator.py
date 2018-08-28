@@ -1,6 +1,7 @@
 import os
-import tensorflow as tf #pylint: disable=E0401
+import tensorflow as tf
 from ai_actions import NUM_ACTIONS
+
 
 class QEstimator(object):
     """Q-Value Estimator neural network.
@@ -15,7 +16,8 @@ class QEstimator(object):
             # Build the graph
             self._build_model()
             if summaries_dir:
-                summary_dir = os.path.join(summaries_dir, "summaries_{}".format(scope))
+                summary_dir = os.path.join(
+                    summaries_dir, "summaries_{}".format(scope))
                 if not os.path.exists(summary_dir):
                     os.makedirs(summary_dir)
                 self.summary_writer = tf.summary.FileWriter(summary_dir)
@@ -26,11 +28,19 @@ class QEstimator(object):
         """
 
         # Placeholders for our input
-        self.x_pl = tf.placeholder(shape=[None, 84, 84, 4], dtype=tf.uint8, name="X")
+        self.x_pl = tf.placeholder(
+            shape=[
+                None,
+                84,
+                84,
+                4],
+            dtype=tf.uint8,
+            name="X")
         # The TD target value
         self.y_pl = tf.placeholder(shape=[None], dtype=tf.float32, name="y")
         # Integer id of which action was selected
-        self.actions_pl = tf.placeholder(shape=[None], dtype=tf.int32, name="actions")
+        self.actions_pl = tf.placeholder(
+            shape=[None], dtype=tf.int32, name="actions")
 
         x = tf.to_float(self.x_pl) / 255.0
         batch_size = tf.shape(self.x_pl)[0]
@@ -49,8 +59,10 @@ class QEstimator(object):
         self.predictions = tf.contrib.layers.fully_connected(fc1, NUM_ACTIONS)
 
         # Get the predictions for the chosen actions only
-        gather_indices = tf.range(batch_size) * tf.shape(self.predictions)[1] + self.actions_pl
-        self.action_predictions = tf.gather(tf.reshape(self.predictions, [-1]), gather_indices)
+        gather_indices = tf.range(
+            batch_size) * tf.shape(self.predictions)[1] + self.actions_pl
+        self.action_predictions = tf.gather(
+            tf.reshape(self.predictions, [-1]), gather_indices)
 
         # Calcualte the loss
         self.losses = tf.squared_difference(self.y_pl, self.action_predictions)
@@ -58,7 +70,8 @@ class QEstimator(object):
 
         # Optimizer Parameters from original paper
         self.optimizer = tf.train.RMSPropOptimizer(0.00025, 0.99, 0.0, 1e-6)
-        self.train_op = self.optimizer.minimize(self.loss, global_step=tf.contrib.framework.get_global_step())
+        self.train_op = self.optimizer.minimize(
+            self.loss, global_step=tf.contrib.framework.get_global_step())
 
         # Summaries for Tensorboard
         self.summaries = tf.summary.merge([
@@ -67,7 +80,6 @@ class QEstimator(object):
             tf.summary.histogram("q_values_hist", self.predictions),
             tf.summary.scalar("max_q_value", tf.reduce_max(self.predictions))
         ])
-
 
     def predict(self, sess, s):
         """
@@ -79,7 +91,7 @@ class QEstimator(object):
           Tensor of shape [batch_size, NUM_VALID_ACTIONS] containing the estimated
           action values.
         """
-        return sess.run(self.predictions, { self.x_pl: s })
+        return sess.run(self.predictions, {self.x_pl: s})
 
     def update(self, sess, s, a, y):
         """
@@ -92,9 +104,12 @@ class QEstimator(object):
         Returns:
           The calculated loss on the batch.
         """
-        feed_dict = { self.x_pl: s, self.y_pl: y, self.actions_pl: a }
+        feed_dict = {self.x_pl: s, self.y_pl: y, self.actions_pl: a}
         summaries, global_step, _, loss = sess.run(
-            [self.summaries, tf.contrib.framework.get_global_step(), self.train_op, self.loss],
+            [self.summaries,
+             tf.contrib.framework.get_global_step(),
+             self.train_op,
+             self.loss],
             feed_dict)
         if self.summary_writer:
             self.summary_writer.add_summary(summaries, global_step)

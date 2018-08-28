@@ -8,6 +8,8 @@ device_manager = get_default_device_manager()
 '''
 Here's a nice performance test for different types of device screenshots.
 '''
+
+
 def measure_screenshot_performance():
     def screenshot_with_writeFile_png(i):
         img = device_manager.device.takeSnapshot()
@@ -17,12 +19,18 @@ def measure_screenshot_performance():
         img = device_manager.device.takeSnapshot()
         bytes = img.convertToBytes('png')
 
-    measure_task(screenshot_with_writeFile_png, 'take screenshot with writeFile png')
-    measure_task(screenshot_with_convertToBytes_png, 'take screenshot with convertToBytes png')
+    measure_task(
+        screenshot_with_writeFile_png,
+        'take screenshot with writeFile png')
+    measure_task(screenshot_with_convertToBytes_png,
+                 'take screenshot with convertToBytes png')
+
 
 '''
 Here's a nice test to launch the browser and then restart it.
 '''
+
+
 def browser_launch_and_restart():
     print('Launching Browser...')
     device_manager.launch_browser()
@@ -32,9 +40,12 @@ def browser_launch_and_restart():
     device_manager.restart_browser()
     sleep(2)
 
+
 '''
 Here's a nice test to launch the KK:Hollywood app and then restart it.
 '''
+
+
 def hollywood_launch_and_restart():
     print('Launching Hollywood...')
     device_manager.launch_hollywood()
@@ -44,9 +55,12 @@ def hollywood_launch_and_restart():
     device_manager.restart_hollywood()
     sleep(2)
 
+
 '''
 Here's a nice test to take a few screenshots of the KK:Hollywood app and print their state.
 '''
+
+
 def hollywood_screenshot_loop_test():
     print('Launching Hollywood...')
     device_manager.launch_hollywood()
@@ -58,11 +72,13 @@ def hollywood_screenshot_loop_test():
         filename = device_manager.get_screenshot()
         print('Saved %s' % filename)
 
+
 def test():
     # measure_screenshot_performance()
     # browser_launch_and_restart()
     # hollywood_launch_and_restart()
     hollywood_screenshot_loop_test()
+
 
 if __name__ == "__main__":
     test()

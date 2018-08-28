@@ -5,10 +5,11 @@ import logging
 import os
 import random
 from collections import namedtuple
-import numpy as np #pylint: disable=E0401
-import tensorflow as tf #pylint: disable=E0401
+import numpy as np
+import tensorflow as tf
 import plotting
 from ai_actions import ACTIONS, NUM_ACTIONS
+
 
 def copy_model_parameters(sess, estimator1, estimator2):
     """
@@ -18,9 +19,13 @@ def copy_model_parameters(sess, estimator1, estimator2):
       estimator1: Estimator to copy the paramters from
       estimator2: Estimator to copy the parameters to
     """
-    e1_params = [t for t in tf.trainable_variables() if t.name.startswith(estimator1.scope)]
+    e1_params = [
+        t for t in tf.trainable_variables() if t.name.startswith(
+            estimator1.scope)]
     e1_params = sorted(e1_params, key=lambda v: v.name)
-    e2_params = [t for t in tf.trainable_variables() if t.name.startswith(estimator2.scope)]
+    e2_params = [
+        t for t in tf.trainable_variables() if t.name.startswith(
+            estimator2.scope)]
     e2_params = sorted(e2_params, key=lambda v: v.name)
 
     update_ops = []
@@ -86,7 +91,9 @@ def deep_q_learning(sess,
         An EpisodeStats object with two numpy arrays for episode_lengths and episode_rewards.
     """
 
-    Transition = namedtuple("Transition", ["state", "action", "reward", "next_state", "done"]) #pylint: disable=C0103
+    Transition = namedtuple(
+        "Transition", [
+            "state", "action", "reward", "next_state", "done"])
 
     logger = logging.getLogger('deep_q_learning')
 
@@ -125,13 +132,21 @@ def deep_q_learning(sess,
     state = np.stack([state] * 4, axis=2)
     for _ in range(replay_memory_init_size):
         # Choose action
-        action_probs = policy(sess, state, epsilons[min(total_t, epsilon_decay_steps-1)])
+        action_probs = policy(
+            sess, state, epsilons[min(total_t, epsilon_decay_steps - 1)])
         action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
 
         # Perform action
         next_state, reward, done, _ = env.step(ACTIONS[action])
-        next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
-        replay_memory.append(Transition(state, action, reward, next_state, done))
+        next_state = np.append(
+            state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
+        replay_memory.append(
+            Transition(
+                state,
+                action,
+                reward,
+                next_state,
+                done))
 
         if done:
             state = env.reset()
@@ -153,7 +168,7 @@ def deep_q_learning(sess,
         for step in itertools.count():
 
             # Epsilon for this time step
-            epsilon = epsilons[min(total_t, epsilon_decay_steps-1)]
+            epsilon = epsilons[min(total_t, epsilon_decay_steps - 1)]
 
             # Add epsilon to Tensorboard
             episode_summary = tf.Summary()
@@ -166,22 +181,38 @@ def deep_q_learning(sess,
                 logger.debug("\nCopied model parameters to target network.")
 
             # Print out which step we're on, useful for debugging.
-            logger.info("\rStep %d (%d) @ Episode %d/%d, loss: %.2f", step, total_t, i_episode + 1, num_episodes, loss)
+            logger.info(
+                "\rStep %d (%d) @ Episode %d/%d, loss: %.2f",
+                step,
+                total_t,
+                i_episode + 1,
+                num_episodes,
+                loss)
 
             # Choose action
             action_probs = policy(sess, state, epsilon)
-            action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
+            action = np.random.choice(
+                np.arange(
+                    len(action_probs)),
+                p=action_probs)
 
             # Take a step
             next_state, reward, done, _ = env.step(ACTIONS[action])
-            next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
+            next_state = np.append(
+                state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
 
             # If our replay memory is full, pop the first element
             if len(replay_memory) == replay_memory_size:
                 replay_memory.pop(0)
 
             # Save transition to replay memory
-            replay_memory.append(Transition(state, action, reward, next_state, done))
+            replay_memory.append(
+                Transition(
+                    state,
+                    action,
+                    reward,
+                    next_state,
+                    done))
 
             # Update statistics
             stats.episode_rewards[i_episode] += reward
@@ -189,18 +220,22 @@ def deep_q_learning(sess,
 
             # Sample a minibatch from the replay memory
             samples = random.sample(replay_memory, batch_size)
-            states_batch, action_batch, reward_batch, next_states_batch, done_batch = map(np.array, zip(*samples))
+            states_batch, action_batch, reward_batch, next_states_batch, done_batch = map(
+                np.array, zip(*samples))
 
             # Calculate q values and targets (Double DQN)
             q_values_next = q_estimator.predict(sess, next_states_batch)
             best_actions = np.argmax(q_values_next, axis=1)
-            q_values_next_target = target_estimator.predict(sess, next_states_batch)
+            q_values_next_target = target_estimator.predict(
+                sess, next_states_batch)
             targets_batch = reward_batch + np.invert(done_batch).astype(np.float32) * \
-                discount_factor * q_values_next_target[np.arange(batch_size), best_actions]
+                discount_factor * \
+                q_values_next_target[np.arange(batch_size), best_actions]
 
             # Perform gradient descent update
             states_batch = np.array(states_batch)
-            loss = q_estimator.update(sess, states_batch, action_batch, targets_batch)
+            loss = q_estimator.update(
+                sess, states_batch, action_batch, targets_batch)
 
             if done:
                 break
@@ -210,11 +245,17 @@ def deep_q_learning(sess,
 
         # Add summaries to tensorboard
         episode_summary = tf.Summary()
-        episode_summary.value.add(simple_value=stats.episode_rewards[i_episode], node_name="episode_reward", tag="episode_reward")
-        episode_summary.value.add(simple_value=stats.episode_lengths[i_episode], node_name="episode_length", tag="episode_length")
+        episode_summary.value.add(
+            simple_value=stats.episode_rewards[i_episode],
+            node_name="episode_reward",
+            tag="episode_reward")
+        episode_summary.value.add(
+            simple_value=stats.episode_lengths[i_episode],
+            node_name="episode_length",
+            tag="episode_length")
         q_estimator.summary_writer.add_summary(episode_summary, total_t)
         q_estimator.summary_writer.flush()
 
         yield total_t, plotting.EpisodeStats(
-            episode_lengths=stats.episode_lengths[:i_episode+1],
-            episode_rewards=stats.episode_rewards[:i_episode+1])
+            episode_lengths=stats.episode_lengths[:i_episode + 1],
+            episode_rewards=stats.episode_rewards[:i_episode + 1])

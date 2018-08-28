@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Set the SDK Path
-# SDK_PATH=~/Android/Sdk # Ubuntu
-SDK_PATH=~/Library/Android/sdk # OSX
+ SDK_PATH=~/Android/Sdk # Ubuntu
+#SDK_PATH=~/Library/Android/sdk # OSX
 
 # Get the directory where this script lives
 BASEDIR=$(dirname "$0")

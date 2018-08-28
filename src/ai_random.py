@@ -2,10 +2,11 @@
 
 import itertools
 import logging
-import numpy as np #pylint: disable=E0401
-import tensorflow as tf #pylint: disable=E0401
+import numpy as np
+import tensorflow as tf1
 import plotting
 from ai_actions import get_actions_from_state
+
 
 def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
     """
@@ -35,7 +36,8 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
         # One step in the environment
         for step in itertools.count():
             # Print out which step we're on, useful for debugging.
-            logger.info("Step %d (%d) @ Episode %d/%d, state: %s", step, total_t, i_episode + 1, num_episodes, state)
+            logger.info("Step %d (%d) @ Episode %d/%d, state: %s",
+                        step, total_t, i_episode + 1, num_episodes, state)
 
             # Choose action randomly
             actions = get_actions_from_state(state)
@@ -56,9 +58,15 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
 
         # Add summaries to tensorboard
         episode_summary = tf.Summary()
-        episode_summary.value.add(simple_value=stats.episode_rewards[i_episode], node_name="episode_reward", tag="episode_reward")
-        episode_summary.value.add(simple_value=stats.episode_lengths[i_episode], node_name="episode_length", tag="episode_length")
+        episode_summary.value.add(
+            simple_value=stats.episode_rewards[i_episode],
+            node_name="episode_reward",
+            tag="episode_reward")
+        episode_summary.value.add(
+            simple_value=stats.episode_lengths[i_episode],
+            node_name="episode_length",
+            tag="episode_length")
 
         yield total_t, i_episode, plotting.EpisodeStats(
-            episode_lengths=stats.episode_lengths[:i_episode+1],
-            episode_rewards=stats.episode_rewards[:i_episode+1])
+            episode_lengths=stats.episode_lengths[:i_episode + 1],
+            episode_rewards=stats.episode_rewards[:i_episode + 1])

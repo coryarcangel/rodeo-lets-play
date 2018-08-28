@@ -1,8 +1,8 @@
 """ Theoretically will contain utils for plotting stats as the AI works """
 
 from collections import namedtuple
-#import numpy as np #pylint: disable=E0401
-#import pandas as pd #pylint: disable=E0401
+# import numpy as np #pylint: disable=E0401
+# import pandas as pd #pylint: disable=E0401
 # from matplotlib import pyplot as plt #pylint: disable=E0401
 # from mpl_toolkits.mplot3d import Axes3D #pylint: disable=E0401
 

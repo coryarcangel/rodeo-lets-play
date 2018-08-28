@@ -15,6 +15,7 @@ COMMAND_DRAG_X = 'DRAG'
 COMMAND_TAP = 'TAP'
 COMMAND_ACK = 'ACK'
 
+
 class DeviceClient(object):
     '''
     Allows any python process (like ai.py) to send commands to a DeviceServer
@@ -32,7 +33,8 @@ class DeviceClient(object):
         self.cur_screen_state = None
 
         self.logger.debug('Connecting to %s:%d', host, port)
-        self.r = redis.StrictRedis(host=host, port=port, db=0, decode_responses=True)
+        self.r = redis.StrictRedis(
+            host=host, port=port, db=0, decode_responses=True)
         self.p = self.r.pubsub(ignore_subscribe_messages=True)
         self.p_thread = None
 
@@ -91,9 +93,10 @@ class DeviceClient(object):
         """ Sends a command to swipe left for given duration / distance """
         self._send_command(COMMAND_DRAG_X, distance, duration)
 
-    def send_tap_command(self, x, y): #pylint: disable=C0103
+    def send_tap_command(self, x, y):
         ''' Sends command to tap device at given location '''
         self._send_command(COMMAND_TAP, x, y)
+
 
 def get_default_device_client():
     """ Returns DeviceClient connected to default host and port """
