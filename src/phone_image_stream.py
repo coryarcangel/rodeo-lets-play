@@ -14,12 +14,14 @@ import mss
 import tensorflow as tf
 import redis
 from darkflow.net.build import TFNet
-from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
+from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME
 from ai_state import AIStateProcessor, IMG_CONFIG_GALAXY8
 from window import set_window_rect
 from image_annotation import AnnotatedImageStream
 
-VYSOR_RECT = (0, 0, 473, 1028)
+# Extremely Hard Coded :)
+VYSOR_RECT = (0, 0, 776, 466)
+VYSOR_CAP_AREA = (62, 95, VYSOR_RECT[-2] -100, VYSOR_RECT[-1] -80)
 
 
 def show_image_test(x=0, y=0, width=200, height=200):
@@ -52,8 +54,7 @@ def show_image_test(x=0, y=0, width=200, height=200):
 def setup_vysor_window():
     ''' Moves the Vysor window to fixed location for capture via mss '''
     x, y, w, h = VYSOR_RECT
-    name = 'Vysor'  # 'Kim'
-    set_window_rect(name, x, y, w, h)
+    set_window_rect(VYSOR_WINDOW_NAME, x, y, w, h)
 
 
 def vysor_show_image_test():
@@ -61,8 +62,8 @@ def vysor_show_image_test():
         and showing the image in opencv '''
     setup_vysor_window()
 
-    x, y, w, h = VYSOR_RECT
-    show_image_test(x + 80, y + 50, w, h)
+    x, y, w, h = VYSOR_CAP_AREA
+    show_image_test(x, y, w, h)
 
 
 def setup_vysor_data_stream():
@@ -80,7 +81,7 @@ def setup_vysor_data_stream():
 
     annotation_stream = AnnotatedImageStream()
 
-    x, y, w, h = VYSOR_RECT
+    x, y, w, h = VYSOR_CAP_AREA
     mon = {'top': y, 'left': x, 'width': w, 'height': h}
 
     with tf.Session() as sess:

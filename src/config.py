@@ -8,3 +8,5 @@ TFNET_CONFIG = {
     'gpu': 0.7,
     'threshold': 0.1
 }
+
+VYSOR_WINDOW_NAME = 'Kim' # 'Vysor'

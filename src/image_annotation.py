@@ -8,7 +8,8 @@ WHITE = (255, 255, 255)
 
 
 def draw_img_text(img, x=0, y=0, text='text',
-                  font=cv2.FONT_HERSHEY_SIMPLEX, color=WHITE):
+                  font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1,
+                  color=WHITE):
     """
     Args:
         img: numpy array
@@ -20,7 +21,7 @@ def draw_img_text(img, x=0, y=0, text='text',
     Returns:
         numpy array with annotations
     """
-    cv2.putText(img, text, (x, y), font, 4, color, 2, cv2.LINE_AA)
+    cv2.putText(img, text, (x, y), font, font_scale, color, 1, cv2.LINE_AA)
     return img
 
 
@@ -57,9 +58,10 @@ class AnnotatedImageStream(object):
                                        for k in ('label', 'confidence', 'rect')]
             x, y, w, h = rect
             ann_img = draw_img_rect(ann_img, x, y, w, h)
+
+            text = '%s (%.2f)' % (label, confidence)
             ann_img = draw_img_text(
-                ann_img, x + w + 10, y + 10, '%s (%.2f)' %
-                (label, confidence))
+                ann_img, x + w + 10, y + 10, text, font_scale=0.6)
 
         cv2.imshow(self.window_name, ann_img)
         # wait 1 ms (no time) for a key press (required to run a lot of backend
