@@ -77,7 +77,7 @@ class DeviceClient(object):
         if message['type'] != 'message':
             return
 
-        data = json.loads(message)
+        data = json.loads(message['data'])
         self.cur_screen_index = data['index']
         self.cur_screen_state = AIState.deserialize(data['state'])
 

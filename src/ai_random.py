@@ -3,7 +3,7 @@
 import itertools
 import logging
 import numpy as np
-import tensorflow as tf1
+import tensorflow as tf
 import plotting
 from ai_actions import get_actions_from_state
 

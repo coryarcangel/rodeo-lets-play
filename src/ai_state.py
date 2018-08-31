@@ -92,13 +92,12 @@ class AIState(object):
           } objects
     """
 
-    def __init__(self, image_shape, money=0, stars=0, image_objects=None):
+    def __init__(self, image_shape=IMG_CONFIG_GALAXY8, money=0, stars=0, image_objects=None):
         self.image_shape = image_shape
         self.money = money
         self.stars = stars
         self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
-        self.image_objects = _process_image_objects(
-            image_objects if image_objects is not None else [])
+        self.image_objects = image_objects if image_objects is not None else []
         self.logger = logging.getLogger('AIState')
 
     @classmethod
@@ -262,7 +261,7 @@ class AIStateProcessor(object):
         # Get YOLO stuff
         np_img_3chan = np_img[:, :, :3]
         yolo_result = self.tfnet.return_predict(np_img_3chan)
-        state_data['image_objects'] = yolo_result
+        state_data['image_objects'] = _process_image_objects(yolo_result)
 
         return AIState(**state_data)
 
