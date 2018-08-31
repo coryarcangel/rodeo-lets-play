@@ -1,85 +1,50 @@
 """ Connects to a DeviceServer over network to control a DeviceManager, somewhere """
 
-import json
+import asyncore
 import logging
 import time
-import redis
-from config import REDIS_HOST, REDIS_PORT
-from ai_state import AIState
+import socket
+import threading
+from asyncchat_kim import AsyncchatKim
 
 # Constants
-COMMAND_SEP = '|'
 COMMAND_SCREENSHOT = 'SCREENSHOT'
 COMMAND_RESET = 'RESET'
 COMMAND_DRAG_X = 'DRAG'
 COMMAND_TAP = 'TAP'
-COMMAND_ACK = 'ACK'
 
-
-class DeviceClient(object):
+class DeviceClient(AsyncchatKim):
     '''
     Allows any python process (like ai.py) to send commands to a DeviceServer
     '''
 
-    def __init__(self, host=REDIS_HOST, port=REDIS_PORT):
-        self.host = host
-        self.port = port
-        self.logger = logging.getLogger('DeviceClient')
-
-        self.command_id = 0
-        self.command_ack_map = {}
-
-        self.cur_screen_index = 0
-        self.cur_screen_state = None
-
-        self.logger.debug('Connecting to %s:%d', host, port)
-        self.r = redis.StrictRedis(
-            host=host, port=port, db=0, decode_responses=True)
-        self.p = self.r.pubsub(ignore_subscribe_messages=True)
-        self.p_thread = None
+    def __init__(self):
+        AsyncchatKim.__init__(self, py2=False, logger_name='DeviceClient')
 
     def start(self):
-        ''' starts pubsub to listen to commands '''
-        self.p.subscribe(**{
-            'device-commands': self._handle_command,
-            'phone-image-states': self._handle_phone_yolo
-        })
-        self.p_thread = self.p.run_in_thread(sleep_time=0.001)
+        """ Connects the client to a server """
+        self.logger.debug('Connecting to %s:%d', self.device_ip, self.port)
 
-    def _has_ack(self, cmd_id):
-        return cmd_id in self.command_ack_map
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connect((self.device_ip, self.port))
 
-    def _send_command(self, *args):
-        # grab current command id and send message
-        command_id = str(self.command_id)
-        msg = COMMAND_SEP.join((command_id,) + args)
-        self.logger.debug('Sending message: %s', msg)
-        self.r.publish('device-commands', msg)
+        self.comm = threading.Thread(target=asyncore.loop)
+        self.comm.daemon = True
+        self.comm.start()
 
-        # increment id for next command
-        self.command_id += 1
+    def _has_received_cmd_ack(self, command_id):
+        return command_id in self.command_ack_map
 
-        # Wait for ack for "consistency!!"
-        while not self._has_ack(command_id):
+    def _wait_for_ack(self, command_id):
+        while not self._has_received_cmd_ack(command_id):
             time.sleep(0.001)
 
-    def _handle_command(self, message):
-        if message['type'] != 'message':
-            return
+    def _send_command(self, *args):
+        command_id = str(self.command_id)
+        AsyncchatKim._send_command(self, *args)
 
-        command_id, command = message['data'].split(COMMAND_SEP)
-        if command != COMMAND_ACK:
-            return
-
-        self.command_ack_map[command_id] = True
-
-    def _handle_phone_yolo(self, message):
-        if message['type'] != 'message':
-            return
-
-        data = json.loads(message['data'])
-        self.cur_screen_index = data['index']
-        self.cur_screen_state = AIState.deserialize(data['state'])
+        # Wait for ack for "consistency!!"
+        self._wait_for_ack(command_id)
 
     def send_screenshot_command(self, filename):
         """ Sends a command to save screenshot to given filename """

@@ -3,8 +3,11 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 """
 
 import logging
+import json
+import redis
 from ai_actions import Action
-from ai_state import AIStateProcessor, IMG_CONFIG_STUDIOBLU
+from ai_state import AIState, AIStateProcessor, IMG_CONFIG_STUDIOBLU
+from config import REDIS_HOST, REDIS_PORT
 
 
 class KimEnv(object):
@@ -92,9 +95,23 @@ class KimEnv(object):
 class DeviceClientKimEnv(KimEnv):
     """Implements KimEnv with a DeviceClient"""
 
-    def __init__(self, client):
+    def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
         KimEnv.__init__(self)
         self.client = client
+
+        self.cur_screen_index = 0
+        self.cur_screen_state = None
+
+        # Redis to grab the screen state from the phone_image_stream process
+        self.logger.debug('Connecting to %s:%d', host, port)
+        self.r = redis.StrictRedis(
+            host=host, port=port, db=0, decode_responses=True)
+        self.p = self.r.pubsub(ignore_subscribe_messages=True)
+
+        self.p.subscribe(**{
+            'phone-image-states': self._handle_phone_yolo
+        })
+        self.p_thread = self.p.run_in_thread(sleep_time=0.001)
 
     def _do_reset(self):
         self.client.send_reset_command()
@@ -102,8 +119,13 @@ class DeviceClientKimEnv(KimEnv):
     def _get_state(self):
         return self.client.cur_screen_state()
 
-    def _cur_filename(self):
-        return 'screen_%d.png' % self.step_num
+    def _handle_phone_yolo(self, message):
+        if message['type'] != 'message':
+            return
+
+        data = json.loads(message['data'])
+        self.cur_screen_index = data['index']
+        self.cur_screen_state = AIState.deserialize(data['state'])
 
     def _perform_swipe_left_action(self):
         self.client.send_drag_x_command(distance=-100)
