@@ -1,47 +1,25 @@
 """ DeviceServer class to communicate with DeviceManager by commands over network """
 
+import asyncore
 import logging
+import socket
 import sys
-import redis
-from config import REDIS_HOST, REDIS_PORT
-import device_client
+
+from config import DEVICE_HOST, DEVICE_PORT
+from device_client import COMMAND_ACK
 from device_manager import get_default_device_manager
+from asyncchat_kim import AsyncchatKim
 
-
-class DeviceServer(object):
+class DeviceMessageHandler(AsyncchatKim):
     '''
-    Allows redis-based commands to control a DeviceManager
+    Allows socket-based commands to control a DeviceManager
     '''
 
-    def __init__(self, device_manager, host=REDIS_HOST, port=REDIS_PORT):
+    def __init__(self, device_manager, sock):
+        AsyncchatKim.__init__(self, logger_name='DeviceMessageHandler', py2=True, sock=sock)
         self.device_manager = device_manager
-        self.logger = logging.getLogger('DeviceServer')
-        self.logger.debug('Starting Device Server...')
 
-        self.r = redis.StrictRedis(
-            host=host, port=port, db=0, decode_responses=True)
-        self.p = self.r.pubsub(ignore_subscribe_messages=True)
-        self.p_thread = None
-
-    def start(self):
-        ''' starts pubsub to listen to commands '''
-        self.p.subscribe(**{'device-commands': self._handle_command})
-        self.p_thread = self.p.run_in_thread(sleep_time=0.001)
-
-    def send_ack(self, command_id):
-        ''' Sends ACK of completed command with given id to client '''
-        self.logger.debug('Sending ACK for command id %s', command_id)
-        msg = device_client.COMMAND_SEP.join(
-            [command_id, device_client.COMMAND_ACK])
-        self.r.publish('device-command-acks', msg)
-
-    def _handle_command(self, message):
-        if message['type'] != 'message':
-            return
-
-        parts = message['data'].split(device_client.COMMAND_SEP)
-        command_id, command, data = parts[0], parts[1], parts[2:]
-
+    def _handle_command(self, command_id, command, data):
         if command == device_client.COMMAND_SCREENSHOT:
             self._handle_screenshot(data[0])
         elif command == device_client.COMMAND_RESET:
@@ -56,9 +34,7 @@ class DeviceServer(object):
         self.send_ack(command_id)
 
     def _handle_screenshot(self, filename):
-        self.logger.debug(
-            'Handling screenshot command with filename: %s',
-            filename)
+        self.logger.debug('Handling screenshot command with filename: %s', filename)
         self.device_manager.save_screenshot(filename)
 
     def _handle_reset(self):
@@ -66,23 +42,48 @@ class DeviceServer(object):
         self.device_manager.reset_hollywood()
 
     def _handle_drag_x(self, distance, duration):
-        self.logger.debug(
-            'Handling Drag X Command with (distance, duration): (%d, %.1f)',
-            distance,
-            duration)
+        self.logger.debug('Handling Drag X Command with (distance, duration): (%d, %.1f)', distance, duration)
         self.device_manager.drag_delta(delta_x=distance, duration=duration)
 
-    def _handle_tap(self, x, y):
+    def _handle_tap(self, x, y): #pylint: disable=C0103
         self.logger.debug('Handling Tap Command with (x, y): (%d, %d)', x, y)
         self.device_manager.tap(x, y)
 
+class DeviceServer(asyncore.dispatcher):
+    '''
+    Manages the creation of DeviceMessageHandlers for every incoming Socket client
+    '''
+
+    def __init__(self, device_manager, host=DEVICE_HOST, port=DEVICE_PORT):
+        asyncore.dispatcher.__init__(self)
+        self.device_manager = device_manager
+        self.logger = logging.getLogger('DeviceServer')
+
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.bind((DEVICE_HOST, port))
+        self.address = self.socket.getsockname()
+        self.listen(1)
+
+    def start(self):
+        """ Starts the server for listening to commands """
+        self.logger.debug('Starting Device Server...')
+        asyncore.loop()
+
+    def handle_accept(self):
+        '''Called when a client (like DeviceClient) connects to our socket'''
+
+        self.logger.debug('Connected to a new client...')
+        client_info = self.accept()
+        DeviceMessageHandler(device_manager=self.device_manager, sock=client_info[0])
+
+    def handle_close(self):
+        self.close()
 
 def get_default_device_server():
     """ Creates server with default port and ip and default device manager """
     manager = get_default_device_manager()
     server = DeviceServer(manager)
     return server
-
 
 def main():
     """ Starts the default server if file is run as a script """
@@ -94,7 +95,6 @@ def main():
 
     server = get_default_device_server()
     server.start()
-
 
 if __name__ == "__main__":
     main()

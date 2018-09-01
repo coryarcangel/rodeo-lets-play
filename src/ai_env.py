@@ -3,8 +3,11 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 """
 
 import logging
+import json
+import redis
 from ai_actions import Action
-from ai_state import AIStateProcessor, IMG_CONFIG_STUDIOBLU
+from ai_state import AIState, AIStateProcessor, IMG_CONFIG_STUDIOBLU
+from config import REDIS_HOST, REDIS_PORT
 
 
 class KimEnv(object):
@@ -48,13 +51,7 @@ class KimEnv(object):
         self.step_num += 1
 
         # Perform relevant action
-        actions_map = {
-            Action.PASS: self._perform_pass_action,
-            Action.SWIPE_LEFT: self._perform_swipe_left_action,
-            Action.SWIPE_RIGHT: self._perform_swipe_right_action,
-            Action.TAP_LOCATION: lambda _: self._perform_tap_action((action_args['x'], action_args['y']))
-        }
-        actions_map[action]()
+        self._take_action(acton, action_args)
 
         # Get new state
         self.logger.debug('Getting state for Step #%d', self.step_num)
@@ -76,25 +73,38 @@ class KimEnv(object):
     def _get_state(self):
         pass
 
-    def _perform_pass_action(self):
-        pass
-
-    def _perform_swipe_left_action(self):
-        pass
-
-    def _perform_swipe_right_action(self):
-        pass
-
-    def _perform_tap_action(self, pos):
+    def _perform_pass_action(self, args):
         pass
 
 
 class DeviceClientKimEnv(KimEnv):
     """Implements KimEnv with a DeviceClient"""
 
-    def __init__(self, client):
+    def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
         KimEnv.__init__(self)
         self.client = client
+
+        self.cur_screen_index = 0
+        self.cur_screen_state = None
+
+        # Setup Actions Map
+        self.actions_map = {
+            Action.PASS: self._perform_pass_action,
+            Action.SWIPE_LEFT: self._perform_swipe_left_action,
+            Action.SWIPE_RIGHT: self._perform_swipe_right_action,
+            Action.TAP_LOCATION: self._perform_tap_action
+        }
+
+        # Redis to grab the screen state from the phone_image_stream process
+        self.logger.debug('Connecting to %s:%d', host, port)
+        self.r = redis.StrictRedis(
+            host=host, port=port, db=0, decode_responses=True)
+        self.p = self.r.pubsub(ignore_subscribe_messages=True)
+
+        self.p.subscribe(**{
+            'phone-image-states': self._handle_phone_yolo
+        })
+        self.p_thread = self.p.run_in_thread(sleep_time=0.001)
 
     def _do_reset(self):
         self.client.send_reset_command()
@@ -102,17 +112,31 @@ class DeviceClientKimEnv(KimEnv):
     def _get_state(self):
         return self.client.cur_screen_state()
 
-    def _cur_filename(self):
-        return 'screen_%d.png' % self.step_num
+    def _handle_phone_yolo(self, message):
+        if message['type'] != 'message':
+            return
 
-    def _perform_swipe_left_action(self):
-        self.client.send_drag_x_command(distance=-100)
+        data = json.loads(message['data'])
+        self.cur_screen_index = data['index']
+        self.cur_screen_state = AIState.deserialize(data['state'])
 
-    def _perform_perform_swipe_right_action(self):
-        self.client.send_drag_x_command(distance=100)
+    def _take_action(self, action, args):
+        if (action in self.actions_map):
+            self.actions_map[action](args)
+        else:
+            print('unrecognized action %s' % action)
 
-    def _perform_tap_action(self, pos):
-        self.client.send_tap_command(pos[0], pos[1])
+    def _perform_swipe_left_action(self, args):
+        distance = args['distance'] if 'distance' in args else 100
+        self.client.send_drag_x_command(distance=-distance)
+
+    def _perform_perform_swipe_right_action(self, args):
+        distance = args['distance'] if 'distance' in args else 100
+        self.client.send_drag_x_command(distance=distance)
+
+    def _perform_tap_action(self, args):
+        x, y = [args[k] for k in ['x', 'y']]
+        self.client.send_tap_command(x, y)
 
 
 class ScreenshotKimEnv(KimEnv):
