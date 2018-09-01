@@ -1,17 +1,10 @@
 """ Connects to a DeviceServer over network to control a DeviceManager, somewhere """
 
 import asyncore
-import logging
 import time
 import socket
 import threading
-from asyncchat_kim import AsyncchatKim
-
-# Constants
-COMMAND_SCREENSHOT = 'SCREENSHOT'
-COMMAND_RESET = 'RESET'
-COMMAND_DRAG_X = 'DRAG'
-COMMAND_TAP = 'TAP'
+from asyncchat_kim import AsyncchatKim, KimCommand
 
 class DeviceClient(AsyncchatKim):
     '''
@@ -23,10 +16,10 @@ class DeviceClient(AsyncchatKim):
 
     def start(self):
         """ Connects the client to a server """
-        self.logger.debug('Connecting to %s:%d', self.device_ip, self.port)
+        self.logger.debug('Connecting to %s:%d', self.host, self.port)
 
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect((self.device_ip, self.port))
+        self.connect((self.host, self.port))
 
         self.comm = threading.Thread(target=asyncore.loop)
         self.comm.daemon = True
@@ -48,19 +41,19 @@ class DeviceClient(AsyncchatKim):
 
     def send_screenshot_command(self, filename):
         """ Sends a command to save screenshot to given filename """
-        self._send_command(COMMAND_SCREENSHOT, filename)
+        self._send_command(KimCommand.SCREENSHOT, filename)
 
     def send_reset_command(self):
         """ Sends a command to restart the game """
-        self._send_command(COMMAND_RESET)
+        self._send_command(KimCommand.RESET)
 
     def send_drag_x_command(self, distance=100, duration=0.5):
         """ Sends a command to swipe left for given duration / distance """
-        self._send_command(COMMAND_DRAG_X, distance, duration)
+        self._send_command(KimCommand.DRAG_X, distance, duration)
 
     def send_tap_command(self, x, y):
         ''' Sends command to tap device at given location '''
-        self._send_command(COMMAND_TAP, x, y)
+        self._send_command(KimCommand.TAP, x, y)
 
 
 def get_default_device_client():

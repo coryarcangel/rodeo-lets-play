@@ -91,7 +91,7 @@ class DeviceManager(object):
     def reset_hollywood(self):
         """ Restarts the KK:Hollywood app, and waits until game is playable """
         self.restart_hollywood()
-        sleep(45)
+        sleep(5)
 
     def get_screenshot(self):
         """ Calls save_screenshot with an auto-incrementing filename """

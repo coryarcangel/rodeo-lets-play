@@ -51,14 +51,14 @@ class KimEnv(object):
         self.step_num += 1
 
         # Perform relevant action
-        self._take_action(acton, action_args)
+        self._take_action(action, action_args)
 
         # Get new state
         self.logger.debug('Getting state for Step #%d', self.step_num)
         next_state = self._get_state()
         self.logger.debug('State for Step #%d: %s', self.step_num, next_state)
 
-        reward = next_state.get_reward()
+        reward = next_state.get_reward() if next_state else None
         done = False
         info = {}
 
@@ -110,15 +110,16 @@ class DeviceClientKimEnv(KimEnv):
         self.client.send_reset_command()
 
     def _get_state(self):
-        return self.client.cur_screen_state()
+        return self.cur_screen_state
 
     def _handle_phone_yolo(self, message):
         if message['type'] != 'message':
             return
 
         data = json.loads(message['data'])
-        self.cur_screen_index = data['index']
-        self.cur_screen_state = AIState.deserialize(data['state'])
+        if data:
+            self.cur_screen_index = data['index']
+            self.cur_screen_state = AIState.deserialize(data['state'])
 
     def _take_action(self, action, args):
         if (action in self.actions_map):
@@ -130,7 +131,7 @@ class DeviceClientKimEnv(KimEnv):
         distance = args['distance'] if 'distance' in args else 100
         self.client.send_drag_x_command(distance=-distance)
 
-    def _perform_perform_swipe_right_action(self, args):
+    def _perform_swipe_right_action(self, args):
         distance = args['distance'] if 'distance' in args else 100
         self.client.send_drag_x_command(distance=distance)
 

@@ -14,7 +14,6 @@ from ai_estimator import QEstimator
 from device_client import get_default_device_client
 
 # Config
-# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 RANDOM = True
 STATIC_SCREENSHOT = False
 

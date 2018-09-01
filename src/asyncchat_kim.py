@@ -1,17 +1,21 @@
 import asynchat
-import asyncore
-import socket
-import time
+import logging
 
 from config import DEVICE_HOST, DEVICE_PORT
 
 COMMAND_SEP = '|'
-COMMAND_ACK = 'ACK'
+
+class KimCommand(object):
+    ACK = 'ACK'
+    SCREENSHOT = 'SCREENSHOT'
+    RESET = 'RESET'
+    DRAG_X = 'DRAG_X'
+    TAP = 'TAP'
 
 class AsyncchatKim(asynchat.async_chat):
     '''
-    Wrapper around the native very-raw api that attempts to make communcation between device_client
-    and device_server easier
+    Wrapper around the native very-raw api that attempts to make communcation
+    between device_client and device_server easier
     '''
 
     def __init__(self, host=DEVICE_HOST, port=DEVICE_PORT, logger_name='async_chat', py2=False, sock=None):
@@ -58,5 +62,5 @@ class AsyncchatKim(asynchat.async_chat):
 
     def send_ack(self, command_id):
         ''' Sends ACK of completed command with given id '''
-        msg = COMMAND_SEP.join((command_id, COMMAND_ACK)) + '\n'
+        msg = COMMAND_SEP.join((command_id, KimCommand.ACK)) + '\n'
         self._send_message(msg)

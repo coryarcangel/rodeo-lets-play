@@ -6,9 +6,8 @@ import socket
 import sys
 
 from config import DEVICE_HOST, DEVICE_PORT
-from device_client import COMMAND_ACK
 from device_manager import get_default_device_manager
-from asyncchat_kim import AsyncchatKim
+from asyncchat_kim import AsyncchatKim, KimCommand
 
 class DeviceMessageHandler(AsyncchatKim):
     '''
@@ -19,33 +18,37 @@ class DeviceMessageHandler(AsyncchatKim):
         AsyncchatKim.__init__(self, logger_name='DeviceMessageHandler', py2=True, sock=sock)
         self.device_manager = device_manager
 
+        self.command_handlers = {
+            KimCommand.SCREENSHOT: self._handle_screenshot,
+            KimCommand.RESET: self._handle_reset,
+            KimCommand.DRAG_X: self._handle_drag_x,
+            KimCommand.TAP: self._handle_tap
+        }
+
     def _handle_command(self, command_id, command, data):
-        if command == device_client.COMMAND_SCREENSHOT:
-            self._handle_screenshot(data[0])
-        elif command == device_client.COMMAND_RESET:
-            self._handle_reset()
-        elif command == device_client.COMMAND_DRAG_X:
-            self._handle_drag_x(data[0], data[1])
-        elif command == device_client.COMMAND_TAP:
-            self._handle_tap(data[0], data[1])
+        if command in self.command_handlers:
+            self.command_handlers[command](data)
         else:
             self.logger.error('Received unknown command: %s', command)
 
         self.send_ack(command_id)
 
-    def _handle_screenshot(self, filename):
+    def _handle_screenshot(self, data):
+        filename = data[0]
         self.logger.debug('Handling screenshot command with filename: %s', filename)
         self.device_manager.save_screenshot(filename)
 
-    def _handle_reset(self):
+    def _handle_reset(self, data):
         self.logger.debug('Handling reset command')
         self.device_manager.reset_hollywood()
 
-    def _handle_drag_x(self, distance, duration):
+    def _handle_drag_x(self, data):
+        distance, duration = data
         self.logger.debug('Handling Drag X Command with (distance, duration): (%d, %.1f)', distance, duration)
         self.device_manager.drag_delta(delta_x=distance, duration=duration)
 
-    def _handle_tap(self, x, y): #pylint: disable=C0103
+    def _handle_tap(self, data):
+        x, y = data
         self.logger.debug('Handling Tap Command with (x, y): (%d, %d)', x, y)
         self.device_manager.tap(x, y)
 
