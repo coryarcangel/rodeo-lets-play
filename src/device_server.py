@@ -9,13 +9,18 @@ from config import DEVICE_HOST, DEVICE_PORT
 from device_manager import get_default_device_manager
 from asyncchat_kim import AsyncchatKim, KimCommand
 
+
 class DeviceMessageHandler(AsyncchatKim):
     '''
     Allows socket-based commands to control a DeviceManager
     '''
 
     def __init__(self, device_manager, sock):
-        AsyncchatKim.__init__(self, logger_name='DeviceMessageHandler', py2=True, sock=sock)
+        AsyncchatKim.__init__(
+            self,
+            logger_name='DeviceMessageHandler',
+            py2=True,
+            sock=sock)
         self.device_manager = device_manager
 
         self.command_handlers = {
@@ -35,7 +40,9 @@ class DeviceMessageHandler(AsyncchatKim):
 
     def _handle_screenshot(self, data):
         filename = data[0]
-        self.logger.debug('Handling screenshot command with filename: %s', filename)
+        self.logger.debug(
+            'Handling screenshot command with filename: %s',
+            filename)
         self.device_manager.save_screenshot(filename)
 
     def _handle_reset(self, data):
@@ -44,13 +51,17 @@ class DeviceMessageHandler(AsyncchatKim):
 
     def _handle_drag_x(self, data):
         distance, duration = data
-        self.logger.debug('Handling Drag X Command with (distance, duration): (%d, %.1f)', distance, duration)
+        self.logger.debug(
+            'Handling Drag X Command with (distance, duration): (%d, %.1f)',
+            distance,
+            duration)
         self.device_manager.drag_delta(delta_x=distance, duration=duration)
 
     def _handle_tap(self, data):
         x, y = data
         self.logger.debug('Handling Tap Command with (x, y): (%d, %d)', x, y)
         self.device_manager.tap(x, y)
+
 
 class DeviceServer(asyncore.dispatcher):
     '''
@@ -77,16 +88,20 @@ class DeviceServer(asyncore.dispatcher):
 
         self.logger.debug('Connected to a new client...')
         client_info = self.accept()
-        DeviceMessageHandler(device_manager=self.device_manager, sock=client_info[0])
+        DeviceMessageHandler(
+            device_manager=self.device_manager,
+            sock=client_info[0])
 
     def handle_close(self):
         self.close()
+
 
 def get_default_device_server():
     """ Creates server with default port and ip and default device manager """
     manager = get_default_device_manager()
     server = DeviceServer(manager)
     return server
+
 
 def main():
     """ Starts the default server if file is run as a script """
@@ -98,6 +113,7 @@ def main():
 
     server = get_default_device_server()
     server.start()
+
 
 if __name__ == "__main__":
     main()

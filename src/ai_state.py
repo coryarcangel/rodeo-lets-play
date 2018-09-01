@@ -92,7 +92,8 @@ class AIState(object):
           } objects
     """
 
-    def __init__(self, image_shape=IMG_CONFIG_GALAXY8, money=0, stars=0, image_objects=None):
+    def __init__(self, image_shape=IMG_CONFIG_GALAXY8,
+                 money=0, stars=0, image_objects=None):
         self.image_shape = image_shape
         self.money = money
         self.stars = stars

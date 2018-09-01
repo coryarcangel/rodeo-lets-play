@@ -21,7 +21,7 @@ from image_annotation import AnnotatedImageStream
 
 # Extremely Hard Coded :)
 VYSOR_RECT = (0, 0, 776, 466)
-VYSOR_CAP_AREA = (62, 95, VYSOR_RECT[-2] -100, VYSOR_RECT[-1] -80)
+VYSOR_CAP_AREA = (62, 95, VYSOR_RECT[-2] - 100, VYSOR_RECT[-1] - 80)
 
 
 def show_image_test(x=0, y=0, width=200, height=200):

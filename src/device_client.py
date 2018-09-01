@@ -6,6 +6,7 @@ import socket
 import threading
 from asyncchat_kim import AsyncchatKim, KimCommand
 
+
 class DeviceClient(AsyncchatKim):
     '''
     Allows any python process (like ai.py) to send commands to a DeviceServer

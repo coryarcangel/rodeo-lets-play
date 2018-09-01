@@ -3,7 +3,8 @@
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
-# Monkeyrunner device client / server communication (no redis installation in jython :(
+# Monkeyrunner device client / server communication (no redis installation
+# in jython :(
 DEVICE_HOST = '127.0.0.1'
 DEVICE_PORT = 5005
 
@@ -14,4 +15,4 @@ TFNET_CONFIG = {
     'threshold': 0.1
 }
 
-VYSOR_WINDOW_NAME = 'Kim' # 'Vysor'
+VYSOR_WINDOW_NAME = 'Kim'  # 'Vysor'

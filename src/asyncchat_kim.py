@@ -5,6 +5,7 @@ from config import DEVICE_HOST, DEVICE_PORT
 
 COMMAND_SEP = '|'
 
+
 class KimCommand(object):
     ACK = 'ACK'
     SCREENSHOT = 'SCREENSHOT'
@@ -12,13 +13,15 @@ class KimCommand(object):
     DRAG_X = 'DRAG_X'
     TAP = 'TAP'
 
+
 class AsyncchatKim(asynchat.async_chat):
     '''
     Wrapper around the native very-raw api that attempts to make communcation
     between device_client and device_server easier
     '''
 
-    def __init__(self, host=DEVICE_HOST, port=DEVICE_PORT, logger_name='async_chat', py2=False, sock=None):
+    def __init__(self, host=DEVICE_HOST, port=DEVICE_PORT,
+                 logger_name='async_chat', py2=False, sock=None):
         asynchat.async_chat.__init__(self, sock)
         self.host = host
         self.port = port
