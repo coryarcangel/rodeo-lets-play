@@ -18,3 +18,8 @@ def measure_task(task, label, count=10, print_every_time=False):
 
     avg_time = sum(times) / float(len(times))
     print('Average time to %s: %.3fs' % (label, avg_time))
+
+def get_rect_center(rect):
+    ''' rect is tuple of x,y,w,h '''
+    x, y, w, h = rect
+    return (x + w / 2, y + h / 2)

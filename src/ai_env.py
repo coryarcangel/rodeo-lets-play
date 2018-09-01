@@ -51,13 +51,7 @@ class KimEnv(object):
         self.step_num += 1
 
         # Perform relevant action
-        actions_map = {
-            Action.PASS: self._perform_pass_action,
-            Action.SWIPE_LEFT: self._perform_swipe_left_action,
-            Action.SWIPE_RIGHT: self._perform_swipe_right_action,
-            Action.TAP_LOCATION: lambda _: self._perform_tap_action((action_args['x'], action_args['y']))
-        }
-        actions_map[action]()
+        self._take_action(acton, action_args)
 
         # Get new state
         self.logger.debug('Getting state for Step #%d', self.step_num)
@@ -79,16 +73,7 @@ class KimEnv(object):
     def _get_state(self):
         pass
 
-    def _perform_pass_action(self):
-        pass
-
-    def _perform_swipe_left_action(self):
-        pass
-
-    def _perform_swipe_right_action(self):
-        pass
-
-    def _perform_tap_action(self, pos):
+    def _perform_pass_action(self, args):
         pass
 
 
@@ -101,6 +86,14 @@ class DeviceClientKimEnv(KimEnv):
 
         self.cur_screen_index = 0
         self.cur_screen_state = None
+
+        # Setup Actions Map
+        self.actions_map = {
+            Action.PASS: self._perform_pass_action,
+            Action.SWIPE_LEFT: self._perform_swipe_left_action,
+            Action.SWIPE_RIGHT: self._perform_swipe_right_action,
+            Action.TAP_LOCATION: self._perform_tap_action
+        }
 
         # Redis to grab the screen state from the phone_image_stream process
         self.logger.debug('Connecting to %s:%d', host, port)
@@ -127,14 +120,23 @@ class DeviceClientKimEnv(KimEnv):
         self.cur_screen_index = data['index']
         self.cur_screen_state = AIState.deserialize(data['state'])
 
-    def _perform_swipe_left_action(self):
-        self.client.send_drag_x_command(distance=-100)
+    def _take_action(self, action, args):
+        if (action in self.actions_map):
+            self.actions_map[action](args)
+        else:
+            print('unrecognized action %s' % action)
 
-    def _perform_perform_swipe_right_action(self):
-        self.client.send_drag_x_command(distance=100)
+    def _perform_swipe_left_action(self, args):
+        distance = args['distance'] if 'distance' in args else 100
+        self.client.send_drag_x_command(distance=-distance)
 
-    def _perform_tap_action(self, pos):
-        self.client.send_tap_command(pos[0], pos[1])
+    def _perform_perform_swipe_right_action(self, args):
+        distance = args['distance'] if 'distance' in args else 100
+        self.client.send_drag_x_command(distance=distance)
+
+    def _perform_tap_action(self, args):
+        x, y = [args[k] for k in ['x', 'y']]
+        self.client.send_tap_command(x, y)
 
 
 class ScreenshotKimEnv(KimEnv):
