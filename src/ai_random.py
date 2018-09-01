@@ -41,7 +41,8 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
 
             # Choose action randomly
             actions = get_actions_from_state(state)
-            action, args = np.random.choice(actions)
+            action_idx = np.random.choice(len(actions))
+            action, args = actions[action_idx]
 
             # Take a step
             next_state, reward, done, _ = env.step(action, args)

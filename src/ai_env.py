@@ -125,7 +125,7 @@ class DeviceClientKimEnv(KimEnv):
         if (action in self.actions_map):
             self.actions_map[action](args)
         else:
-            print('unrecognized action %s' % action)
+            self.logger.debug('unrecognized action %s' % action)
 
     def _perform_swipe_left_action(self, args):
         distance = args['distance'] if 'distance' in args else 100

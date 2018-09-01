@@ -25,9 +25,6 @@ class DeviceClient(AsyncchatKim):
         self.comm.daemon = True
         self.comm.start()
 
-    def _has_received_cmd_ack(self, command_id):
-        return command_id in self.command_ack_map
-
     def _wait_for_ack(self, command_id):
         while not self._has_received_cmd_ack(command_id):
             time.sleep(0.001)
