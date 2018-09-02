@@ -2,6 +2,8 @@ import collections
 import logging
 import sys
 
+from util import Rect
+
 # Redis for sharing state between all non-monkeyrunner processes
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
@@ -19,9 +21,13 @@ TFNET_CONFIG = {
 }
 
 # Extremely Hard Coded (to the galaxy 8) :) (:
-VYSOR_RECT = (0, 0, 776, 466)
-VYSOR_CAP_AREA = (62, 95, VYSOR_RECT[-2] - 100, VYSOR_RECT[-1] - 80)
+VYSOR_RECT = Rect(0, 0, 776, 466)
+VYSOR_CAP_AREA = Rect(62, 95, VYSOR_RECT[-2] - 100, VYSOR_RECT[-1] - 80)
 VYSOR_WINDOW_NAME = 'Kim'  # 'Vysor'
+
+# Phone Rects
+GALAXY8_RECT = Rect(0, 0, 2220, 1080)
+CURRENT_PHONE_RECT = GALAXY8_RECT
 
 # Image Configs
 ImageConfig = collections.namedtuple("ImageConfig", [
@@ -63,6 +69,8 @@ IMG_CONFIG_GALAXY8 = ImageConfig(
     top_menu_padding=10,
     top_menu_item_width=65
 )
+
+CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY8
 
 
 def configure_logging():

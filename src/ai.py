@@ -6,12 +6,12 @@ from datetime import datetime
 import tensorflow as tf
 
 # Local Imports
-from config import configure_logging
+from config import configure_logging, CURRENT_PHONE_RECT, CURRENT_IMG_CONFIG
 from ai_deep_q import deep_q_learning
 from ai_random import random_learning
 from ai_env import DeviceClientKimEnv, ScreenshotKimEnv
 from ai_estimator import QEstimator
-from device_client import get_default_device_client
+from device_client import DeviceClient
 
 # Config
 RANDOM = True
@@ -42,7 +42,9 @@ def main():
     target_estimator = QEstimator(scope="target_q") if not RANDOM else None
 
     # Device Client
-    device_client = get_default_device_client() if not STATIC_SCREENSHOT else None
+    device_client = DeviceClient(
+        CURRENT_PHONE_RECT,
+        CURRENT_IMG_CONFIG) if not STATIC_SCREENSHOT else None
     device_client.start()
 
     # Env

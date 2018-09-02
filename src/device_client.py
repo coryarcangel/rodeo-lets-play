@@ -9,11 +9,19 @@ from asyncchat_kim import AsyncchatKim, KimCommand
 
 class DeviceClient(AsyncchatKim):
     '''
-    Allows any python process (like ai.py) to send commands to a DeviceServer
+    Allows any python process (like ai.py) to send commands to a DeviceServer.
+
+    Also performs the *extremely desirable* task of translating points from
+    image read on screen to point on device (we use a smaller image for reading)
+    for performance reasons.
     '''
 
-    def __init__(self):
+    def __init__(self, phone_rect, img_config):
         AsyncchatKim.__init__(self, py2=False, logger_name='DeviceClient')
+        self.phone_rect = phone_rect
+        self.img_config = img_config
+        self.p_x_scale = self.phone_rect.w / self.img_config.width
+        self.p_y_scale = self.phone_rect.h / self.img_config.height
 
     def start(self):
         """ Connects the client to a server """
@@ -51,15 +59,17 @@ class DeviceClient(AsyncchatKim):
         """ Sends a command to restart the game """
         self._send_command(KimCommand.RESET)
 
+    def _img_point_to_device_point(self, img_point):
+        x, y = img_point
+        nx = int(self.p_x_scale * x)
+        ny = int(self.p_y_scale * y)
+        return (nx, ny)
+
     def send_drag_x_command(self, distance=100, duration=1):
         """ Sends a command to swipe left for given duration / distance """
         self._send_command(KimCommand.DRAG_X, distance, duration)
 
-    def send_tap_command(self, x, y):
+    def send_tap_command(self, x, y, type):
         ''' Sends command to tap device at given location '''
-        self._send_command(KimCommand.TAP, x, y)
-
-
-def get_default_device_client():
-    """ Returns DeviceClient connected to default host and port """
-    return DeviceClient()
+        nx, ny = self._img_point_to_device_point((x, y))
+        self._send_command(KimCommand.TAP, nx, ny, type)

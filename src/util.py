@@ -1,6 +1,10 @@
 ''' Generic Utility Functions '''
 
+import collections
 from datetime import datetime
+
+Point = collections.namedtuple("Point", ['x', 'y'])
+Rect = collections.namedtuple("Rect", ['x', 'y', 'w', 'h'])
 
 
 def measure_task(task, label, count=10, print_every_time=False):
@@ -23,7 +27,7 @@ def measure_task(task, label, count=10, print_every_time=False):
 def get_rect_center(rect):
     ''' rect is tuple of x,y,w,h '''
     x, y, w, h = rect
-    return (x + w / 2, y + h / 2)
+    return Point(x + w / 2, y + h / 2)
 
 
 def floatarr(arr):

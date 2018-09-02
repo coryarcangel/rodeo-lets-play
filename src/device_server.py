@@ -35,14 +35,14 @@ class DeviceMessageHandler(AsyncchatKim):
         if command in self.command_handlers:
             try:
                 self.command_handlers[command](data)
-            except TypeError as e:
+            except TypeError, e:
                 self.logger.error(
                     'TypeError handling command (%s, %s, %s): %s' %
-                    (command_id, command, data, e.strerror))
-            except Exception as e:
+                    (command_id, command, data, e))
+            except Exception, e:
                 self.logger.error(
                     'Unknown error handling command (%s, %s, %s): %s' %
-                    (command_id, command, data, e.strerror))
+                    (command_id, command, data, e))
         else:
             self.logger.error('Received unknown command: %s', command)
 
@@ -68,8 +68,13 @@ class DeviceMessageHandler(AsyncchatKim):
         self.device_manager.drag_delta(delta_x=distance, duration=duration)
 
     def _handle_tap(self, data):
-        x, y = intarr(data)
-        self.logger.debug('Handling Tap Command with (x, y): (%d, %d)', x, y)
+        x, y = intarr(data[0:2])
+        type = data[2]
+        self.logger.debug(
+            'Handling Tap Command with (x, y, type): (%d, %d, %s)',
+            x,
+            y,
+            type)
         self.device_manager.tap(x, y)
 
 

@@ -15,7 +15,7 @@ import tensorflow as tf
 import redis
 from darkflow.net.build import TFNet
 from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME
-from ai_state import AIStateProcessor, IMG_CONFIG_GALAXY8
+from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
 from window import set_window_rect
 from image_annotation import AnnotatedImageStream
 
@@ -77,7 +77,7 @@ def setup_vysor_data_stream():
         decode_responses=True)
 
     sct = mss.mss()
-    processor = AIStateProcessor(image_config=IMG_CONFIG_GALAXY8)
+    processor = AIStateProcessor(image_config=CURRENT_IMG_CONFIG)
 
     annotation_stream = AnnotatedImageStream()
 

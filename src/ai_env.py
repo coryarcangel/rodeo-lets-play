@@ -6,8 +6,8 @@ import logging
 import json
 import redis
 from ai_actions import Action
-from ai_state import AIState, AIStateProcessor, IMG_CONFIG_STUDIOBLU
-from config import REDIS_HOST, REDIS_PORT
+from ai_state import AIState, AIStateProcessor
+from config import REDIS_HOST, REDIS_PORT, IMG_CONFIG_STUDIOBLU
 
 
 class KimEnv(object):
@@ -136,8 +136,8 @@ class DeviceClientKimEnv(KimEnv):
         self.client.send_drag_x_command(distance=distance)
 
     def _perform_tap_action(self, args):
-        x, y = [args[k] for k in ['x', 'y']]
-        self.client.send_tap_command(x, y)
+        x, y, type = [args[k] for k in ['x', 'y', 'type']]
+        self.client.send_tap_command(x, y, type)
 
 
 class ScreenshotKimEnv(KimEnv):

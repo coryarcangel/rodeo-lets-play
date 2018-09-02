@@ -1,5 +1,5 @@
 import cv2
-import numpy as np
+from ai_actions import ActionGetter
 
 # TODO: might want to do annotation with matplotlib
 # (https://matplotlib.org/api/_as_gen/matplotlib.patches.Rectangle.html)
@@ -62,6 +62,11 @@ class AnnotatedImageStream(object):
             text = '%s (%.2f)' % (label, confidence)
             ann_img = draw_img_text(
                 ann_img, x + w + 10, y + 10, text, font_scale=0.6)
+
+        # Draw Static Stuff!!
+        # for a, args in ActionGetter.MenuTaps:
+        #     x, y = [int(args[k]) for k in ['x', 'y']]
+        #     ann_img = draw_img_rect(ann_img, x - 10, y - 10, 20, 20)
 
         cv2.imshow(self.window_name, ann_img)
         # wait 1 ms (no time) for a key press (required to run a lot of backend

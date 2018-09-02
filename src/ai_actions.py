@@ -1,6 +1,10 @@
 """Defines Constants for available game actions."""
 
-from util import get_rect_center
+from config import CURRENT_IMG_CONFIG
+from util import get_rect_center, Rect
+
+img_rect = Rect(0, 0, CURRENT_IMG_CONFIG.width, CURRENT_IMG_CONFIG.height)
+img_rect_center = get_rect_center(img_rect)
 
 
 class Action(object):
@@ -23,28 +27,37 @@ NUM_ACTIONS = len(ACTIONS)
 
 def _get_object_tap_action(obj):
     x, y = get_rect_center(obj['rect'])
-    return (Action.TAP_LOCATION, {'x': x, 'y': y, 'img_obj': obj})
+    return (Action.TAP_LOCATION, {'x': int(x), 'y': int(
+        y), 'type': 'object', 'img_obj': obj})
 
 
-def get_actions_from_state(state):
-    """ Returns list of possible (action, arg) tuples from an AIState instance. """
-    base = [
-        (Action.PASS, {}),
-        # (Action.SWIPE_LEFT, {'distance': 100}),
-        # (Action.SWIPE_RIGHT, {'distance': 100}),
-        # (Action.SWIPE_LEFT, {'duration': 200}),
-        # (Action.SWIPE_RIGHT, {'duration': 200}),
-        # (Action.SWIPE_LEFT, {'duration': 300}),
-        # (Action.SWIPE_RIGHT, {'duration': 300}),
+class ActionGetter(object):
+    Pass = (Action.PASS, {})
+    Swipes = [
         (Action.SWIPE_LEFT, {'distance': 400}),
         (Action.SWIPE_RIGHT, {'distance': 400}),
-        # (Action.SWIPE_LEFT, {'duration': 500}),
-        # (Action.SWIPE_RIGHT, {'duration': 500}),
     ]
+    BottomMenuTaps = [(Action.TAP_LOCATION,
+                       {'type': 'menu',
+                        'x': img_rect.w - 80 - 51 * i,
+                        'y': img_rect.h - 28}) for i in range(4)]
+    MenuTaps = [
+        # For pressing the "OK"
+        (Action.TAP_LOCATION,
+         {'type': 'menu',
+          'x': img_rect_center.x,
+          'y': img_rect_center.y + 35}),
+    ] + BottomMenuTaps
 
-    if not state:
-        return base
+    Base = [Pass] + Swipes + MenuTaps
+    # Base = MenuTaps
 
-    object_taps = [_get_object_tap_action(obj) for obj in state.image_objects]
+    @classmethod
+    def get_actions_from_state(cls, state):
+        if not state:
+            return ActionGetter.Base
 
-    return base + object_taps
+        object_taps = [_get_object_tap_action(
+            obj) for obj in state.image_objects]
+
+        return ActionGetter.Base + object_taps

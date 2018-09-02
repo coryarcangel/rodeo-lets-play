@@ -8,7 +8,7 @@ import tesserocr
 from concurrent import futures
 from PIL import Image
 from darkflow.net.build import TFNet
-from config import TFNET_CONFIG, IMG_CONFIG_GALAXY8
+from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
 
 # Constants
 OUTPUT_IMAGE_SIZE = [160, 80]  # width x height
@@ -51,7 +51,7 @@ class AIState(object):
           } objects
     """
 
-    def __init__(self, image_shape=IMG_CONFIG_GALAXY8,
+    def __init__(self, image_shape=None,
                  money=0, stars=0, image_objects=None):
         self.image_shape = image_shape
         self.money = money
@@ -259,7 +259,7 @@ class AIStateProcessor(object):
         return AIState(**state_data)
 
 
-def get_image_state(filename, image_config=IMG_CONFIG_GALAXY8):
+def get_image_state(filename, image_config=CURRENT_IMG_CONFIG):
     """ Utility function to get state from a single image """
     processor = AIStateProcessor(image_config=image_config)
 

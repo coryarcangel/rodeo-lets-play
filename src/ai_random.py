@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import tensorflow as tf
 import plotting
-from ai_actions import get_actions_from_state
+from ai_actions import ActionGetter
 
 
 def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
@@ -40,7 +40,7 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
                         step, total_t, i_episode + 1, num_episodes, state)
 
             # Choose action randomly
-            actions = get_actions_from_state(state)
+            actions = ActionGetter.get_actions_from_state(state)
             action_idx = np.random.choice(len(actions))
             action, args = actions[action_idx]
 
