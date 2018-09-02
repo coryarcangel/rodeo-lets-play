@@ -1,15 +1,41 @@
 import cv2
-from ai_actions import ActionGetter
+import numpy as np
+from matplotlib import colors as mcolors
 
-# TODO: might want to do annotation with matplotlib
-# (https://matplotlib.org/api/_as_gen/matplotlib.patches.Rectangle.html)
 
-WHITE = (255, 255, 255)
+def hex2rgb(hex):
+    c = mcolors.to_rgb(hex)
+    return tuple([int(255 * n) for n in c])
+
+
+# https://matplotlib.org/examples/color/named_colors.html
+colors = {name: hex2rgb(hex) for name, hex in dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).items() }
+
+label_colors_map = {
+    'person': colors['tomato'],
+    'clock': colors['springgreen'],
+    'tvmonitor': colors['lightslategray'],
+    'laptop': colors['lightslategray'],
+    'traffic light': colors['chartreuse'],
+}
+
+
+def get_img_object_color(label, confidence):
+    if label in label_colors_map:
+        return label_colors_map[label]
+    if confidence > 0.75:
+        return colors['b']
+    elif confidence > 0.5:
+        return colors['darkorchid']
+    elif confidence > 0.25:
+        return colors['gold']
+    else:
+        return colors['white']
 
 
 def draw_img_text(img, x=0, y=0, text='text',
                   font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1,
-                  color=WHITE):
+                  color=colors['white']):
     """
     Args:
         img: numpy array
@@ -25,7 +51,7 @@ def draw_img_text(img, x=0, y=0, text='text',
     return img
 
 
-def draw_img_rect(img, x=0, y=0, w=100, h=100, color=WHITE, thickness=3):
+def draw_img_rect(img, x=0, y=0, w=100, h=100, color=colors['white'], thickness=3):
     """
     Args:
         img: numpy array
@@ -56,12 +82,15 @@ class AnnotatedImageStream(object):
         for obj in ai_state.image_objects:
             label, confidence, rect = [obj[k]
                                        for k in ('label', 'confidence', 'rect')]
+
+            color = get_img_object_color(label, confidence)
+
             x, y, w, h = rect
-            ann_img = draw_img_rect(ann_img, x, y, w, h)
+            ann_img = draw_img_rect(ann_img, x, y, w, h, color=color)
 
             text = '%s (%.2f)' % (label, confidence)
             ann_img = draw_img_text(
-                ann_img, x + w + 10, y + 10, text, font_scale=0.6)
+                ann_img, x + w + 10, y + 10, text, font_scale=0.6, color=color)
 
         # Draw Static Stuff!!
         # for a, args in ActionGetter.MenuTaps:
