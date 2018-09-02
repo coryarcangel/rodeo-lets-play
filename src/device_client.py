@@ -26,9 +26,13 @@ class DeviceClient(AsyncchatKim):
         self.comm.daemon = True
         self.comm.start()
 
-    def _wait_for_ack(self, command_id):
+    def _wait_for_ack(self, command_id, timeout=10):
+        now = time.time()
         while not self._has_received_cmd_ack(command_id):
             time.sleep(0.001)
+            if time.time() - now >= timeout:
+                self.logger.debug('Timeout receving ACK for command %s' % command_id)
+                break
 
     def _send_command(self, *args):
         command_id = str(self.command_id)
@@ -45,7 +49,7 @@ class DeviceClient(AsyncchatKim):
         """ Sends a command to restart the game """
         self._send_command(KimCommand.RESET)
 
-    def send_drag_x_command(self, distance=100, duration=0.5):
+    def send_drag_x_command(self, distance=100, duration=1):
         """ Sends a command to swipe left for given duration / distance """
         self._send_command(KimCommand.DRAG_X, distance, duration)
 

@@ -24,3 +24,13 @@ def get_rect_center(rect):
     ''' rect is tuple of x,y,w,h '''
     x, y, w, h = rect
     return (x + w / 2, y + h / 2)
+
+
+def floatarr(arr):
+    ''' convert array of any to array of floats '''
+    return [float(n) for n in arr]
+
+
+def intarr(arr):
+    ''' convert array of any to array of ints '''
+    return [int(n) for n in arr]

@@ -46,22 +46,30 @@ class DeviceManager(object):
         self._launch_app(component)
 
     def drag(self, start_pos, end_pos, duration=1, steps=10):
-        ''' Drags a finger along the device screen '''
+        '''
+        Drags a finger along the device screen:
+        https://developer.android.com/studio/test/monkeyrunner/MonkeyDevice#drag
+        '''
+
+        start_pos = tuple(int(i) for i in start_pos)
+        end_pos = tuple(int(i) for i in end_pos)
+        self.logger.debug('Dragging from %s to %s in %fs (%d steps)' % (start_pos, end_pos, duration, steps))
         self.device.drag(start_pos, end_pos, duration, steps)
         # always want to behave synchronously, so wait until action is complete
         sleep(duration)
 
     def drag_delta(self, start_pos=None, delta_x=0,
-                   delta_y=0, duration=1, steps=10):
+                   delta_y=0, duration=1, steps=100):
         ''' Drags a finger along the device screen a given distance '''
         if start_pos is None:
-            start_pos = (100, 100)
+            start_pos = (150, 150)
 
         end_pos = (start_pos[0] + delta_x, start_pos[1] + delta_y)
         self.drag(start_pos, end_pos, duration, steps)
 
     def tap(self, x, y):
         ''' Taps device at given location '''
+        self.logger.debug('Tapping at (%d, %d)' % (x, y))
         self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
 
     def touch_down(self, x, y):

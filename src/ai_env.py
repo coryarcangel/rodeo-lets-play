@@ -128,11 +128,11 @@ class DeviceClientKimEnv(KimEnv):
             self.logger.debug('unrecognized action %s' % action)
 
     def _perform_swipe_left_action(self, args):
-        distance = args['distance'] if 'distance' in args else 100
+        distance = args['distance'] if 'distance' in args else 200
         self.client.send_drag_x_command(distance=-distance)
 
     def _perform_swipe_right_action(self, args):
-        distance = args['distance'] if 'distance' in args else 100
+        distance = args['distance'] if 'distance' in args else 200
         self.client.send_drag_x_command(distance=distance)
 
     def _perform_tap_action(self, args):

@@ -2,11 +2,11 @@
 
 import logging
 import os
-import sys
 from datetime import datetime
 import tensorflow as tf
 
 # Local Imports
+from config import configure_logging
 from ai_deep_q import deep_q_learning
 from ai_random import random_learning
 from ai_env import DeviceClientKimEnv, ScreenshotKimEnv
@@ -16,12 +16,7 @@ from device_client import get_default_device_client
 # Config
 RANDOM = True
 STATIC_SCREENSHOT = False
-
-logging.basicConfig(
-    stream=sys.stdout,
-    format='%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s:%(message)s',
-    level=logging.DEBUG,
-    datefmt='%Y-%m-%d %H:%M:%S')
+configure_logging()
 
 
 def main():

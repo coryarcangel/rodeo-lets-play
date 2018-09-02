@@ -1,8 +1,11 @@
-import os
 from time import sleep
+from random import randint
+
+from config import configure_logging
 from util import measure_task
 from device_manager import get_default_device_manager
 
+configure_logging()
 device_manager = get_default_device_manager()
 
 '''
@@ -73,11 +76,40 @@ def hollywood_screenshot_loop_test():
         print('Saved %s' % filename)
 
 
+'''
+Here's a nice test to drag and tap around the screen
+'''
+
+
+def hollywood_drag_and_tap():
+    print('Launching Hollywood...')
+    device_manager.launch_hollywood()
+    print('Sleeping for 5 seconds...')
+    sleep(5)
+
+    def drag_x():
+        device_manager.drag_delta((randint(50, 500), randint(50, 300)), randint(-400, 400), 0, randint(1, 4), randint(10, 200))
+
+    def drag_y():
+        device_manager.drag_delta((randint(50, 500), randint(50, 300)), 0, randint(-400, 400), randint(1, 4), randint(10, 200))
+
+    def tap():
+        device_manager.tap(randint(50, 500), randint(50, 300))
+
+    print('Starting to drag and tap')
+    for i in range(100):
+        seq = [drag_x, drag_x, drag_x, drag_x]
+        for action in seq:
+            action()
+            sleep(1)
+
+
 def test():
     # measure_screenshot_performance()
     # browser_launch_and_restart()
     # hollywood_launch_and_restart()
-    hollywood_screenshot_loop_test()
+    # hollywood_screenshot_loop_test()
+    hollywood_drag_and_tap()
 
 
 if __name__ == "__main__":

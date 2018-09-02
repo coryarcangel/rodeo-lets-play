@@ -1,3 +1,5 @@
+import logging
+import sys
 
 # Redis for sharing state between all non-monkeyrunner processes
 REDIS_HOST = 'localhost'
@@ -16,3 +18,11 @@ TFNET_CONFIG = {
 }
 
 VYSOR_WINDOW_NAME = 'Kim'  # 'Vysor'
+
+
+def configure_logging():
+    logging.basicConfig(
+        stream=sys.stdout,
+        format='%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s:%(message)s',
+        level=logging.DEBUG,
+        datefmt='%Y-%m-%d %H:%M:%S')

@@ -8,7 +8,7 @@ import plotting
 from ai_actions import get_actions_from_state
 
 
-def random_learning(sess, env, num_episodes=100, max_episode_length=10000):
+def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
     """
     Q-Learning algorithm for off-policy TD control using Function Approximation.
     Finds the optimal greedy policy while following an epsilon-greedy policy.

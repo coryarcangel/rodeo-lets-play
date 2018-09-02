@@ -30,10 +30,16 @@ def get_actions_from_state(state):
     """ Returns list of possible (action, arg) tuples from an AIState instance. """
     base = [
         (Action.PASS, {}),
-        (Action.SWIPE_LEFT, {'distance': 20}),
-        (Action.SWIPE_RIGHT, {'distance': 20}),
-        (Action.SWIPE_LEFT, {'duration': 100}),
-        (Action.SWIPE_RIGHT, {'duration': 100})
+        # (Action.SWIPE_LEFT, {'distance': 100}),
+        # (Action.SWIPE_RIGHT, {'distance': 100}),
+        # (Action.SWIPE_LEFT, {'duration': 200}),
+        # (Action.SWIPE_RIGHT, {'duration': 200}),
+        # (Action.SWIPE_LEFT, {'duration': 300}),
+        # (Action.SWIPE_RIGHT, {'duration': 300}),
+        (Action.SWIPE_LEFT, {'distance': 400}),
+        (Action.SWIPE_RIGHT, {'distance': 400}),
+        # (Action.SWIPE_LEFT, {'duration': 500}),
+        # (Action.SWIPE_RIGHT, {'duration': 500}),
     ]
 
     if not state:

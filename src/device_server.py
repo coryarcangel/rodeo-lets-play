@@ -8,6 +8,7 @@ import sys
 from config import DEVICE_HOST, DEVICE_PORT
 from device_manager import get_default_device_manager
 from asyncchat_kim import AsyncchatKim, KimCommand
+from util import floatarr, intarr
 
 
 class DeviceMessageHandler(AsyncchatKim):
@@ -32,7 +33,12 @@ class DeviceMessageHandler(AsyncchatKim):
 
     def _handle_command(self, command_id, command, data):
         if command in self.command_handlers:
-            self.command_handlers[command](data)
+            try:
+                self.command_handlers[command](data)
+            except TypeError, e:
+                self.logger.error('TypeError handling command (%s, %s, %s): %s' % (command_id, command, data, e.strerror))
+            except Exception, e:
+                self.logger.error('Unknown error handling command (%s, %s, %s): %s' %(command_id, command, data, e.strerror))
         else:
             self.logger.error('Received unknown command: %s', command)
 
@@ -50,7 +56,7 @@ class DeviceMessageHandler(AsyncchatKim):
         self.device_manager.reset_hollywood()
 
     def _handle_drag_x(self, data):
-        distance, duration = data
+        distance, duration = floatarr(data)
         self.logger.debug(
             'Handling Drag X Command with (distance, duration): (%d, %.1f)',
             distance,
@@ -58,7 +64,7 @@ class DeviceMessageHandler(AsyncchatKim):
         self.device_manager.drag_delta(delta_x=distance, duration=duration)
 
     def _handle_tap(self, data):
-        x, y = data
+        x, y = intarr(data)
         self.logger.debug('Handling Tap Command with (x, y): (%d, %d)', x, y)
         self.device_manager.tap(x, y)
 
