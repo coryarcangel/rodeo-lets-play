@@ -53,7 +53,9 @@ class DeviceManager(object):
 
         start_pos = tuple(int(i) for i in start_pos)
         end_pos = tuple(int(i) for i in end_pos)
-        self.logger.debug('Dragging from %s to %s in %fs (%d steps)' % (start_pos, end_pos, duration, steps))
+        self.logger.debug(
+            'Dragging from %s to %s in %fs (%d steps)' %
+            (start_pos, end_pos, duration, steps))
         self.device.drag(start_pos, end_pos, duration, steps)
         # always want to behave synchronously, so wait until action is complete
         sleep(duration)

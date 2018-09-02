@@ -2,10 +2,10 @@
 
 import json
 import logging
-from time import sleep
 import numpy as np
 import tensorflow as tf
 import tesserocr
+from concurrent import futures
 from PIL import Image
 from darkflow.net.build import TFNet
 from config import TFNET_CONFIG, IMG_CONFIG_GALAXY8
@@ -170,19 +170,31 @@ class AIStateProcessor(object):
         return value
 
     def _get_pil_image_state_data(self, image):
+        '''
+            FPS with no text reading: ~7.5
+            FPS with straight sync text reading: ~3.0
+            FPS with thread pool text reading: ~3.9
+        '''
         # Get shape
         width, height = image.size
         image_shape = (width, height, 3)
 
         # get OCR text from known HUD elements
-        money = self._read_hud_value(image, self.image_config.money_item_left)
-        stars = self._read_hud_value(image, self.image_config.stars_item_left)
+        values = {'image_shape': image_shape}
 
-        return {
-            'image_shape': image_shape,
-            'money': money,
-            'stars': stars
-        }
+        with futures.ThreadPoolExecutor() as executor:
+            future_to_key = {
+                executor.submit(self._read_hud_value, image, self.image_config.money_item_left): 'money',
+                executor.submit(self._read_hud_value, image, self.image_config.stars_item_left): 'stars'
+            }
+            for future in futures.as_completed(future_to_key):
+                key = future_to_key[future]
+                try:
+                    values[key] = future.result()
+                except Exception as e:
+                    print('Exception reading value: %s', e)
+
+        return values
 
     def process_from_file(self, sess, filename):
         """
@@ -214,16 +226,35 @@ class AIStateProcessor(object):
             np_img: np array of image pixels
         Returns:
             A processed AIState object.
+
+        FPS with sync pil and yolo: ~3.9
+        FPS with threaded pil and yolo: ~6.8
         """
 
-        # Get PIL stuff
-        image = Image.fromarray(np_img).convert('RGB')
-        state_data = self._get_pil_image_state_data(image)
+        # Reads text via OCR, etc
+        def get_pil_state():
+            image = Image.fromarray(np_img).convert('RGB')
+            return self._get_pil_image_state_data(image)
 
-        # Get YOLO stuff
-        np_img_3chan = np_img[:, :, :3]
-        yolo_result = self.tfnet.return_predict(np_img_3chan)
-        state_data['image_objects'] = _process_image_objects(yolo_result)
+        # Gets the very valuable yolo objects
+        def get_yolo_state():
+            np_img_3chan = np_img[:, :, :3]
+            yolo_result = self.tfnet.return_predict(np_img_3chan)
+            return {'image_objects': _process_image_objects(yolo_result)}
+
+        state_data = {}
+        with futures.ThreadPoolExecutor() as executor:
+            state_futures = [
+                executor.submit(get_pil_state),
+                executor.submit(get_yolo_state)
+            ]
+
+            for future in futures.as_completed(state_futures):
+                try:
+                    data = future.result()
+                    state_data.update(data)
+                except Exception as e:
+                    print('Exception getting state: %s', e)
 
         return AIState(**state_data)
 

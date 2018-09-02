@@ -88,10 +88,12 @@ def hollywood_drag_and_tap():
     sleep(5)
 
     def drag_x():
-        device_manager.drag_delta((randint(50, 500), randint(50, 300)), randint(-400, 400), 0, randint(1, 4), randint(10, 200))
+        device_manager.drag_delta((randint(50, 500), randint(
+            50, 300)), randint(-400, 400), 0, randint(1, 4), randint(10, 200))
 
     def drag_y():
-        device_manager.drag_delta((randint(50, 500), randint(50, 300)), 0, randint(-400, 400), randint(1, 4), randint(10, 200))
+        device_manager.drag_delta((randint(50, 500), randint(
+            50, 300)), 0, randint(-400, 400), randint(1, 4), randint(10, 200))
 
     def tap():
         device_manager.tap(randint(50, 500), randint(50, 300))

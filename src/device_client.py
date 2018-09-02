@@ -31,7 +31,9 @@ class DeviceClient(AsyncchatKim):
         while not self._has_received_cmd_ack(command_id):
             time.sleep(0.001)
             if time.time() - now >= timeout:
-                self.logger.debug('Timeout receving ACK for command %s' % command_id)
+                self.logger.debug(
+                    'Timeout receving ACK for command %s' %
+                    command_id)
                 break
 
     def _send_command(self, *args):

@@ -35,10 +35,14 @@ class DeviceMessageHandler(AsyncchatKim):
         if command in self.command_handlers:
             try:
                 self.command_handlers[command](data)
-            except TypeError, e:
-                self.logger.error('TypeError handling command (%s, %s, %s): %s' % (command_id, command, data, e.strerror))
-            except Exception, e:
-                self.logger.error('Unknown error handling command (%s, %s, %s): %s' %(command_id, command, data, e.strerror))
+            except TypeError as e:
+                self.logger.error(
+                    'TypeError handling command (%s, %s, %s): %s' %
+                    (command_id, command, data, e.strerror))
+            except Exception as e:
+                self.logger.error(
+                    'Unknown error handling command (%s, %s, %s): %s' %
+                    (command_id, command, data, e.strerror))
         else:
             self.logger.error('Received unknown command: %s', command)
 
