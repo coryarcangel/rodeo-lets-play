@@ -2,54 +2,13 @@
 
 import json
 import logging
-from collections import namedtuple
+from time import sleep
 import numpy as np
 import tensorflow as tf
 import tesserocr
 from PIL import Image
 from darkflow.net.build import TFNet
-from config import TFNET_CONFIG
-
-# Image Configs
-ImageConfig = namedtuple("ImageConfig", [
-    "width",
-    "height",
-    "top_menu_height",
-    "top_menu_padding",
-    "top_menu_item_width",
-    "money_item_left",
-    "stars_item_left"
-])
-
-IMG_CONFIG_IPHONE7PLUS = ImageConfig(
-    width=2208,
-    height=1242,
-    money_item_left=1170,
-    stars_item_left=1568,
-    top_menu_height=115,
-    top_menu_padding=30,
-    top_menu_item_width=240
-)
-
-IMG_CONFIG_STUDIOBLU = ImageConfig(
-    width=1280,
-    height=720,
-    money_item_left=680,
-    stars_item_left=884,
-    top_menu_height=60,
-    top_menu_padding=10,
-    top_menu_item_width=120
-)
-
-IMG_CONFIG_GALAXY8 = ImageConfig(
-    width=1280,
-    height=720,
-    money_item_left=680,
-    stars_item_left=884,
-    top_menu_height=60,
-    top_menu_padding=10,
-    top_menu_item_width=120
-)
+from config import TFNET_CONFIG, IMG_CONFIG_GALAXY8
 
 # Constants
 OUTPUT_IMAGE_SIZE = [160, 80]  # width x height
@@ -186,7 +145,9 @@ def read_num_from_img(image):
     """ Performs OCR on image and converts text to number """
     text = tesserocr.image_to_text(image).strip()
     try:
-        val = int(''.join(filter(str.isdigit, text.encode('ascii', 'ignore'))))
+        f = filter(str.isdigit, text.encode('ascii', 'ignore').decode('utf-8'))
+        t = ''.join(f)
+        val = int(t)
         return val
     except BaseException:
         return 0
@@ -195,7 +156,7 @@ def read_num_from_img(image):
 class AIStateProcessor(object):
     """ Top-level class for translating an image into state """
 
-    def __init__(self, image_config=IMG_CONFIG_STUDIOBLU):
+    def __init__(self, image_config):
         self.image_config = image_config
         self.tfnet = TFNet(TFNET_CONFIG)
 
