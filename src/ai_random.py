@@ -5,7 +5,48 @@ import logging
 import numpy as np
 import tensorflow as tf
 import plotting
-from ai_actions import ActionGetter
+from ai_actions import ActionGetter, Action
+
+
+class RandomActionSelector(object):
+    ''' Selects action from AIState randomly, with weighting based on projected
+    value of types of moves '''
+
+    ActionWeights = {
+        Action.PASS: 25,
+        Action.SWIPE_LEFT: 40,
+        Action.SWIPE_RIGHT: 40,
+        Action.TAP_LOCATION: 100
+    }
+    TapTypeWeights = {
+        'menu': 5,
+        'object': 100
+    }
+
+    @classmethod
+    def get_action_weight(cls, a_tup):
+        ''' Assigns a weight to action based on its type / content '''
+        action, args = a_tup
+        if action == Action.TAP_LOCATION and args['type'] in cls.TapTypeWeights:
+            return cls.TapTypeWeights[args['type']]
+        if action in cls.ActionWeights:
+            return cls.ActionWeights[action]
+        return 1
+
+    @classmethod
+    def select_state_action(cls, state):
+        # Get possible actions
+        actions = ActionGetter.get_actions_from_state(state)
+
+        # Assign weighted probabilities
+        action_weights = [cls.get_action_weight(a) for a in actions]
+        total_weight = float(sum(action_weights))
+        action_probs = [w / total_weight for w in action_weights]
+
+        # Choose
+        action_idx = np.random.choice(len(actions), p=action_probs)
+        action, args = actions[action_idx]
+        return action, args
 
 
 def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
@@ -40,9 +81,7 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
                         step, total_t, i_episode + 1, num_episodes, state)
 
             # Choose action randomly
-            actions = ActionGetter.get_actions_from_state(state)
-            action_idx = np.random.choice(len(actions))
-            action, args = actions[action_idx]
+            action, args = RandomActionSelector.select_state_action(state)
 
             # Take a step
             next_state, reward, done, _ = env.step(action, args)
