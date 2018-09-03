@@ -4,14 +4,13 @@ import json
 import logging
 import numpy as np
 import tensorflow as tf
-import tesserocr
 from concurrent import futures
-from PIL import Image
 from darkflow.net.build import TFNet
 from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
+from image_circles import get_image_circles, GALAXY8_VYSOR_HOUGH_CONFIG
+from image_ocr import ImageOCRProcessor
 
 # Constants
-OUTPUT_IMAGE_SIZE = [160, 80]  # width x height
 STATE_INPUT_SHAPE = [4]
 
 
@@ -52,13 +51,21 @@ class AIState(object):
     """
 
     def __init__(self, image_shape=None,
-                 money=0, stars=0, image_objects=None):
+                 money=0, stars=0, image_objects=None, tap_circles=None):
+        self.logger = logging.getLogger('AIState')
         self.image_shape = image_shape
         self.money = money
         self.stars = stars
         self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
         self.image_objects = image_objects if image_objects is not None else []
-        self.logger = logging.getLogger('AIState')
+        if tap_circles is not None:
+            for idx, c in enumerate(tap_circles):
+                x, y, r = c
+                self.image_objects.append({
+                    'label': 'Circle #%d' % (idx + 1),
+                    'confidence': None,
+                    'rect': (x - r, y - r, 2 * r, 2 * r)
+                })
 
     @classmethod
     def deserialize(cls, data):
@@ -89,112 +96,13 @@ class AIState(object):
         return np.array([1, self.money, self.stars])
 
 
-class AIGameplayImageProcessor(object):
-    """
-    Processes raw KK:H images into state.
-    For now, resizes it and converts it to grayscale.
-    In the future: use YOLO to translate image into object locations,
-    and read known fixed-position HUD elements
-    """
-
-    def __init__(self, image_config):
-        self.image_shape = [image_config.width, image_config.height, 3]
-        self.output_image_size = OUTPUT_IMAGE_SIZE
-
-        # Build the Tensorflow graph
-        with tf.variable_scope("state_processor"):
-            self.input_image = tf.placeholder(
-                shape=self.image_shape, dtype=tf.uint8)
-
-            # Convert to grayscale
-            self.grayscale_image = tf.image.rgb_to_grayscale(self.input_image)
-
-            # Crop to non-menu area
-            image_width, image_height, _ = self.image_shape
-            self.output_image = tf.image.crop_to_bounding_box(
-                self.grayscale_image,
-                image_config.top_menu_height,
-                0,
-                image_height - image_config.top_menu_height,
-                image_width
-            )
-
-            # Resize for performance
-            resize_method = tf.image.ResizeMethod.NEAREST_NEIGHBOR
-            self.output_image = tf.image.resize_images(
-                self.output_image, self.output_image_size, method=resize_method)
-
-            # Remove 1-dimensional components
-            self.output_image = tf.squeeze(self.output_image)
-
-    def process_image(self, sess, image):
-        """
-        Args:
-            sess: A Tensorflow session object
-            image: An image tensor with shape equal to
-            `[self.image_config.width, self.image_config.height]`
-        Returns:
-            Tuple of (output_image, grayscale_image)
-        """
-        # get processed image for gameplay area
-        sess.run(self.output_image, {self.input_image: image})
-        return self.output_image, self.grayscale_image
-
-
-def read_num_from_img(image):
-    """ Performs OCR on image and converts text to number """
-    text = tesserocr.image_to_text(image).strip()
-    try:
-        f = filter(str.isdigit, text.encode('ascii', 'ignore').decode('utf-8'))
-        t = ''.join(f)
-        val = int(t)
-        return val
-    except BaseException:
-        return 0
-
-
 class AIStateProcessor(object):
     """ Top-level class for translating an image into state """
 
     def __init__(self, image_config):
         self.image_config = image_config
+        self.ocr_processor = ImageOCRProcessor(image_config)
         self.tfnet = TFNet(TFNET_CONFIG)
-
-    def _read_hud_value(self, image, left):
-        padding = self.image_config.top_menu_padding
-        height = self.image_config.top_menu_height
-        width = self.image_config.top_menu_item_width
-        item_crop_box = (left, padding, left + width, height - padding)
-        hud_image = image.crop(item_crop_box)
-        value = read_num_from_img(hud_image)
-        return value
-
-    def _get_pil_image_state_data(self, image):
-        '''
-            FPS with no text reading: ~7.5
-            FPS with straight sync text reading: ~3.0
-            FPS with thread pool text reading: ~3.9
-        '''
-        # Get shape
-        width, height = image.size
-        image_shape = (width, height, 3)
-
-        # get OCR text from known HUD elements
-        values = {'image_shape': image_shape}
-
-        with futures.ThreadPoolExecutor() as executor:
-            future_to_key = {
-                executor.submit(self._read_hud_value, image, self.image_config.money_item_left): 'money',
-                executor.submit(self._read_hud_value, image, self.image_config.stars_item_left): 'stars'
-            }
-            for future in futures.as_completed(future_to_key):
-                key = future_to_key[future]
-                try:
-                    values[key] = future.result()
-                except Exception as e:
-                    print('Exception reading value: %s', e)
-
-        return values
 
     def process_from_file(self, sess, filename):
         """
@@ -205,11 +113,7 @@ class AIStateProcessor(object):
             A processed AIState object.
         """
 
-        # Read image with pillow
-        image = Image.open(filename).convert('RGB')
-        pil_data = self._get_pil_image_state_data(image)
-
-        return AIState(**pil_data)
+        return AIState(**self.ocr_processor.process_filename(filename))
 
         # Decode image for tensorflow
         # tf_image_file = tf.read_file(filename)
@@ -233,8 +137,7 @@ class AIStateProcessor(object):
 
         # Reads text via OCR, etc
         def get_pil_state():
-            image = Image.fromarray(np_img).convert('RGB')
-            return self._get_pil_image_state_data(image)
+            return self.ocr_processor.process_np_img(np_img)
 
         # Gets the very valuable yolo objects
         def get_yolo_state():
@@ -242,11 +145,21 @@ class AIStateProcessor(object):
             yolo_result = self.tfnet.return_predict(np_img_3chan)
             return {'image_objects': _process_image_objects(yolo_result)}
 
+        # Gets Tappable circles!!
+        def get_circles_state():
+            circles = get_image_circles(np_img, GALAXY8_VYSOR_HOUGH_CONFIG)
+
+            # Try to Filter out the menu circles
+            tap_circles = [c for c in circles if c[1] < 350]
+
+            return {'tap_circles': tap_circles}
+
         state_data = {}
         with futures.ThreadPoolExecutor() as executor:
             state_futures = [
                 executor.submit(get_pil_state),
-                executor.submit(get_yolo_state)
+                executor.submit(get_yolo_state),
+                executor.submit(get_circles_state)
             ]
 
             for future in futures.as_completed(state_futures):
@@ -254,7 +167,7 @@ class AIStateProcessor(object):
                     data = future.result()
                     state_data.update(data)
                 except Exception as e:
-                    print('Exception getting state: %s', e)
+                    print('Exception getting state: %s' % e)
 
         return AIState(**state_data)
 

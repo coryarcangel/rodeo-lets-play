@@ -9,13 +9,17 @@ def hex2rgb(hex):
 
 
 # https://matplotlib.org/examples/color/named_colors.html
-colors = {name: hex2rgb(hex) for name, hex in dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).items() }
+colors = {
+    name: hex2rgb(hex) for name,
+    hex in dict(
+        mcolors.BASE_COLORS,
+        **mcolors.CSS4_COLORS).items()}
 
 label_colors_map = {
     'person': colors['tomato'],
     'clock': colors['springgreen'],
-    'tvmonitor': colors['lightslategray'],
-    'laptop': colors['lightslategray'],
+    'tvmonitor': colors['black'],
+    'laptop': colors['black'],
     'traffic light': colors['chartreuse'],
 }
 
@@ -23,6 +27,8 @@ label_colors_map = {
 def get_img_object_color(label, confidence):
     if label in label_colors_map:
         return label_colors_map[label]
+    elif 'Circle' in label:
+        return colors['orange']
     if confidence > 0.75:
         return colors['b']
     elif confidence > 0.5:
@@ -47,11 +53,12 @@ def draw_img_text(img, x=0, y=0, text='text',
     Returns:
         numpy array with annotations
     """
-    cv2.putText(img, text, (x, y), font, font_scale, color, 1, cv2.LINE_AA)
+    cv2.putText(img, text, (x, y), font, font_scale, color, 2, cv2.LINE_AA)
     return img
 
 
-def draw_img_rect(img, x=0, y=0, w=100, h=100, color=colors['white'], thickness=3):
+def draw_img_rect(img, x=0, y=0, w=100, h=100,
+                  color=colors['white'], thickness=3):
     """
     Args:
         img: numpy array
@@ -88,7 +95,7 @@ class AnnotatedImageStream(object):
             x, y, w, h = rect
             ann_img = draw_img_rect(ann_img, x, y, w, h, color=color)
 
-            text = '%s (%.2f)' % (label, confidence)
+            text = '%s (%.2f)' % (label, confidence) if confidence else label
             ann_img = draw_img_text(
                 ann_img, x + w + 10, y + 10, text, font_scale=0.6, color=color)
 

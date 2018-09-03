@@ -14,12 +14,12 @@ class RandomActionSelector(object):
 
     ActionWeights = {
         Action.PASS: 25,
-        Action.SWIPE_LEFT: 40,
-        Action.SWIPE_RIGHT: 40,
+        Action.SWIPE_LEFT: 10,
+        Action.SWIPE_RIGHT: 10,
         Action.TAP_LOCATION: 100
     }
     TapTypeWeights = {
-        'menu': 5,
+        'menu': 1,
         'object': 100
     }
 
