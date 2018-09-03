@@ -76,6 +76,9 @@ def draw_img_rect(img, x=0, y=0, w=100, h=100,
 
 
 class AnnotatedImageStream(object):
+    ''' This creates the affected screen capture, which is the visual output of
+        the project '''
+
     def __init__(self, window_name='annotations'):
         self.window_name = window_name
         cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)

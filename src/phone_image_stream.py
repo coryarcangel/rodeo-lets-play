@@ -14,14 +14,10 @@ import mss
 import tensorflow as tf
 import redis
 from darkflow.net.build import TFNet
-from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME
+from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
 from window import set_window_rect
 from image_annotation import AnnotatedImageStream
-
-# Extremely Hard Coded :)
-VYSOR_RECT = (0, 0, 776, 466)
-VYSOR_CAP_AREA = (62, 95, VYSOR_RECT[-2] - 100, VYSOR_RECT[-1] - 80)
 
 
 def show_image_test(x=0, y=0, width=200, height=200):
@@ -76,9 +72,15 @@ def setup_vysor_data_stream():
         db=0,
         decode_responses=True)
 
+    # Create Screen Capturer
     sct = mss.mss()
+
+    # Create State Processor
+    # This is the most important aspect of the whole project!!!!!!
     processor = AIStateProcessor(image_config=CURRENT_IMG_CONFIG)
 
+    # Create annotation stream to display the screen captures with overlays
+    # of what the AI sees on top!
     annotation_stream = AnnotatedImageStream()
 
     x, y, w, h = VYSOR_CAP_AREA

@@ -73,7 +73,7 @@ class DeviceManager(object):
         ''' Taps device at given location '''
         self.logger.debug('Tapping at (%d, %d)' % (x, y))
         self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
-        sleep(0.5)  # Reasonable Down Time
+        sleep(1)  # Reasonable Down Time
 
     def touch_down(self, x, y):
         ''' Presses finger down at given location '''

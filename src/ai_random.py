@@ -14,8 +14,8 @@ class RandomActionSelector(object):
 
     ActionWeights = {
         Action.PASS: 25,
-        Action.SWIPE_LEFT: 10,
-        Action.SWIPE_RIGHT: 10,
+        Action.SWIPE_LEFT: 50,
+        Action.SWIPE_RIGHT: 50,
         Action.TAP_LOCATION: 100
     }
     TapTypeWeights = {
