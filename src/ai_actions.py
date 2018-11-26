@@ -27,8 +27,13 @@ NUM_ACTIONS = len(ACTIONS)
 
 def _get_object_tap_action(obj):
     x, y = get_rect_center(obj['rect'])
-    return (Action.TAP_LOCATION, {'x': int(x), 'y': int(
-        y), 'type': 'object', 'img_obj': obj})
+    return (Action.TAP_LOCATION, {
+        'x': int(x),
+        'y': int(y),
+        'type': 'object',
+        'object_label': obj['label'],
+        'img_obj': obj
+    })
 
 
 class ActionGetter(object):
