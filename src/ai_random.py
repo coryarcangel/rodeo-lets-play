@@ -23,6 +23,9 @@ class RandomActionSelector(object):
         'object': 100
     }
     TapObjectLabelWeights = {
+        'frisbee': 500,
+        'circle': 300,
+        'clock': 300,
         'traffic light': 200,
         'doorbell': 250
     }
@@ -31,7 +34,8 @@ class RandomActionSelector(object):
     def get_action_weight(cls, a_tup):
         ''' Assigns a weight to action based on its type / content '''
         action, args = a_tup
-        action_type = args['type']
+        print(args)
+        action_type = args['type'] if 'type' in args else None
         object_label = args['object_label'].lower() if 'object_label' in args else None
         if action == Action.TAP_LOCATION and action_type in cls.TapTypeWeights:
             if object_label and object_label in cls.TapObjectLabelWeights:
