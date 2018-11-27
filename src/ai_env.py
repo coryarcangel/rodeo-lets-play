@@ -137,6 +137,7 @@ class DeviceClientKimEnv(KimEnv):
 
     def _perform_tap_action(self, args):
         x, y, type = [args[k] for k in ['x', 'y', 'type']]
+        type = args['object_type'] if type == 'object' else type
         self.client.send_tap_command(x, y, type)
 
 

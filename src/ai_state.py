@@ -63,6 +63,7 @@ class AIState(object):
                 x, y, r = c
                 self.image_objects.append({
                     'label': 'Circle #%d' % (idx + 1),
+                    'object_type': 'circle',
                     'confidence': None,
                     'rect': (x - r, y - r, 2 * r, 2 * r)
                 })

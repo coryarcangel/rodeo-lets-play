@@ -31,7 +31,7 @@ def _get_object_tap_action(obj):
         'x': int(x),
         'y': int(y),
         'type': 'object',
-        'object_label': obj['label'],
+        'object_type': obj['object_type'] if 'obj_type' in obj else obj['label'],
         'img_obj': obj
     })
 
