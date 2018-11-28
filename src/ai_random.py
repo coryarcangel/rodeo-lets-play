@@ -27,8 +27,11 @@ class RandomActionSelector(object):
         'circle': 500,
         'clock': 500,
         'sports ball': 500,
-        'traffic light': 200,
-        'doorbell': 250
+        'traffic light': 10,
+        'doorbell': 250,
+        'person': 5,
+        'umbrella': 5,
+        'chair': 5
     }
 
     @classmethod

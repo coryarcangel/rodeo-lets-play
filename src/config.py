@@ -22,7 +22,7 @@ TFNET_CONFIG = {
 
 # Extremely Hard Coded (to the galaxy 8) :) (:
 VYSOR_RECT = Rect(0, 0, 776, 466)
-VYSOR_CAP_AREA = Rect(62, 95, VYSOR_RECT[-2] - 100, VYSOR_RECT[-1] - 80)
+VYSOR_CAP_AREA = Rect(62, 98, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 88)
 VYSOR_WINDOW_NAME = 'Kim'  # 'Vysor'
 
 # Phone Rects
