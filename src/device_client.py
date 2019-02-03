@@ -16,12 +16,10 @@ class DeviceClient(AsyncchatKim):
     for performance reasons.
     '''
 
-    def __init__(self, phone_rect, img_config):
+    def __init__(self, phone_rect, img_rect):
         AsyncchatKim.__init__(self, py2=False, logger_name='DeviceClient')
         self.phone_rect = phone_rect
-        self.img_config = img_config
-        self.p_x_scale = self.phone_rect.w / self.img_config.width
-        self.p_y_scale = self.phone_rect.h / self.img_config.height
+        self.img_rect = img_rect
 
     def start(self):
         """ Connects the client to a server """
@@ -61,9 +59,11 @@ class DeviceClient(AsyncchatKim):
 
     def _img_point_to_device_point(self, img_point):
         x, y = img_point
-        nx = int(self.p_x_scale * x)
-        ny = int(self.p_y_scale * y)
-        return (nx, ny)
+        x1, y1, w1, h1 = self.img_rect
+        x2, y2, w2, h2 = self.phone_rect
+        nx = ((x - x1) / w1) * w2 + x2
+        ny = ((y - y1) / h1) * h2 + y2
+        return (int(nx), int(ny))
 
     def send_drag_x_command(self, distance=100, duration=1):
         """ Sends a command to swipe left for given duration / distance """

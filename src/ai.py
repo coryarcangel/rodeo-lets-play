@@ -6,7 +6,7 @@ from datetime import datetime
 import tensorflow as tf
 
 # Local Imports
-from config import configure_logging, CURRENT_PHONE_RECT, CURRENT_IMG_CONFIG
+from config import configure_logging, CURRENT_PHONE_RECT, VYSOR_CAP_AREA
 from ai_deep_q import deep_q_learning
 from ai_random import random_learning
 from ai_env import DeviceClientKimEnv, ScreenshotKimEnv
@@ -44,7 +44,7 @@ def main():
     # Device Client
     device_client = DeviceClient(
         CURRENT_PHONE_RECT,
-        CURRENT_IMG_CONFIG) if not STATIC_SCREENSHOT else None
+        VYSOR_CAP_AREA) if not STATIC_SCREENSHOT else None
     device_client.start()
 
     # Env
