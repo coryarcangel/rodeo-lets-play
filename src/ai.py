@@ -54,6 +54,7 @@ def main():
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
+        # Create Learning Generator
         learning_gen = None
         if RANDOM:
             learning_gen = random_learning(

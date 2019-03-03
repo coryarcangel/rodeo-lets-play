@@ -8,6 +8,7 @@ from concurrent import futures
 from darkflow.net.build import TFNet
 from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
 from image_circles import get_image_circles, GALAXY8_VYSOR_HOUGH_CONFIG
+from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
 
 # Constants
@@ -51,13 +52,16 @@ class AIState(object):
     """
 
     def __init__(self, image_shape=None,
-                 money=0, stars=0, image_objects=None, tap_circles=None):
+                 money=0, stars=0, image_objects=None, tap_circles=None, color_features=None):
         self.logger = logging.getLogger('AIState')
         self.image_shape = image_shape
         self.money = money
         self.stars = stars
         self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
+        self.color_features = color_features
+        self.color_sig = color_features['color_sig'] if color_features is not None else 'none'
         self.image_objects = image_objects if image_objects is not None else []
+
         if tap_circles is not None:
             for idx, c in enumerate(tap_circles):
                 x, y, r = c
@@ -155,12 +159,19 @@ class AIStateProcessor(object):
 
             return {'tap_circles': tap_circles}
 
+        # Gets Color Features
+        def get_color_features():
+            color_features = get_image_color_features(np_img)
+
+            return {'color_features': color_features}
+
         state_data = {}
         with futures.ThreadPoolExecutor() as executor:
             state_futures = [
                 executor.submit(get_pil_state),
                 executor.submit(get_yolo_state),
-                executor.submit(get_circles_state)
+                executor.submit(get_circles_state),
+                executor.submit(get_color_features)
             ]
 
             for future in futures.as_completed(state_futures):
