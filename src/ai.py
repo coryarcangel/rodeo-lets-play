@@ -9,12 +9,19 @@ import tensorflow as tf
 from config import configure_logging, CURRENT_PHONE_RECT, VYSOR_CAP_AREA
 from ai_deep_q import deep_q_learning
 from ai_random import random_learning
+from ai_heuristic import heuristic_learning
 from ai_env import DeviceClientKimEnv, ScreenshotKimEnv
 from ai_estimator import QEstimator
 from device_client import DeviceClient
 
+class LearningMode(object):
+    """Enum-like iteration of all available learning methods """
+    RANDOM = 0
+    HEURISTIC = 1
+    DEEP_Q = 2
+
 # Config
-RANDOM = True
+learning_mode = LearningMode.Heuristic
 STATIC_SCREENSHOT = False
 configure_logging()
 
@@ -23,6 +30,8 @@ def main():
     """
     Runs the ai infinitely.
     """
+
+    is_deep_q = learning_mode == LearningMode.DEEP_Q
 
     # Simple variables
     start_time = datetime.now()
@@ -38,8 +47,8 @@ def main():
     # Create estimators
     q_estimator = QEstimator(
         scope="q",
-        summaries_dir=experiment_dir) if not RANDOM else None
-    target_estimator = QEstimator(scope="target_q") if not RANDOM else None
+        summaries_dir=experiment_dir) if is_deep_q else None
+    target_estimator = QEstimator(scope="target_q") if is_deep_q else None
 
     # Device Client
     device_client = DeviceClient(
@@ -56,9 +65,10 @@ def main():
 
         # Create Learning Generator
         learning_gen = None
-        if RANDOM:
-            learning_gen = random_learning(
-                sess=sess, env=env, max_episode_length=1000)
+        if learning_mode == LearningMode.Random:
+            learning_gen = random_learning(sess=sess, env=env, max_episode_length=1000)
+        elif learning_mode == LearningMode.Heuristic:
+            learning_gen = heuristic_learning(sess=sess, env=env, max_episode_length=1000)
         else:
             learning_gen = deep_q_learning(sess=sess,
                                            env=env,
