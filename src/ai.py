@@ -6,7 +6,7 @@ from datetime import datetime
 import tensorflow as tf
 
 # Local Imports
-from config import configure_logging, CURRENT_PHONE_RECT, VYSOR_CAP_AREA
+from config import configure_logging, CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
 from ai_deep_q import deep_q_learning
 from ai_random import random_learning
 from ai_heuristic import heuristic_learning
@@ -14,14 +14,16 @@ from ai_env import DeviceClientKimEnv, ScreenshotKimEnv
 from ai_estimator import QEstimator
 from device_client import DeviceClient
 
+
 class LearningMode(object):
     """Enum-like iteration of all available learning methods """
     RANDOM = 0
     HEURISTIC = 1
     DEEP_Q = 2
 
+
 # Config
-learning_mode = LearningMode.Heuristic
+learning_mode = LearningMode.RANDOM
 STATIC_SCREENSHOT = False
 configure_logging()
 
@@ -52,7 +54,7 @@ def main():
 
     # Device Client
     device_client = DeviceClient(
-        CURRENT_PHONE_RECT,
+        CURRENT_PHONE_GAME_RECT,
         VYSOR_CAP_AREA) if not STATIC_SCREENSHOT else None
     device_client.start()
 
@@ -65,9 +67,9 @@ def main():
 
         # Create Learning Generator
         learning_gen = None
-        if learning_mode == LearningMode.Random:
+        if learning_mode == LearningMode.RANDOM:
             learning_gen = random_learning(sess=sess, env=env, max_episode_length=1000)
-        elif learning_mode == LearningMode.Heuristic:
+        elif learning_mode == LearningMode.HEURISTIC:
             learning_gen = heuristic_learning(sess=sess, env=env, max_episode_length=1000)
         else:
             learning_gen = deep_q_learning(sess=sess,

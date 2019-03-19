@@ -25,9 +25,11 @@ VYSOR_RECT = Rect(0, 0, 776, 466)
 VYSOR_CAP_AREA = Rect(62, 98, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 88)
 VYSOR_WINDOW_NAME = 'Kim'  # 'Vysor'
 
-# Phone Rects
+# Raw Phone Size
 GALAXY8_RECT = Rect(0, 0, 2220, 1080)
-CURRENT_PHONE_RECT = GALAXY8_RECT
+# The game doesn't use all phone real estate
+GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)
+CURRENT_PHONE_GAME_RECT = GALAXY8_GAME_RECT
 
 # Image Configs
 ImageConfig = collections.namedtuple("ImageConfig", [

@@ -16,9 +16,9 @@ class DeviceClient(AsyncchatKim):
     for performance reasons.
     '''
 
-    def __init__(self, phone_rect, img_rect):
+    def __init__(self, phone_game_rect, img_rect):
         AsyncchatKim.__init__(self, py2=False, logger_name='DeviceClient')
-        self.phone_rect = phone_rect
+        self.phone_game_rect = phone_game_rect
         self.img_rect = img_rect
 
     def start(self):
@@ -59,10 +59,10 @@ class DeviceClient(AsyncchatKim):
 
     def _img_point_to_device_point(self, img_point):
         x, y = img_point
-        x1, y1, w1, h1 = self.img_rect
-        x2, y2, w2, h2 = self.phone_rect
-        nx = ((x - x1) / w1) * w2 + x2
-        ny = ((y - y1) / h1) * h2 + y2
+        _, _, w1, h1 = self.img_rect
+        x2, y2, w2, h2 = self.phone_game_rect
+        nx = (w2 / float(w1)) * x + x2
+        ny = (h2 / float(h1)) * y + y2
         return (int(nx), int(ny))
 
     def send_drag_x_command(self, distance=100, duration=1):

@@ -24,6 +24,7 @@ ACTIONS = [
 
 NUM_ACTIONS = len(ACTIONS)
 
+
 def get_action_type_str(action_type):
     if action_type == Action.PASS:
         return 'pass'
@@ -33,6 +34,7 @@ def get_action_type_str(action_type):
         return 'swipe_right'
     else:
         return 'tap_location'
+
 
 def _get_object_tap_action(obj):
     x, y = get_rect_center(obj['rect'])
@@ -74,7 +76,9 @@ class ActionGetter(object):
         object_taps = [_get_object_tap_action(
             obj) for obj in state.image_objects]
 
+        # return object_taps if len(object_taps) > 0 else ActionGetter.Base
         return ActionGetter.Base + object_taps
+
 
 class ActionWeighter(object):
     ''' gets default action weights for weighted-random selection '''
