@@ -5,6 +5,7 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 import logging
 import json
 import redis
+from time import time
 from ai_actions import Action
 from ai_state import AIState, AIStateProcessor
 from config import REDIS_HOST, REDIS_PORT, IMG_CONFIG_STUDIOBLU
@@ -121,8 +122,17 @@ class DeviceClientKimEnv(KimEnv):
             self.cur_screen_index = data['index']
             self.cur_screen_state = AIState.deserialize(data['state'])
 
+    def _publish_action(self, action, args):
+        if action == Action.TAP_LOCATION:
+            self.r.publish('ai-phone-touches', json.dumps({
+                'type': 'tap',
+                'time': time(),
+                'args': args
+            }))
+
     def _take_action(self, action, args):
         if (action in self.actions_map):
+            self._publish_action(action, args)
             self.actions_map[action](args)
         else:
             self.logger.debug('unrecognized action %s' % action)

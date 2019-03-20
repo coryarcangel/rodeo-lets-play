@@ -19,15 +19,8 @@ class RandomActionSelector(object):
         # Get possible actions
         actions = ActionGetter.get_actions_from_state(state)
 
-        # Assign weighted probabilities
-        action_weights = [self.action_weighter.get_action_weight(a) for a in actions]
-        total_weight = float(sum(action_weights))
-        action_probs = [w / total_weight for w in action_weights]
-
-        # Choose
-        action_idx = np.random.choice(len(actions), p=action_probs)
-        action, args = actions[action_idx]
-        return action, args
+        # Choose randomly
+        return self.action_weighter.select_action(actions, self.action_weighter.get_action_weight)
 
 
 def random_learning(sess, env, num_episodes=100, max_episode_length=100000):

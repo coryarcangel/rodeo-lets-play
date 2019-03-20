@@ -2,6 +2,7 @@
 
 from config import CURRENT_IMG_CONFIG
 from util import get_rect_center, Rect
+import numpy as np
 
 img_rect = Rect(0, 0, CURRENT_IMG_CONFIG.width, CURRENT_IMG_CONFIG.height)
 img_rect_center = get_rect_center(img_rect)
@@ -82,6 +83,7 @@ class ActionGetter(object):
 
 class ActionWeighter(object):
     ''' gets default action weights for weighted-random selection '''
+
     def __init__(self):
         self.ActionWeights = {
             Action.PASS: 25,
@@ -117,3 +119,17 @@ class ActionWeighter(object):
         if action in self.ActionWeights:
             return self.ActionWeights[action]
         return 1
+
+    def select_action(self, actions, get_weight):
+        ''' Selects action from list based on weight provided from get_weight fn '''
+
+        # Assign weighted probabilities
+        action_weights = [get_weight(a) for a in actions]
+        total_weight = float(sum(action_weights))
+        action_probs = [w / total_weight for w in action_weights]
+
+        # Choose
+        action_idx = np.random.choice(len(actions), p=action_probs)
+        action, args = actions[action_idx]
+        args['action_prob'] = action_probs[action_idx]
+        return (action, args)

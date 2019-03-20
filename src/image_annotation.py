@@ -39,21 +39,20 @@ def get_img_object_color(label, confidence):
         return colors['white']
 
 
-def draw_img_text(img, x=0, y=0, text='text',
-                  font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=1,
-                  color=colors['white']):
+def draw_img_text(img, p=(0, 0), text='text',
+                  font_scale=1, color=colors['white'], thickness=2,
+                  font=cv2.FONT_HERSHEY_SIMPLEX):
     """
     Args:
         img: numpy array
-        x: number
-        y: number
+        p: (x, y)
         text: string
         font: string
         color: (r, g, b) tuple
     Returns:
         numpy array with annotations
     """
-    cv2.putText(img, text, (x, y), font, font_scale, color, 2, cv2.LINE_AA)
+    cv2.putText(img, text, p, font, font_scale, color, thickness, cv2.LINE_AA)
     return img
 
 
@@ -75,6 +74,42 @@ def draw_img_rect(img, x=0, y=0, w=100, h=100,
     return img
 
 
+def draw_img_line(img, p1=(0, 0), p2=(100, 100), color=colors['white'], thickness=3):
+    """
+    Args:
+        img: numpy array
+        p1: (x, y) tuple
+        p2: (x, y) tuple
+        color: (r, g, b) tuple
+        thickness: number
+    Returns:
+        numpy array with annotations
+    """
+    cv2.line(img, p1, p2, color, thickness)
+    return img
+
+
+def draw_img_crosshairs(img, p=(0, 0), color=colors['white'], thickness=2):
+    """
+    Args:
+        img: numpy array
+        p: (x, y) tuple
+        color: (r, g, b) tuple
+        thickness: number
+    Returns:
+        numpy array with annotations
+    """
+    x, y = p
+    h, w, _ = img.shape
+    r = 5
+    draw_img_line(img, (w, y), (x + r, y), color, thickness)
+    draw_img_line(img, (x, 0), (x, y - r), color, thickness)
+    draw_img_line(img, (0, y), (x - r, y), color, thickness)
+    draw_img_line(img, (x, h), (x, y + r), color, thickness)
+    draw_img_rect(img, x - r, y - r, r * 2, r * 2, color, -1)
+    return img
+
+
 class AnnotatedImageStream(object):
     ''' This creates the affected screen capture, which is the visual output of
         the project '''
@@ -83,8 +118,15 @@ class AnnotatedImageStream(object):
         self.window_name = window_name
         cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)
 
-    def show_image(self, img, ai_state):
-        """ Shows the given opencv image with annotations from the AiState """
+    def show_image(self, img, ai_state, recent_touch=None):
+        """
+        Shows the given opencv image with annotations from the AiState
+
+        Args:
+            img: numpy array
+            ai_state: AiState object
+            recent_touch: {'p', 'label', 'prob'} dict or None
+        """
         # Nice docs here:
         # https://docs.opencv.org/3.1.0/d7/dfc/group__highgui.html#ga453d42fe4cb60e5723281a89973ee563
 
@@ -100,7 +142,16 @@ class AnnotatedImageStream(object):
 
             text = '%s (%.2f)' % (label, confidence) if confidence else label
             ann_img = draw_img_text(
-                ann_img, x + w + 10, y + 10, text, font_scale=0.6, color=color)
+                ann_img, (x + w + 10, y + 10), text, 0.6, color)
+
+        if recent_touch:
+            r_point = recent_touch['p']
+            r_color = (0, 0, 255)
+            ann_img = draw_img_crosshairs(ann_img, r_point, r_color)
+            if recent_touch['prob']:
+                prob_text = '{}%'.format(round(recent_touch['prob'] * 100, 1))
+                prob_point = (r_point[0] + 8, r_point[1] - 8)
+                ann_img = draw_img_text(ann_img, prob_point, prob_text, 0.4, r_color, 1)
 
         # Draw Static Stuff!!
         # for a, args in ActionGetter.MenuTaps:

@@ -60,14 +60,8 @@ class HeuristicRoom(object):
         return weight
 
     def select_from_actions(self, actions):
-        # Assign weighted probabilities
-        action_weights = [self.get_action_weight(a) for a in actions]
-        total_weight = float(sum(action_weights))
-        action_probs = [w / total_weight for w in action_weights]
-
-        # Choose
-        action_idx = np.random.choice(len(actions), p=action_probs)
-        a_tup = actions[action_idx]
+        # Choose with custom weights
+        a_tup = self.action_weighter.select_action(actions, self.get_action_weight)
 
         # Mark as selected
         rep = self.get_action_rep(a_tup)
