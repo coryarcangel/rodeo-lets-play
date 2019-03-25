@@ -11,6 +11,7 @@ pandas = "*"
 tensorflow = "*"
 tesserocr = "*"
 mss = "*"
+sklearn = "*"
 
 [dev-packages]
 
