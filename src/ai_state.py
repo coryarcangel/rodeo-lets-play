@@ -140,13 +140,14 @@ class AIStateProcessor(object):
         FPS with threaded pil and yolo: ~6.8
         """
 
+        np_img_3chan = np_img[:, :, :3]
+
         # Reads text via OCR, etc
         def get_pil_state():
             return self.ocr_processor.process_np_img(np_img)
 
         # Gets the very valuable yolo objects
         def get_yolo_state():
-            np_img_3chan = np_img[:, :, :3]
             yolo_result = self.tfnet.return_predict(np_img_3chan)
             return {'image_objects': _process_image_objects(yolo_result)}
 
@@ -161,7 +162,7 @@ class AIStateProcessor(object):
 
         # Gets Color Features
         def get_color_features():
-            color_features = get_image_color_features(np_img)
+            color_features = get_image_color_features(np_img_3chan)
 
             return {'color_features': color_features}
 

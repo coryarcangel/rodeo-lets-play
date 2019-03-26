@@ -3,9 +3,9 @@ from sklearn.cluster import KMeans
 from collections import Counter
 import cv2
 
-def get_img_dom_colors(image, k = 4, image_processing_size = None):
+def get_img_dom_colors(image, k = 3, image_processing_size = None):
     """
-    takes an image as input
+    takes an image as input (no alpha channel!)
     returns the dominant colors of the image as a list
 
     dominant color is found by running k means on the
@@ -21,11 +21,12 @@ def get_img_dom_colors(image, k = 4, image_processing_size = None):
 
     # if no new dims provided, force 100w image
     if image_processing_size is None:
-        image_processing_size = (100, int(100 * (image.shape[1] / image.shape[0])))
+        h, w, _ = image.shape
+        r = float(w) / h
+        image_processing_size = (50, int(50 / r))
 
-    #resize image if new dims provided
-    if image_processing_size is not None:
-        image = cv2.resize(image, image_processing_size, interpolation = cv2.INTER_AREA)
+    #resize image
+    image = cv2.resize(image, image_processing_size, interpolation = cv2.INTER_AREA)
 
     #reshape the image to be a list of pixels
     image = image.reshape((image.shape[0] * image.shape[1], 3))
