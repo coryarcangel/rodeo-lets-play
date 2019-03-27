@@ -8,6 +8,7 @@ from concurrent import futures
 from darkflow.net.build import TFNet
 from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
 from image_circles import get_image_circles, GALAXY8_VYSOR_HOUGH_CONFIG
+from image_blob import BlobDetector
 from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
 
@@ -108,6 +109,7 @@ class AIStateProcessor(object):
         self.image_config = image_config
         self.ocr_processor = ImageOCRProcessor(image_config)
         self.tfnet = TFNet(TFNET_CONFIG)
+        self.blob_detector = BlobDetector()
 
     def process_from_file(self, sess, filename):
         """
@@ -160,6 +162,12 @@ class AIStateProcessor(object):
 
             return {'tap_circles': tap_circles}
 
+        # Gets Blobs
+        def get_blobs():
+            blobs = self.blob_detector.get_image_blobs(np_img_3chan)
+
+            return {'blobs': blobs}
+
         # Gets Color Features
         def get_color_features():
             color_features = get_image_color_features(np_img_3chan)
@@ -172,6 +180,7 @@ class AIStateProcessor(object):
                 executor.submit(get_pil_state),
                 executor.submit(get_yolo_state),
                 executor.submit(get_circles_state),
+                executor.submit(get_blobs),
                 executor.submit(get_color_features)
             ]
 
