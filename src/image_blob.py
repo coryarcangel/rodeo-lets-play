@@ -42,9 +42,28 @@ class BlobDetector(object):
         """ pass an alpha-less numpy image, get some blobs """
 
         keypoints = self.detector.detect(image)
-        print(keypoints)
 
-        return keypoints
+        colored_points = [{'point': (int(k.pt[0]), int(k.pt[1])), 'size': k.size} for k in keypoints]
+        for c in colored_points:
+            x, y = c['point']
+            color = image[x, y]
+            g, r, b = color
+            dom_color = 'white'
+            if g > r and g > b:
+                dom_color = 'green'
+            elif r > g and r > b:
+                dom_color = 'red'
+            elif b > g and b > r:
+                dom_color = 'blue'
+            elif b < 100 and r < 100 and g < 100:
+                dom_color = 'black'
+            else:
+                pass
+
+            c['color'] = color
+            c['dom_color'] = dom_color
+
+        return colored_points
 
 
 if __name__ == '__main__':

@@ -52,8 +52,14 @@ class AIState(object):
           } objects
     """
 
-    def __init__(self, image_shape=None,
-                 money=0, stars=0, image_objects=None, tap_circles=None, color_features=None):
+    def __init__(self,
+                 image_shape=None,
+                 money=0,
+                 stars=0,
+                 image_objects=None,
+                 tap_circles=[],
+                 color_features=None,
+                 blobs=[]):
         self.logger = logging.getLogger('AIState')
         self.image_shape = image_shape
         self.money = money
@@ -63,15 +69,25 @@ class AIState(object):
         self.color_sig = color_features['color_sig'] if color_features is not None else 'none'
         self.image_objects = image_objects if image_objects is not None else []
 
-        if tap_circles is not None:
-            for idx, c in enumerate(tap_circles):
-                x, y, r = c
-                self.image_objects.append({
-                    'label': 'Circle #%d' % (idx + 1),
-                    'object_type': 'circle',
-                    'confidence': None,
-                    'rect': (x - r, y - r, 2 * r, 2 * r)
-                })
+        for idx, c in enumerate(tap_circles):
+            x, y, r = c
+            self.image_objects.append({
+                'label': 'Circle #%d' % (idx + 1),
+                'object_type': 'circle',
+                'confidence': None,
+                'rect': (x - r, y - r, 2 * r, 2 * r)
+            })
+
+        for idx, b in enumerate(blobs):
+            x, y = b['point']
+            r = int(b['size'] / 2.0)
+            # TODO: can make object type stronger based on color / size of blob
+            self.image_objects.append({
+                'label': 'Blob #%d - %s' % (idx + 1, b['dom_color']),
+                'object_type': 'blob',
+                'confidence': None,
+                'rect': (x - r, y - r, 2 * r, 2 * r)
+            })
 
     @classmethod
     def deserialize(cls, data):
@@ -165,7 +181,7 @@ class AIStateProcessor(object):
         # Gets Blobs
         def get_blobs():
             blobs = self.blob_detector.get_image_blobs(np_img_3chan)
-
+            # blobs = []
             return {'blobs': blobs}
 
         # Gets Color Features

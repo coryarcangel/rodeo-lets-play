@@ -29,6 +29,10 @@ def get_img_object_color(label, confidence):
         return label_colors_map[label]
     elif 'Circle' in label:
         return colors['orange']
+    elif 'Blob' in label:
+        return colors['purple']
+    elif confidence is None:
+        return colors['black']
     if confidence > 0.75:
         return colors['b']
     elif confidence > 0.5:
