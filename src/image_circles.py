@@ -33,7 +33,7 @@ def get_image_circles(image, hough_config=GALAXY8_VYSOR_HOUGH_CONFIG):
         **hough_config)
 
     if circles is None or len(circles) == 0:
-        return None
+        return []
 
     int_circles = np.round(circles[0, :]).astype('int')
 

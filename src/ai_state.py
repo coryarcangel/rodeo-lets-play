@@ -25,6 +25,9 @@ def _process_image_objects(image_objects):
         'bottomright'
     }[]
     '''
+    if not image_objects:
+        return []
+
     def process_obj(obj):
         x = obj['topleft']['x']
         y = obj['topleft']['y']
@@ -181,7 +184,6 @@ class AIStateProcessor(object):
         # Gets Blobs
         def get_blobs():
             blobs = self.blob_detector.get_image_blobs(np_img_3chan)
-            # blobs = []
             return {'blobs': blobs}
 
         # Gets Color Features

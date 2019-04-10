@@ -13,25 +13,28 @@ class BlobDetector(object):
         # Setup SimpleBlobDetector parameters.
         params = cv2.SimpleBlobDetector_Params()
 
+        # NOTE: these parameters are currently optimized to find speech bubbles...
+
         # Change thresholds
         params.minThreshold = 10
         params.maxThreshold = 200
 
         # Filter by Area.
         params.filterByArea = True
-        params.minArea = 100
+        params.minArea = 150
 
         # Filter by Circularity
         params.filterByCircularity = True
-        params.minCircularity = 0.1
+        params.minCircularity = 0.01
 
         # Filter by Convexity
         params.filterByConvexity = True
-        params.minConvexity = 0.87
+        params.minConvexity = 0.5
 
         # Filter by Inertia
         params.filterByInertia = True
-        params.minInertiaRatio = 0.01
+        params.minInertiaRatio = 0.0001
+        params.maxInertiaRatio = 0.05
 
         if set_params:
             set_params(params)
@@ -42,13 +45,15 @@ class BlobDetector(object):
         """ pass an alpha-less numpy image, get some blobs """
 
         keypoints = self.detector.detect(image)
+        if not keypoints:
+            return []
 
         colored_points = [{'point': (int(k.pt[0]), int(k.pt[1])), 'size': k.size} for k in keypoints]
         for c in colored_points:
             x, y = c['point']
-            color = image[x, y]
-            g, r, b = color
-            dom_color = 'white'
+            color = image[y, x]
+            b, g, r = color
+            dom_color = ''
             if g > r and g > b:
                 dom_color = 'green'
             elif r > g and r > b:
@@ -58,7 +63,7 @@ class BlobDetector(object):
             elif b < 100 and r < 100 and g < 100:
                 dom_color = 'black'
             else:
-                pass
+                dom_color = 'white'
 
             c['color'] = color
             c['dom_color'] = dom_color
