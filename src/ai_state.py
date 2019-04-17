@@ -89,6 +89,8 @@ class AIState(object):
                 'label': 'Blob #%d - %s' % (idx + 1, b['dom_color']),
                 'object_type': 'blob',
                 'confidence': None,
+                'dom_color': b['dom_color'],
+                'size': b['size'],
                 'rect': (x - r, y - r, 2 * r, 2 * r)
             })
 

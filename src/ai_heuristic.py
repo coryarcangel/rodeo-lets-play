@@ -33,6 +33,13 @@ class HeuristicRoom(object):
         self.action_count = 0
         self.action_selection_counts = {}
         self.action_weighter = ActionWeighter()
+        self.blob_dom_color_weights = {
+            'red': 300,
+            'green': 600,
+            'blue': 1000,
+            'black': 200,
+            'white': 1000
+        }
 
     def get_action_rep(self, a_tup):
         action_type, args = a_tup
@@ -45,6 +52,20 @@ class HeuristicRoom(object):
 
         return 'tap_object_{}_y{}'.format(args['object_type'].lower(), args['y'])
 
+    def get_object_tap_default_weight(self, a_tup):
+        action_type, args = a_tup
+        type = args['object_type']
+        if type == 'blob':
+            dom_color = args['img_obj']['dom_color']
+            size = args['img_obj']['size']
+            color_weight = self.blob_dom_color_weights[dom_color] if dom_color in self.blob_dom_color_weights else 50
+            size_mult = 2 if size > 200 else 1
+            return color_weight * size_mult
+        elif type == 'circle':
+            return 500
+        else:
+            return self.action_weighter.get_action_weight(a_tup)
+
     def get_action_weight(self, a_tup):
         action_type, args = a_tup
         is_object_tap = action_type == Action.TAP_LOCATION and 'type' in args and args['type'] == 'object'
@@ -55,7 +76,14 @@ class HeuristicRoom(object):
         sel_p = min(sel_count, 10) / 15.0 if is_object_tap else min(sel_count, 2) / 8.0
         depression_mult = (1 - math.pow(sel_p, 1))
 
-        default_weight = self.action_weighter.get_action_weight(a_tup)
+        # Get unique weight for type of object tap
+        default_weight = 0
+        if is_object_tap:
+            type = self.get_object_tap_default_weight(a_tup)
+        else:
+            default_weight = self.action_weighter.get_action_weight(a_tup)
+
+        # Multiply default by the depression heuristic
         weight = default_weight * depression_mult
         return weight
 
