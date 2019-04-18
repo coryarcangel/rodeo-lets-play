@@ -28,8 +28,11 @@ from ai_actions import ActionGetter, ActionWeighter, Action, get_action_type_str
 class HeuristicRoom(object):
     ''' Maintains info for a room identified by a specific color_sig '''
 
-    def __init__(self, color_sig):
+    def __init__(self, color_sig, time_since_last_visit, rooms_since_last_visit):
         self.color_sig = color_sig
+        self.time_since_last_visit = time_since_last_visit
+        self.rooms_since_last_visit = rooms_since_last_visit
+
         self.action_count = 0
         self.action_selection_counts = {}
         self.action_weighter = ActionWeighter()
@@ -62,7 +65,8 @@ class HeuristicRoom(object):
             size_mult = 2 if size > 200 else 1
             return color_weight * size_mult
         elif type == 'circle':
-            return 500
+            # If we have just been to this room, let's try to leave more quickly..
+            return 500 if self.rooms_since_last_visit > 5 else 2000
         else:
             return self.action_weighter.get_action_weight(a_tup)
 
@@ -106,11 +110,35 @@ class HeuristicActionSelector(object):
         self.state_room_seq = deque(maxlen=100)
         self.state_idx = 0
 
+    def _create_room(self, state):
+        # Get total action count since we have last been to this room
+        has_visited_before = False
+        time_since_last_visit = 0
+        rooms_since_last_visit = 0
+        num_rooms = max(1, len(self.state_room_seq))
+        for i in range(num_rooms - 1):
+            prev_room = self.state_room_seq[-(i + 1)]
+            if prev_room.color_sig == state.color_sig:
+                has_visited_before = True
+                break
+            else:
+                rooms_since_last_visit += 1
+                time_since_last_visit += prev_room.action_count
+
+        # Create room
+        room = HeuristicRoom(
+            state.color_sig,
+            time_since_last_visit if has_visited_before else 0,
+            rooms_since_last_visit if has_visited_before else 0
+        )
+        return room
+
     def ingest_state_into_room(self, state):
         ''' incorporates state into state_room_seq, deciding its a new room if color_sig is different...'''
         did_change = self.state_idx == 0 or state.color_sig != self.state_room_seq[-1].color_sig
         if did_change:
-            room = HeuristicRoom(state.color_sig)
+            # Create room and append to seq
+            room = self._create_room(state)
             self.state_room_seq.append(room)
 
         return self.state_room_seq[-1]
