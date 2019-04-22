@@ -23,6 +23,8 @@ from ai_actions import ActionGetter, ActionWeighter, Action, get_action_type_str
 
     Heuristic #3 - Color Splatch Detection
         Detect large splotches of specific solid colors—those are important things to tap.
+
+    Heuristic #4 - Have I gotten any money recently?
 '''
 
 class HeuristicRoom(object):
@@ -32,6 +34,9 @@ class HeuristicRoom(object):
         self.color_sig = color_sig
         self.time_since_last_visit = time_since_last_visit
         self.rooms_since_last_visit = rooms_since_last_visit
+
+        self.reward_seq = []
+        self.has_gained_money = False
 
         self.action_count = 0
         self.action_selection_counts = {}
@@ -44,7 +49,7 @@ class HeuristicRoom(object):
             'white': 1000
         }
 
-    def get_action_rep(self, a_tup):
+    def _get_action_rep(self, a_tup):
         action_type, args = a_tup
         if action_type != Action.TAP_LOCATION:
             return get_action_type_str(action_type)
@@ -55,7 +60,19 @@ class HeuristicRoom(object):
 
         return 'tap_object_{}_y{}'.format(args['object_type'].lower(), args['y'])
 
-    def get_object_tap_default_weight(self, a_tup):
+    def _have_recently_been_here(self): return self.rooms_since_last_visit < 6
+    def _have_been_here_a_while(self): return self.action_count >= 300
+
+    def _get_exit_action_weight(self):
+        ''' If I have recently been to this room, or it has been forever since I have left, let's emphasize leaving '''
+        if self._have_recently_been_here() or self._have_been_here_a_while():
+            return 2500
+        elif self._have_not_made_money_here():
+            return 100
+        else:
+            return 500
+
+    def _get_object_tap_default_weight(self, a_tup):
         action_type, args = a_tup
         type = args['object_type']
         if type == 'blob':
@@ -64,18 +81,18 @@ class HeuristicRoom(object):
             color_weight = self.blob_dom_color_weights[dom_color] if dom_color in self.blob_dom_color_weights else 50
             size_mult = 2 if size > 200 else 1
             return color_weight * size_mult
-        elif type == 'circle':
-            # If we have just been to this room, let's try to leave more quickly..
-            return 500 if self.rooms_since_last_visit > 5 else 2000
+        elif self.action_weighter.is_object_type_likely_exit(type):
+            return self.get_exit_action_weight()
         else:
             return self.action_weighter.get_action_weight(a_tup)
 
     def get_action_weight(self, a_tup):
+        ''' Gets weight of an action (for weighted-random selection) based on heuristics listed above '''
         action_type, args = a_tup
         is_object_tap = action_type == Action.TAP_LOCATION and 'type' in args and args['type'] == 'object'
 
         # The more we select an action, the less likely we are to pick it again in this room
-        rep = self.get_action_rep(a_tup)
+        rep = self._get_action_rep(a_tup)
         sel_count = self.action_selection_counts[rep] if rep in self.action_selection_counts else 0
         sel_p = min(sel_count, 10) / 15.0 if is_object_tap else min(sel_count, 2) / 8.0
         depression_mult = (1 - math.pow(sel_p, 1))
@@ -83,7 +100,7 @@ class HeuristicRoom(object):
         # Get unique weight for type of object tap
         default_weight = 0
         if is_object_tap:
-            type = self.get_object_tap_default_weight(a_tup)
+            type = self._get_object_tap_default_weight(a_tup)
         else:
             default_weight = self.action_weighter.get_action_weight(a_tup)
 
@@ -91,12 +108,21 @@ class HeuristicRoom(object):
         weight = default_weight * depression_mult
         return weight
 
+    def ingest_state(self, state):
+        ''' Basically just adds states rewards to reward seq for later inspection '''
+        reward = state.get_reward_dict()
+        self.reward_seq.push(reward)
+        if not self.has_gained_money and reward['money'] > self.reward_seq[0]['money']:
+            self.has_gained_money = True
+
     def select_from_actions(self, actions):
+        ''' Selects an action from possible list based on... heuristics '''
+
         # Choose with custom weights
         a_tup = self.action_weighter.select_action(actions, self.get_action_weight)
 
         # Mark as selected
-        rep = self.get_action_rep(a_tup)
+        rep = self._get_action_rep(a_tup)
         self.action_selection_counts[rep] = self.action_selection_counts[rep] + 1 if rep in self.action_selection_counts else 1
         self.action_count += 1
 
@@ -146,6 +172,7 @@ class HeuristicActionSelector(object):
     def select_state_action(self, state):
         # Ingest state and get heuristic room
         room = self.ingest_state_into_room(state)
+        room.ingest_state(state)
 
         # Get possible actions
         actions = ActionGetter.get_actions_from_state(state)

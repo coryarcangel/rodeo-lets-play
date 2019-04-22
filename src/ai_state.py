@@ -102,6 +102,12 @@ class AIState(object):
     def __str__(self):
         return 'Money: {} | Stars: {}'.format(self.money, self.stars)
 
+    def get_reward_dict(self):
+        return {
+            'money': self.money,
+            'stars': self.stars,
+        }
+
     def serialize(self):
         ''' serializes AIState into json '''
         return json.dumps({
