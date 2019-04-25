@@ -3,6 +3,26 @@
     * https://stackoverflow.com/questions/42924059/detect-different-color-blob-opencv
 '''
 import cv2
+import numpy as np
+
+
+def get_center_color(image, p):
+    x, y = p
+    color = image[y, x]
+    b, g, r = color[:3]
+    dom_color = ''
+    if g > r and g > b:
+        dom_color = 'green'
+    elif r > g and r > b:
+        dom_color = 'red'
+    elif b > g and b > r:
+        dom_color = 'blue'
+    elif b < 100 and r < 100 and g < 100:
+        dom_color = 'black'
+    else:
+        dom_color = 'white'
+
+    return color, dom_color
 
 
 class BlobDetector(object):
@@ -48,23 +68,13 @@ class BlobDetector(object):
         if not keypoints:
             return []
 
+        # Draw detected blobs as red circles.
+        # im_with_keypoints = cv2.drawKeypoints(image, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        # cv2.imwrite('01.png', im_with_keypoints)
+
         colored_points = [{'point': (int(k.pt[0]), int(k.pt[1])), 'size': k.size} for k in keypoints]
         for c in colored_points:
-            x, y = c['point']
-            color = image[y, x]
-            b, g, r = color
-            dom_color = ''
-            if g > r and g > b:
-                dom_color = 'green'
-            elif r > g and r > b:
-                dom_color = 'red'
-            elif b > g and b > r:
-                dom_color = 'blue'
-            elif b < 100 and r < 100 and g < 100:
-                dom_color = 'black'
-            else:
-                dom_color = 'white'
-
+            color, dom_color = get_center_color(image, c['point'])
             c['color'] = color
             c['dom_color'] = dom_color
 

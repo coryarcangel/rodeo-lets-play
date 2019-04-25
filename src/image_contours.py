@@ -1,7 +1,7 @@
 ''' Module inspired by https://www.pyimagesearch.com/2016/02/08/opencv-shape-detection/ '''
 import cv2
 import imutils
-
+from image_blob import get_center_color
 
 def get_contour_shape(c):
     # approximate the contour
@@ -12,15 +12,11 @@ def get_contour_shape(c):
         print(e)
         return None
 
-    # if the shape is a triangle, it will have 3 vertices
-    if len(approx) == 3:
+    verts = len(approx)
+    if verts == 3:
         return "triangle"
-
-    # if the shape has 4 vertices, it is either a square or rect
     elif len(approx) == 4:
         return 'rectangle'
-
-    # otherwise, we assume the shape is a circle
     else:
         return 'circle'
 
@@ -35,8 +31,8 @@ def get_image_shapes(image):
     resized = cv2.GaussianBlur(resized, (5, 5), 0)
     resized = cv2.threshold(resized, 200, 255, cv2.THRESH_BINARY)[1]
 
-    cv2.imshow('Threshold', resized)
-    cv2.waitKey(0)
+    # cv2.imshow('Threshold', resized)
+    # cv2.waitKey(0)
 
     # find contours
     _, contours, _ = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -45,26 +41,35 @@ def get_image_shapes(image):
         try:
             # Compute center and shape
             M = cv2.moments(c)
-            cX = int((M["m10"] / M["m00"]) * ratio)
-            cY = int((M["m01"] / M["m00"]) * ratio)
-            shape = get_contour_shape(c)
+            area = M["m00"]
+            cX = int((M["m10"] / area) * ratio)
+            cY = int((M["m01"] / area) * ratio)
 
             # Multiply contour by ratio and draw on image
             rc = (c.astype('float') * ratio).astype('int')
 
-            return (shape, (cX, cY), rc)
-        except Exception:
+            color, dom_color = get_center_color(image, (cX, cY))
+            return {
+                'shape': get_contour_shape(c),
+                'point': (cX, cY),
+                'area': area * ratio,
+                'color': color,
+                'dom_color': dom_color,
+                'contour': rc
+            }
+        except Exception as e:
+            print(e)
             return None
 
     shapes = [get_shape(c) for c in contours]
 
-    return [s for s in shapes if s and s[0]]
+    return [s for s in shapes if s and s['shape']]
 
 
 def draw_shapes(image, shapes):
-    for s, p, c in shapes:
-        cv2.drawContours(image, [c], -1, (0, 255, 0), 2)
-        cv2.putText(image, s, p, cv2.FONT_HERSHEY_SIMPLEX,
+    for shape in shapes:
+        cv2.drawContours(image, [shape['contour']], -1, (0, 255, 0), 2)
+        cv2.putText(image, shape['shape'], shape['point'], cv2.FONT_HERSHEY_SIMPLEX,
                     0.5, (255, 255, 255), 2)
 
     cv2.imshow('Shapes', image)
@@ -76,4 +81,4 @@ if __name__ == '__main__':
     shapes = get_image_shapes(image)
     print([(shape, p) for shape, p, _ in shapes])
 
-    draw_shapes(image, shapes)
+    # draw_shapes(image, shapes)

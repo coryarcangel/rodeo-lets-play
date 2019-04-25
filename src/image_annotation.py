@@ -78,6 +78,23 @@ def draw_img_rect(img, x=0, y=0, w=100, h=100,
     return img
 
 
+def draw_img_circle(img, x=0, y=0, r=100,
+                  color=colors['white'], thickness=3):
+    """
+    Args:
+        img: numpy array
+        x: number
+        y: number
+        r: number
+        color: (r, g, b) tuple
+        thickness: number
+    Returns:
+        numpy array with annotations
+    """
+    cv2.circle(img, (x, y), r, color, thickness)
+    return img
+
+
 def draw_img_line(img, p1=(0, 0), p2=(100, 100), color=colors['white'], thickness=3):
     """
     Args:
@@ -136,17 +153,24 @@ class AnnotatedImageStream(object):
 
         ann_img = img
         for obj in ai_state.image_objects:
-            label, confidence, rect = [obj[k]
-                                       for k in ('label', 'confidence', 'rect')]
+            label, confidence, rect, circle, contour = [obj[k] if k in obj else None
+                                       for k in ('label', 'confidence', 'rect', 'circle', 'contour')]
 
             color = get_img_object_color(label, confidence)
 
             x, y, w, h = rect
-            ann_img = draw_img_rect(ann_img, x, y, w, h, color=color)
-
             text = '%s (%.2f)' % (label, confidence) if confidence else label
-            ann_img = draw_img_text(
-                ann_img, (x + w + 10, y + 10), text, 0.6, color)
+            text_p = (x + w + 10, y + 10)
+            if contour is not None:
+                ann_img = cv2.drawContours(ann_img, [contour], -1, color, 2)
+            elif circle is not None:
+                x, y, r = circle
+                text_p = (x + r + 10, y + 5)
+                ann_img = draw_img_circle(ann_img, x, y, r, color, 2)
+            else:
+                ann_img = draw_img_rect(ann_img, x, y, w, h, color=color)
+
+            ann_img = draw_img_text(ann_img, text_p, text, 0.5, color)
 
         if recent_touch:
             r_point = recent_touch['p']

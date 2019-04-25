@@ -9,6 +9,7 @@ from darkflow.net.build import TFNet
 from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
 from image_circles import get_image_circles, GALAXY8_VYSOR_HOUGH_CONFIG
 from image_blob import BlobDetector
+from image_contours import get_image_shapes
 from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
 
@@ -62,7 +63,8 @@ class AIState(object):
                  image_objects=None,
                  tap_circles=[],
                  color_features=None,
-                 blobs=[]):
+                 blobs=[],
+                 shapes=[]):
         self.logger = logging.getLogger('AIState')
         self.image_shape = image_shape
         self.money = money
@@ -91,6 +93,23 @@ class AIState(object):
                 'confidence': None,
                 'dom_color': b['dom_color'],
                 'size': b['size'],
+                'circle': (x, y, r),
+                'rect': (x - r, y - r, 2 * r, 2 * r)
+            })
+
+        for idx, shape in enumerate(shapes):
+            p, a, s, c, co = [shape[k] for k in ('point', 'area', 'shape', 'contour', 'dom_color')]
+            x, y = p
+            r = int(a / 2.0)
+            self.image_objects.append({
+                'label': '%s #%d - %s' % (s, idx + 1, co),
+                'object_type': 'shape',
+                'confidence': None,
+                'dom_color': co,
+                'size': a,
+                'point': p,
+                'shape': s,
+                'contour': c,
                 'rect': (x - r, y - r, 2 * r, 2 * r)
             })
 
@@ -110,10 +129,18 @@ class AIState(object):
 
     def serialize(self):
         ''' serializes AIState into json '''
+
+        def clean_img_obj(o):
+            o2 = dict(o)
+            for k in ['contour']:
+                if k in o2:
+                    del o2[k]
+            return o2
+
         return json.dumps({
             'money': self.money,
             'stars': self.stars,
-            'image_objects': self.image_objects
+            'image_objects': [clean_img_obj(o) for o in self.image_objects]
         })
 
     def get_reward(self):
@@ -193,6 +220,13 @@ class AIStateProcessor(object):
         def get_blobs():
             blobs = self.blob_detector.get_image_blobs(np_img_3chan)
             return {'blobs': blobs}
+
+        # Gets Contours
+        def get_shapes():
+            contours = get_image_shapes(np_img)
+            # print([(c['shape'], c['area']) for c in contours])
+            shapes = [c for c in contours if c['area'] > 80]
+            return {'shapes': shapes}
 
         # Gets Color Features
         def get_color_features():
