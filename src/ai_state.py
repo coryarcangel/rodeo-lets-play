@@ -6,10 +6,11 @@ import numpy as np
 import tensorflow as tf
 from concurrent import futures
 from darkflow.net.build import TFNet
+from math import pow
 from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
 from image_circles import get_image_circles, GALAXY8_VYSOR_HOUGH_CONFIG
 from image_blob import BlobDetector
-from image_contours import get_image_shapes
+from image_contours import get_kim_action_color_shapes
 from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
 
@@ -98,18 +99,18 @@ class AIState(object):
             })
 
         for idx, shape in enumerate(shapes):
-            p, a, s, c, co = [shape[k] for k in ('point', 'area', 'shape', 'contour', 'dom_color')]
+            p, a, s, v, c, co = [shape[k] for k in ('point', 'area', 'shape', 'verts', 'contour', 'color_label')]
             x, y = p
-            r = int(a / 2.0)
+            r = int(pow(a, 0.5) / 2.0)
             self.image_objects.append({
-                'label': '%s #%d - %s' % (s, idx + 1, co),
+                'label': '%s (%d) - %s' % (s, a, co),
                 'object_type': 'shape',
                 'confidence': None,
                 'dom_color': co,
                 'size': a,
                 'point': p,
                 'shape': s,
-                'contour': c,
+                # 'contour': c,
                 'rect': (x - r, y - r, 2 * r, 2 * r)
             })
 
@@ -223,9 +224,7 @@ class AIStateProcessor(object):
 
         # Gets Contours
         def get_shapes():
-            contours = get_image_shapes(np_img)
-            # print([(c['shape'], c['area']) for c in contours])
-            shapes = [c for c in contours if c['area'] > 80]
+            shapes = get_kim_action_color_shapes(np_img)
             return {'shapes': shapes}
 
         # Gets Color Features
@@ -240,7 +239,8 @@ class AIStateProcessor(object):
                 executor.submit(get_pil_state),
                 executor.submit(get_yolo_state),
                 executor.submit(get_circles_state),
-                executor.submit(get_blobs),
+                # executor.submit(get_blobs),
+                executor.submit(get_shapes),
                 executor.submit(get_color_features)
             ]
 
