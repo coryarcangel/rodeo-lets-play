@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import colors as mcolors
+from action_shape import get_shape_data_label
 
 
 def hex2rgb(hex):
@@ -151,13 +152,28 @@ class AnnotatedImageStream(object):
         # Nice docs here:
         # https://docs.opencv.org/3.1.0/d7/dfc/group__highgui.html#ga453d42fe4cb60e5723281a89973ee563
 
+        image_shape = img.shape
         ann_img = img
         for obj in ai_state.image_objects:
-            label, confidence, rect, circle, contour = [obj[k] if k in obj else None
-                                       for k in ('label', 'confidence', 'rect', 'circle', 'contour')]
+            label, confidence, type, rect, circle, contour = [obj[k] if k in obj else None
+                for k in ('label', 'confidence', 'object_type', 'rect', 'circle', 'contour')]
 
             color = get_img_object_color(label, confidence)
+            font_scale, thickness = (0.5, 2)
 
+            # Special handling of action_shape objects to remove color label if we know the color :)
+            if type == 'action_shape':
+                font_scale, thickness = (0.25, 1)
+                try:
+                    color_key = obj['shape_data']['color_label'].lower().replace(' ', '')
+                    color = colors[color_key][::-1]
+                    shape_label = get_shape_data_label(obj['shape_data'], image_shape)
+                    label = shape_label if shape_label is not None else label
+                except Exception as e:
+                    print(e)
+                    color = colors['black']
+
+            # Draw Image Shape
             x, y, w, h = rect
             text = '%s (%.2f)' % (label, confidence) if confidence else label
             text_p = (x + w + 10, y + 10)
@@ -170,8 +186,10 @@ class AnnotatedImageStream(object):
             else:
                 ann_img = draw_img_rect(ann_img, x, y, w, h, color=color)
 
-            ann_img = draw_img_text(ann_img, text_p, text, 0.5, color)
+            # Draw Text
+            ann_img = draw_img_text(ann_img, text_p, text, font_scale, color, thickness)
 
+        # Draw Recent Touch as final item
         if recent_touch:
             r_point = recent_touch['p']
             r_color = (0, 0, 255)

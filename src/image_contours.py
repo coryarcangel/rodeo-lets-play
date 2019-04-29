@@ -2,7 +2,7 @@
 import cv2
 import imutils
 from image_blob import get_center_color
-
+from action_shape import action_shape_color_ranges
 
 def get_contour_shape(c):
     # approximate the contour
@@ -94,17 +94,7 @@ def get_image_colored_shapes(image, color_ranges):
 
 
 def get_kim_action_color_shapes(image):
-    color_ranges = [
-        ('Light Blue', (100, 160, 50), (120, 255, 255), 2000),
-        ('Light Green', (40, 100, 50), (65, 255, 255), 2000),
-        ('Light Gray', (100, 50, 200), (105, 100, 255), 2000),
-        ('Red', (0, 110, 225), (5, 140, 255), 60),
-        ('Gold', (10, 20, 50), (30, 255, 255), 200),
-        # ('White', (0, 0, 253), (255, 1, 255), 40),
-        # ('Black', (0, 0, 0), (255, 255, 20), 60),
-    ]
-
-    shapes = get_image_colored_shapes(image, color_ranges)
+    shapes = get_image_colored_shapes(image, action_shape_color_ranges)
     return shapes
 
 

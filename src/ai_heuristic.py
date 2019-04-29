@@ -8,6 +8,7 @@ import plotting
 from collections import deque
 from math import pow
 from ai_actions import ActionGetter, ActionWeighter, Action, get_action_type_str
+from action_shape import ActionShape, get_shape_data_likely_action_shape
 
 
 '''
@@ -35,6 +36,11 @@ class HeuristicConfig(object):
         Heuristic Action Selector. '''
 
     def __init__(self):
+        # Toggle on / off specific heuristic usage
+        self.REPEAT_ACTION_DEPRESS = True
+        self.RECENT_ROOM_MEMORY = True
+        self.COLOR_ACTION_DETECT = True
+
         self.max_room_history_len = 100
 
         # What is the maximum number of times I might expect to select the same action in a given room?
@@ -56,6 +62,15 @@ class HeuristicConfig(object):
             'black': 200,
             'white': 1000,
             'other': 80
+        }
+
+        # Probabalistic weights to assign to best-guess of ActionShape variety
+        self.action_shape_tap_weights = {
+            ActionShape.MENU_EXIT: 10000,
+            ActionShape.CONFIRM_OK: 10000,
+            ActionShape.MONEY_CHOICE: 300,
+            ActionShape.TALK_CHOICE: 2500,
+            ActionShape.UNKNOWN: 100
         }
 
         # How big does a blob need to be to pass the "large" filter
@@ -86,6 +101,10 @@ class HeuristicConfig(object):
     def get_blob_size_mult(self, size):
         return self.large_blob_weight_mult if size > self.large_blob_threshold else 1
 
+    def get_action_shape_tap_weight(self, action_shape):
+        weights = self.action_shape_tap_weights
+        return weights[action_shape] if action_shape in weights else weights[ActionShape.UNKNOWN]
+
 
 class HeuristicRoom(object):
     ''' Maintains info for a room identified by a specific color_sig '''
@@ -94,6 +113,8 @@ class HeuristicRoom(object):
         self.color_sig = color_sig
         self.time_since_last_visit = time_since_last_visit
         self.rooms_since_last_visit = rooms_since_last_visit
+
+        self.cur_image_shape = None
 
         self.reward_seq = []
         self.has_gained_money = False
@@ -123,6 +144,9 @@ class HeuristicRoom(object):
 
     def _get_exit_action_weight(self):
         ''' If I have recently been to this room, or it has been forever since I have left, let's emphasize leaving '''
+        if not self.config.RECENT_ROOM_MEMORY:
+            return self.config.default_exit_weight
+
         if self._have_recently_been_here():
             return self.config.recent_room_exit_weight
         elif self._have_been_here_a_while():
@@ -132,18 +156,24 @@ class HeuristicRoom(object):
         else:
             return self.config.default_exit_weight
 
-    def _get_blob_tap_weight(self, dom_color, size):
+    def _get_blob_tap_weight(self, img_obj):
+        dom_color, size = [img_obj[k] for k in ('dom_color', 'size')]
         color_weight = self.config.get_blob_color_weight(dom_color)
         size_mult = self.config.get_blob_size_mult(size)
         return color_weight * size_mult
 
+    def _get_action_shape_tap_weight(self, img_obj):
+        a_shape = get_shape_data_likely_action_shape(img_obj['shape_data'], self.cur_image_shape)
+        return self.config.get_action_shape_tap_weight(a_shape)
+
     def _get_object_tap_default_weight(self, a_tup):
         action_type, args = a_tup
-        type = args['object_type']
-        if type == 'blob':
-            dom_color = args['img_obj']['dom_color']
-            size = args['img_obj']['size']
-            return self._get_blob_tap_weight(dom_color, size)
+        type, img_obj = [args[k] for k in ('object_type', 'img_obj')]
+
+        if self.config.COLOR_ACTION_DETECT and type == 'blob':
+            return self._get_blob_tap_weight(img_obj)
+        elif self.config.COLOR_ACTION_DETECT and type == 'action_shape':
+            return self._get_action_shape_tap_weight(img_obj)
         elif self.action_weighter.is_object_type_likely_exit(type):
             return self.get_exit_action_weight()
         else:
@@ -156,19 +186,21 @@ class HeuristicRoom(object):
         is_object_tap = is_tap and 'type' in args and args['type'] == 'object'
 
         # The more we select an action, the less likely we are to pick it again in this room
-        rep = self._get_action_rep(a_tup)
-        a_sel_counts = self.action_selection_counts
-        sel_count = a_sel_counts[rep] if rep in a_sel_counts else 0
+        depression_mult = 1
+        if self.config.REPEAT_ACTION_DEPRESS:
+            rep = self._get_action_rep(a_tup)
+            a_sel_counts = self.action_selection_counts
+            sel_count = a_sel_counts[rep] if rep in a_sel_counts else 0
 
-        sel_p = 1
-        if is_object_tap:
-            c = min(sel_count, self.config.object_tap_action_max_sel_count)
-            sel_p = c / self.config.object_tap_action_sel_denom
-        else:
-            c = min(sel_count, self.config.other_action_max_sel_count)
-            sel_p = c / self.config.other_action_sel_denom
+            sel_p = 1
+            if is_object_tap:
+                c = min(sel_count, self.config.object_tap_action_max_sel_count)
+                sel_p = c / self.config.object_tap_action_sel_denom
+            else:
+                c = min(sel_count, self.config.other_action_max_sel_count)
+                sel_p = c / self.config.other_action_sel_denom
 
-        depression_mult = (1 - pow(sel_p, self.config.action_sel_depress_exp))
+            depression_mult = (1 - pow(sel_p, self.config.action_sel_depress_exp))
 
         # Get unique weight for type of object tap
         default_weight = 0
@@ -183,6 +215,8 @@ class HeuristicRoom(object):
 
     def ingest_state(self, state):
         ''' Basically just adds states rewards to reward seq for later inspection '''
+        self.cur_image_shape = state.image_shape
+
         reward = state.get_reward_dict()
         self.reward_seq.push(reward)
         if not self.has_gained_money and reward['money'] > self.reward_seq[0]['money']:

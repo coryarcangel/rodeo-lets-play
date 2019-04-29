@@ -99,17 +99,15 @@ class AIState(object):
             })
 
         for idx, shape in enumerate(shapes):
-            p, a, s, v, c, co = [shape[k] for k in ('point', 'area', 'shape', 'verts', 'contour', 'color_label')]
+            p, a, s, co = [shape[k] for k in ('point', 'area', 'shape', 'color_label')]
             x, y = p
             r = int(pow(a, 0.5) / 2.0)
             self.image_objects.append({
                 'label': '%s (%d) - %s' % (s, a, co),
-                'object_type': 'shape',
+                'simple_label': '%s (%d)' % (s, a),
+                'object_type': 'action_shape',
                 'confidence': None,
-                'dom_color': co,
-                'size': a,
-                'point': p,
-                'shape': s,
+                'shape_data': { k: shape[k] for k in ('point', 'area', 'shape', 'color_label') },
                 # 'contour': c,
                 'rect': (x - r, y - r, 2 * r, 2 * r)
             })
