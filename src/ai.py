@@ -23,7 +23,7 @@ class LearningMode(object):
 
 
 # Config
-learning_mode = LearningMode.RANDOM
+learning_mode = LearningMode.HEURISTIC
 STATIC_SCREENSHOT = False
 configure_logging()
 

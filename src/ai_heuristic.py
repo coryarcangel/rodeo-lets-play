@@ -175,7 +175,7 @@ class HeuristicRoom(object):
         elif self.config.COLOR_ACTION_DETECT and type == 'action_shape':
             return self._get_action_shape_tap_weight(img_obj)
         elif self.action_weighter.is_object_type_likely_exit(type):
-            return self.get_exit_action_weight()
+            return self._get_exit_action_weight()
         else:
             return self.action_weighter.get_action_weight(a_tup)
 
@@ -218,7 +218,7 @@ class HeuristicRoom(object):
         self.cur_image_shape = state.image_shape
 
         reward = state.get_reward_dict()
-        self.reward_seq.push(reward)
+        self.reward_seq.append(reward)
         if not self.has_gained_money and reward['money'] > self.reward_seq[0]['money']:
             self.has_gained_money = True
 

@@ -107,7 +107,7 @@ class ActionWeighter(object):
             'chair': 5
         }
 
-    def is_object_likely_exit(self, object_type):
+    def is_object_type_likely_exit(self, object_type):
         return object_type == 'circle' or object_type == 'clock' or object_type == 'frisbee'
 
     def get_action_weight(self, a_tup):
