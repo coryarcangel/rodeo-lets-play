@@ -16,7 +16,7 @@ import redis
 from darkflow.net.build import TFNet
 from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
-from window import set_window_rect
+from window import set_window_rect, set_window_fullscreen
 from image_annotation import AnnotatedImageStream
 
 
@@ -128,7 +128,12 @@ class VysorDataStream(object):
 
         # Create annotation stream to display the screen captures with overlays
         # of what the AI sees on top!
-        annotation_stream = AnnotatedImageStream()
+        ann_window_name = 'annotations'
+        ann_display_size = (1900, 1000)
+        annotation_stream = AnnotatedImageStream(ann_window_name)
+
+        # Move annotation to fullscreen
+        set_window_fullscreen(ann_window_name)
 
         x, y, w, h = VYSOR_CAP_AREA
         mon = {'top': y, 'left': x, 'width': w, 'height': h}
@@ -155,7 +160,7 @@ class VysorDataStream(object):
                 self.r.publish('phone-image-states', json.dumps(message))
 
                 # Display
-                annotation_stream.show_image(img, ai_state, recent_touch)
+                annotation_stream.show_image(img, ai_state, recent_touch, display_size=ann_display_size)
 
                 print('fps: {0}'.format(1 / (time.time() - last_time)))
 
