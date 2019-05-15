@@ -14,13 +14,15 @@ class Action(object):
     SWIPE_LEFT = 1
     SWIPE_RIGHT = 2
     TAP_LOCATION = 3
+    RESET = 99
 
 
 ACTIONS = [
     Action.PASS,
     Action.SWIPE_LEFT,
     Action.SWIPE_RIGHT,
-    Action.TAP_LOCATION
+    Action.TAP_LOCATION,
+    Action.RESET
 ]
 
 NUM_ACTIONS = len(ACTIONS)
@@ -33,6 +35,8 @@ def get_action_type_str(action_type):
         return 'swipe_left'
     elif action_type == Action.SWIPE_RIGHT:
         return 'swipe_right'
+    elif action_type == Action.RESET:
+        return 'reset'
     else:
         return 'tap_location'
 
@@ -89,7 +93,8 @@ class ActionWeighter(object):
             Action.PASS: 25,
             Action.SWIPE_LEFT: 50,
             Action.SWIPE_RIGHT: 50,
-            Action.TAP_LOCATION: 100
+            Action.TAP_LOCATION: 100,
+            Action.RESET: 0.01
         }
         self.TapTypeWeights = {
             'menu': 1,

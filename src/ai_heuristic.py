@@ -54,6 +54,9 @@ class HeuristicConfig(object):
         # How aggressively should I depress repeated actions (lower is more aggressive)
         self.action_sel_depress_exp = 1.0
 
+        # How many frames do I need to wait on the same exact screen before resetting?
+        self.image_sig_stag_limit = 20
+
         # Probabalistic weights to assign to found blobs of given colors
         self.blob_dom_color_weights = {
             'red': 300,
@@ -115,6 +118,10 @@ class HeuristicRoom(object):
         self.rooms_since_last_visit = rooms_since_last_visit
 
         self.cur_image_shape = None
+
+        self.cur_image_sig = 0
+        self.image_sig_stag_count = 0
+        self.needs_reset = False
 
         self.reward_seq = []
         self.has_gained_money = False
@@ -213,9 +220,21 @@ class HeuristicRoom(object):
         weight = default_weight * depression_mult
         return weight
 
+    def _ingest_image_sig(self, image_sig):
+        if image_sig == self.cur_image_sig:
+            self.image_sig_stag_count += 1
+            if self.image_sig_stag_count > self.config.image_sig_stag_limit:
+                # reset when we have been on the same screen for a long time
+                self.needs_reset = True
+        else:
+            self.cur_image_sig = image_sig
+            self.image_sig_stag_count = 0
+
     def ingest_state(self, state):
         ''' Basically just adds states rewards to reward seq for later inspection '''
         self.cur_image_shape = state.image_shape
+
+        self._ingest_image_sig(state.image_sig)
 
         reward = state.get_reward_dict()
         self.reward_seq.append(reward)
@@ -224,6 +243,9 @@ class HeuristicRoom(object):
 
     def select_from_actions(self, actions):
         ''' Selects an action from possible list based on... heuristics '''
+
+        if self.needs_reset:
+            return (Action.RESET, {})
 
         # Choose with custom weights
         a_tup = self.action_weighter.select_action(actions, self.get_action_weight)
@@ -332,6 +354,8 @@ def heuristic_learning(sess, env, num_episodes=100, max_episode_length=100000):
 
             # Choose action
             action, args = selector.select_state_action(state)
+            if action == Action.RESET:
+                break
 
             # Take a step
             next_state, reward, done, _ = env.step(action, args)
