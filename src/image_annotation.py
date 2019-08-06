@@ -140,7 +140,7 @@ class AnnotatedImageStream(object):
         self.window_name = window_name
         cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)
 
-    def show_image(self, img, ai_state, recent_touch=None):
+    def show_image(self, img, ai_state, recent_touch=None, display_size=None):
         """
         Shows the given opencv image with annotations from the AiState
 
@@ -203,6 +203,9 @@ class AnnotatedImageStream(object):
         # for a, args in ActionGetter.MenuTaps:
         #     x, y = [int(args[k]) for k in ['x', 'y']]
         #     ann_img = draw_img_rect(ann_img, x - 10, y - 10, 20, 20)
+
+        if display_size is not None:
+            ann_img = cv2.resize(ann_img, display_size)
 
         cv2.imshow(self.window_name, ann_img)
         # wait 1 ms (no time) for a key press (required to run a lot of backend

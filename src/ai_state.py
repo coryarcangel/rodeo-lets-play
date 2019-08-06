@@ -72,7 +72,8 @@ class AIState(object):
         self.stars = stars
         self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
         self.color_features = color_features
-        self.color_sig = color_features['color_sig'] if color_features is not None else 'none'
+        self.color_sig = color_features['color_sig'] if color_features is not None and 'color_sig' in color_features else 'none'  # rough idea of colors in room
+        self.image_sig = color_features['image_sig'] if color_features is not None and 'image_sig' in color_features else 'none'  # hard idea of exact image -- should change frame to frame
         self.image_objects = image_objects if image_objects is not None else []
 
         for idx, c in enumerate(tap_circles):
