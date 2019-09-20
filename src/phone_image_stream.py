@@ -157,7 +157,8 @@ class VysorDataStream(object):
                 # Publish to redis (:
                 message = {
                     'index': screen_num,
-                    'state': ai_state.serialize()
+                    'state': ai_state.serialize(),
+                    'recent_touch': recent_touch
                 }
                 self.r.publish('phone-image-states', json.dumps(message))
 

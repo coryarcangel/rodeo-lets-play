@@ -1,7 +1,5 @@
 import cv2
-import numpy as np
 from matplotlib import colors as mcolors
-from action_shape import get_shape_data_label
 
 
 def hex2rgb(hex):
@@ -167,7 +165,7 @@ class AnnotatedImageStream(object):
                 try:
                     color_key = obj['shape_data']['color_label'].lower().replace(' ', '')
                     color = colors[color_key][::-1]
-                    shape_label = get_shape_data_label(obj['shape_data'], image_shape)
+                    shape_label = obj['shape_data']['shape_label']
                     label = shape_label if shape_label is not None else label
                 except Exception as e:
                     print(e)

@@ -34,6 +34,7 @@ class RedisImageStream:
 
         self.phone_image_state = None
         self.phone_image_index = 0
+        self.phone_recent_touch = None
         self.size = (width, height)
         self.quality = quality
 
@@ -56,6 +57,7 @@ class RedisImageStream:
         data = json.loads(message['data'])
         if data:
             self.phone_image_state = data['state']
+            self.phone_recent_touch = data['recent_touch']
             self.phone_image_index = data['index']
 
     def get_jpeg_image_bytes(self):
@@ -70,7 +72,7 @@ class RedisImageStream:
 
     def get_jpeg_image_with_state(self):
         data = self.get_jpeg_image_bytes()
-        return (self.phone_image_index, self.phone_image_state, data)
+        return (self.phone_image_index, self.phone_image_state, self.phone_recent_touch, data)
 
 
 image_stream = RedisImageStream(args.width, args.height, args.quality)
@@ -88,12 +90,13 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         print("WebSocket opened from: " + self.request.remote_ip)
 
     def on_message(self, message):
-        frame_num, image_state, jpeg_bytes = image_stream.get_jpeg_image_with_state()
+        frame_num, image_state, recent_touch, jpeg_bytes = image_stream.get_jpeg_image_with_state()
         if jpeg_bytes:
             self.write_message(jpeg_bytes, binary=True)
         self.write_message({
             'frameNum': self.frame_num,
-            'imageState': image_state
+            'imageState': image_state,
+            'recentTouch': recent_touch
         })
 
     def on_close(self):
@@ -101,7 +104,7 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         print("WebSocket closed from: " + self.request.remote_ip)
 
 
-static_path = script_path + '/static/'
+static_path = script_path + '../frontend-static/'
 
 app = tornado.web.Application([
         (r"/websocket", ImageWebSocket),

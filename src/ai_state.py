@@ -13,6 +13,7 @@ from image_blob import BlobDetector
 from image_contours import get_kim_action_color_shapes
 from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
+from action_shape import get_shape_data_label
 
 # Constants
 STATE_INPUT_SHAPE = [4]
@@ -103,12 +104,14 @@ class AIState(object):
             p, a, s, co = [shape[k] for k in ('point', 'area', 'shape', 'color_label')]
             x, y = p
             r = int(pow(a, 0.5) / 2.0)
+            shape_data = { k: shape[k] for k in ('point', 'area', 'shape', 'color_label') }
+            shape_data['shape_label'] = get_shape_data_label(shape_data, image_shape)
             self.image_objects.append({
                 'label': '%s (%d) - %s' % (s, a, co),
                 'simple_label': '%s (%d)' % (s, a),
                 'object_type': 'action_shape',
                 'confidence': None,
-                'shape_data': { k: shape[k] for k in ('point', 'area', 'shape', 'color_label') },
+                'shape_data': shape_data,
                 # 'contour': c,
                 'rect': (x - r, y - r, 2 * r, 2 * r)
             })
