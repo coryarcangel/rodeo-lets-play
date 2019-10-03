@@ -14,6 +14,7 @@ import mss
 import tensorflow as tf
 import redis
 from darkflow.net.build import TFNet
+
 from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA, WEB_BASED_IMAGE
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
 from window import set_window_rect, set_window_fullscreen

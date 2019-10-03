@@ -3,7 +3,7 @@ var fpsText = document.getElementById('fps');
 var frameNumText = document.getElementById('frameNum');
 var objectAnnCanvas = document.getElementById('object-annotations');
 
-var target_fps = 24;
+var target_fps = 10 // 24;
 
 var request_start_time = performance.now();
 var start_time = performance.now();
@@ -87,12 +87,15 @@ function renderImageState(imageState, recentTouch) {
     return;
   }
 
+  console.log(imageState, recentTouch)
+
   const canvas = objectAnnCanvas;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const { image_objects = [], image_shape } = imageState;
 
+  // draw each object on top of main image
   image_objects.forEach(item => {
     let { label, confidence, object_type: type, rect, circle, shape_data } = item
 
@@ -135,7 +138,7 @@ function renderImageState(imageState, recentTouch) {
   })
 
   if (recentTouch && recentTouch.p) {
-    const { p, color = '#00f' } = recent_touch
+    const { p, color = '#00f' } = recentTouch
 
     // draw crosshairs
     const [x, y] = p
@@ -190,8 +193,8 @@ function handleImageMessage(arrayBuffer) {
 
 function handleMetadataMessage(data) {
   renderState.frameNum = data.frameNum;
-  renderState.imageState = data.imageState;
-  renderState.recentTouch = data.recentTouch;
+  renderState.imageState = typeof data.imageState === 'string' ? JSON.parse(data.imageState) : data.imageState;
+  renderState.recentTouch = typeof data.recentTouch === 'string' ? JSON.parse(data.recentTouch) : data.recentTouch;
   updateRender();
 }
 

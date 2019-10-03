@@ -1,19 +1,15 @@
 """ Code to transform images from KK:Hollywood into numerical state """
 
-import json
-import logging
-import numpy as np
 import tensorflow as tf
 from concurrent import futures
 from darkflow.net.build import TFNet
-from math import pow
 from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
 from image_circles import get_image_circles, GALAXY8_VYSOR_HOUGH_CONFIG
 from image_blob import BlobDetector
 from image_contours import get_kim_action_color_shapes
 from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
-from action_shape import get_shape_data_label
+from ai_state_data import AIState
 
 # Constants
 STATE_INPUT_SHAPE = [4]
@@ -43,120 +39,6 @@ def _process_image_objects(image_objects):
         }
 
     return [process_obj(i) for i in image_objects]
-
-
-class AIState(object):
-    """
-    Incorporates all known information about a frame of KK:H, including:
-        * image -
-        * money - number
-        * stars - number
-        * image_objects - list of {
-            label: str,
-            confidence: num,
-            rect: (x,y,w,h)
-          } objects
-    """
-
-    def __init__(self,
-                 image_shape=None,
-                 money=0,
-                 stars=0,
-                 image_objects=None,
-                 tap_circles=[],
-                 color_features=None,
-                 blobs=[],
-                 shapes=[]):
-        self.logger = logging.getLogger('AIState')
-        self.image_shape = image_shape
-        self.money = money
-        self.stars = stars
-        self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
-        self.color_features = color_features
-        self.color_sig = color_features['color_sig'] if color_features is not None and 'color_sig' in color_features else 'none'  # rough idea of colors in room
-        self.image_sig = color_features['image_sig'] if color_features is not None and 'image_sig' in color_features else 'none'  # hard idea of exact image -- should change frame to frame
-        self.image_objects = image_objects if image_objects is not None else []
-
-        for idx, c in enumerate(tap_circles):
-            x, y, r = c
-            self.image_objects.append({
-                'label': 'Circle #%d' % (idx + 1),
-                'object_type': 'circle',
-                'confidence': None,
-                'rect': (x - r, y - r, 2 * r, 2 * r)
-            })
-
-        for idx, b in enumerate(blobs):
-            x, y = b['point']
-            r = int(b['size'] / 2.0)
-            # TODO: can make object type stronger based on color / size of blob
-            self.image_objects.append({
-                'label': 'Blob #%d - %s' % (idx + 1, b['dom_color']),
-                'object_type': 'blob',
-                'confidence': None,
-                'dom_color': b['dom_color'],
-                'size': b['size'],
-                'circle': (x, y, r),
-                'rect': (x - r, y - r, 2 * r, 2 * r)
-            })
-
-        for idx, shape in enumerate(shapes):
-            p, a, s, co = [shape[k] for k in ('point', 'area', 'shape', 'color_label')]
-            x, y = p
-            r = int(pow(a, 0.5) / 2.0)
-            shape_data = { k: shape[k] for k in ('point', 'area', 'shape', 'color_label') }
-            shape_data['shape_label'] = get_shape_data_label(shape_data, image_shape)
-            self.image_objects.append({
-                'label': '%s (%d) - %s' % (s, a, co),
-                'simple_label': '%s (%d)' % (s, a),
-                'object_type': 'action_shape',
-                'confidence': None,
-                'shape_data': shape_data,
-                # 'contour': c,
-                'rect': (x - r, y - r, 2 * r, 2 * r)
-            })
-
-    @classmethod
-    def deserialize(cls, data):
-        ''' loads AIState from serialized json '''
-        return cls(**json.loads(data))
-
-    def __str__(self):
-        return 'Money: {} | Stars: {}'.format(self.money, self.stars)
-
-    def get_reward_dict(self):
-        return {
-            'money': self.money,
-            'stars': self.stars,
-        }
-
-    def serialize(self):
-        ''' serializes AIState into json '''
-
-        def clean_img_obj(o):
-            o2 = dict(o)
-            for k in ['contour']:
-                if k in o2:
-                    del o2[k]
-            return o2
-
-        return json.dumps({
-            'money': self.money,
-            'stars': self.stars,
-            'image_objects': [clean_img_obj(o) for o in self.image_objects]
-        })
-
-    def get_reward(self):
-        """ Returns total value of state """
-        return self.money + self.stars
-
-    def log(self):
-        """ Logs string representation of state to INFO """
-        self.logger.info(self)
-
-    def to_input(self):
-        """ Converts high-level object into numbers with shape STATE_INPUT_SHAPE """
-        return np.array([1, self.money, self.stars])
 
 
 class AIStateProcessor(object):

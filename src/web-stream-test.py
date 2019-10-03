@@ -4,7 +4,7 @@ import argparse
 import os
 import io
 
-from random import randint
+from random import randint, random
 
 import tornado.ioloop
 import tornado.web
@@ -12,10 +12,13 @@ import tornado.websocket
 
 from PIL import Image
 
+from ai_state_data import get_random_phone_image_state
+
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 parser = argparse.ArgumentParser(description='Start the PyImageStream server.')
 
+parser.add_argument('--clientmode', default='real', type=str, help='Either "real" or "test" where real uses client from frontend-static dir')
 parser.add_argument('--port', default=8888, type=int, help='Web server port (default: 8888)')
 parser.add_argument('--imgpath', default=script_path + '/../src/img/', type=str, help='Path to image to test with')
 parser.add_argument('--img1', default='ios_screenshot_1.png', type=str, help='img1 name')
@@ -27,6 +30,7 @@ parser.add_argument('--quality', default=70, type=int, help='JPEG Quality 1 (wor
 parser.add_argument('--stopdelay', default=7, type=int, help='Delay in seconds before the camera will be stopped after '
                                                              'all clients have disconnected (default: 7)')
 args = parser.parse_args()
+
 
 class StaticImageStream:
 
@@ -48,6 +52,8 @@ class StaticImageStream:
 srcs = [args.imgpath + src for src in [args.img1, args.img2, args.img3]]
 image_stream = StaticImageStream(srcs, args.width, args.height, args.quality)
 
+is_real_client = args.clientmode == 'real'
+
 
 class ImageWebSocket(tornado.websocket.WebSocketHandler):
     clients = set()
@@ -65,8 +71,12 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         jpeg_bytes = image_stream.get_jpeg_image_bytes()
         self.write_message(jpeg_bytes, binary=True)
+
+        test_state = get_random_phone_image_state(self.frame_num)
         self.write_message({
-            'frameNum': self.frame_num
+            'frameNum': self.frame_num,
+            'imageState': test_state['state'],
+            'recentTouch': test_state['recent_touch'] if random() < 0.5 else None
         })
         self.frame_num += 1
 
@@ -75,7 +85,8 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         print("WebSocket closed from: " + self.request.remote_ip)
 
 
-static_path = script_path + '/static/'
+static_path = script_path + '/../frontend-static/' if is_real_client else script_path + '/../web-stream-test-static/'
+print(static_path)
 
 app = tornado.web.Application([
         (r"/websocket", ImageWebSocket),

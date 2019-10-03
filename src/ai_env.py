@@ -7,7 +7,8 @@ import json
 import redis
 from time import time
 from ai_actions import Action
-from ai_state import AIState, AIStateProcessor
+from ai_state_data import AIState
+from ai_state import AIStateProcessor
 from config import REDIS_HOST, REDIS_PORT, IMG_CONFIG_STUDIOBLU
 
 
