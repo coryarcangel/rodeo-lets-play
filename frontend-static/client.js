@@ -19,6 +19,8 @@ var path = location.pathname.replace('index.html', '/');
 var ws = new WebSocket(wsProtocol + location.host + path + 'websocket');
 ws.binaryType = 'arraybuffer';
 
+var playing = true
+
 /// Render / Layout
 
 const colors = JSON.parse(`{
@@ -40,8 +42,10 @@ function setupLayout() {
 
   Object.assign(img.style, {
     position: 'fixed',
-    top: 0, left: 0, width: '100%', height: '100%',
-    objectFit: 'cover'
+    top: '50%', left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: objectAnnCanvas.width, height: objectAnnCanvas.height,
+    // objectFit: 'cover'
   });
 }
 
@@ -81,13 +85,40 @@ function drawLine(ctx, p1x, p1y, p2x, p2y) {
   ctx.stroke();
 }
 
+function getCanvasSize() {
+  const w = window.innerWidth
+  const h = window.innerHeight
+  return [w, h]
+}
+
+function translatePointToScreen(image_shape, x, y) {
+  const [h1, w1] = image_shape
+  const [w2, h2] = getCanvasSize()
+
+  // https://math.stackexchange.com/questions/1857632/translating-co-ordinate-from-one-rectangle-to-another-rectangle
+  const xNew = (x / w1) * w2
+  const yNew = (y / h1) * h2
+  return [xNew, yNew]
+}
+
+function translateRectToScreen(image_shape, x, y, w, h) {
+  const [xNew, yNew] = translatePointToScreen(image_shape, x, y)
+
+  const [h1, w1] = image_shape
+  const [w2, h2] = getCanvasSize()
+  const wNew = (w2 / w1) * w
+  const hNew = (h2 / h1) * h
+
+  return [xNew, yNew, wNew, hNew]
+}
+
 // imageState is the JSON equivalent of the python AIState object :)
 function renderImageState(imageState, recentTouch) {
   if (!imageState) {
     return;
   }
 
-  console.log(imageState, recentTouch)
+  console.log(renderState.frameNum, imageState, recentTouch)
 
   const canvas = objectAnnCanvas;
   const ctx = canvas.getContext('2d');
@@ -101,13 +132,13 @@ function renderImageState(imageState, recentTouch) {
 
     const style = {
       color: getImageObjectColor(label, confidence),
-      fontSize: 16,
+      fontSize: 32,
       fontWeight: 'bold'
     }
 
     // Special handling of action_shape objects to remove color label if we know the color :)
     if (type == 'action_shape') {
-      style.fontSize = 12;
+      style.fontSize = 24;
       style.fontWeight = 'medium';
       if (shape_data) {
         colorKey = (shape_data.color_label || '').toLowerCase().replace(/ /g, '')
@@ -117,19 +148,24 @@ function renderImageState(imageState, recentTouch) {
     }
 
     // Set style
-    ctx.fillStyle = style.color;
-    ctx.font = `${style.fontSize} Helvetica ${style.fontWeight}`;
+    // ctx.fillStyle = style.color;
+    ctx.strokeStyle = style.color;
+    ctx.lineWidth = 10;
+    ctx.font = `${style.fontSize}px Helvetica ${style.fontWeight}`;
+    console.log(ctx.font)
 
     // Draw Image Shape
     let textPoint = { x: 0, y: 0 }
     if (circle) {
-      const [x, y, r] = circle
+      const [xRaw, yRaw, r] = circle
+      const [x, y] = translatePointToScreen(image_shape, xRaw, yRaw)
       textPoint = { x: x + r + 10, y: y + 5 }
       ctx.arc(x, y, r, 0, 2 * Math.PI);
     } else {
-      const [x, y, w, h] = rect
+      const [xRaw, yRaw, wRaw, hRaw] = rect
+      const [x, y, w, h] = translateRectToScreen(image_shape, xRaw, yRaw, wRaw, hRaw)
       textPoint = { x: x + w + 10, y: y + 10 }
-      ctx.fillRect(x, y, w, h);
+      ctx.strokeRect(x, y, w, h);
     }
 
     // Draw Text
@@ -138,13 +174,15 @@ function renderImageState(imageState, recentTouch) {
   })
 
   if (recentTouch && recentTouch.p) {
-    const { p, color = '#00f' } = recentTouch
+    const { p, color = '#ed3732' } = recentTouch
 
     // draw crosshairs
-    const [x, y] = p
-    const [h, w] = image_shape
-    const r = 5
-    ctx.strokeWidth = 2
+    // const [x, y] = p
+    // const [h, w] = image_shape
+    const [x, y] = translatePointToScreen(image_shape, p[0], p[1])
+    const [w, h] = getCanvasSize()
+    const r = 3
+    ctx.lineWidth = 5
     ctx.strokeStyle = color
     drawLine(ctx, w, y, x + r, y)
     drawLine(ctx, x, 0, x, y - r)
@@ -167,24 +205,26 @@ function requestImage() {
 }
 
 function handleImageMessage(arrayBuffer) {
-  if (img.src) {
-    URL.revokeObjectURL(img.src);
+  if (playing) {
+    if (img.src) {
+      URL.revokeObjectURL(img.src);
+    }
+
+    var blob  = new Blob([new Uint8Array(arrayBuffer)], {type: 'image/jpeg'});
+    img.src = window.URL.createObjectURL(blob);
+
+    // smooth with moving average
+    var end_time = performance.now();
+    var current_time = end_time - start_time;
+    time = (time * time_smoothing) + (current_time * (1.0 - time_smoothing));
+    start_time = end_time;
+    renderState.fps = Math.round(1000 / time);
+
+    // smooth with moving average
+    var current_request_time = performance.now() - request_start_time;
+    request_time = (request_time * request_time_smoothing) + (current_request_time * (1.0 - request_time_smoothing));
+    var timeout = Math.max(0, target_time - request_time);
   }
-
-  var blob  = new Blob([new Uint8Array(arrayBuffer)], {type: 'image/jpeg'});
-  img.src = window.URL.createObjectURL(blob);
-
-  // smooth with moving average
-  var end_time = performance.now();
-  var current_time = end_time - start_time;
-  time = (time * time_smoothing) + (current_time * (1.0 - time_smoothing));
-  start_time = end_time;
-  renderState.fps = Math.round(1000 / time);
-
-  // smooth with moving average
-  var current_request_time = performance.now() - request_start_time;
-  request_time = (request_time * request_time_smoothing) + (current_request_time * (1.0 - request_time_smoothing));
-  var timeout = Math.max(0, target_time - request_time);
 
   setTimeout(requestImage, timeout);
 }
@@ -192,10 +232,25 @@ function handleImageMessage(arrayBuffer) {
 /// Metadata
 
 function handleMetadataMessage(data) {
+  if (!playing) {
+    return
+  }
+
   renderState.frameNum = data.frameNum;
   renderState.imageState = typeof data.imageState === 'string' ? JSON.parse(data.imageState) : data.imageState;
   renderState.recentTouch = typeof data.recentTouch === 'string' ? JSON.parse(data.recentTouch) : data.recentTouch;
   updateRender();
+}
+
+/// User Interaction
+
+function setupUserInteraction() {
+  console.log('setting up user interaction...')
+  window.addEventListener('keydown', e => {
+    if (e.keyCode === 32) { // spacebar
+      playing = !playing
+    }
+  })
 }
 
 /// Websocket Events
@@ -203,6 +258,7 @@ function handleMetadataMessage(data) {
 ws.onopen = function() {
   console.log('connection was established');
   setupLayout();
+  setupUserInteraction();
   start_time = performance.now();
   requestImage();
 };
