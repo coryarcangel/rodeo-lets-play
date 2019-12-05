@@ -13,6 +13,7 @@ import tornado.websocket
 from PIL import Image
 
 from ai_state_data import get_random_phone_image_state
+from ai_actions import ActionGetter
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -73,9 +74,12 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         self.write_message(jpeg_bytes, binary=True)
 
         test_state = get_random_phone_image_state(self.frame_num)
+        state_obj = test_state['state']
+        actions = ActionGetter.get_actions_from_state(state_obj)
         self.write_message({
             'frameNum': self.frame_num,
-            'imageState': test_state['state'],
+            'imageState': state_obj.serialize(),
+            'stateActions': actions,
             'recentTouch': test_state['recent_touch'] if random() < 0.5 else None
         })
         self.frame_num += 1

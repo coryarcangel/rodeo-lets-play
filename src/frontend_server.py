@@ -13,6 +13,7 @@ import tornado.websocket
 from PIL import Image
 
 from config import REDIS_HOST, REDIS_PORT
+from ai_actions import ActionGetter
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -93,9 +94,12 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         frame_num, image_state, recent_touch, jpeg_bytes = image_stream.get_jpeg_image_with_state()
         if jpeg_bytes:
             self.write_message(jpeg_bytes, binary=True)
+
+        actions = ActionGetter.get_actions_from_state(image_state)
         self.write_message({
             'frameNum': self.frame_num,
             'imageState': image_state,
+            'stateActions': actions,
             'recentTouch': recent_touch
         })
 

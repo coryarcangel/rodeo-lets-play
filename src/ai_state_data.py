@@ -27,7 +27,7 @@ def get_random_recent_touch():
 def get_random_phone_image_state(index):
     return {
         'index': index,
-        'state': AIState.get_random_state().serialize(),
+        'state': AIState.get_random_state(),
         'recent_touch': get_random_recent_touch()
     }
 

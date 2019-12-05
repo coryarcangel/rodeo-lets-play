@@ -124,12 +124,15 @@ class DeviceClientKimEnv(KimEnv):
             self.cur_screen_state = AIState.deserialize(data['state'])
 
     def _publish_action(self, action, args):
+        ad = None
         if action == Action.TAP_LOCATION:
-            self.r.publish('ai-phone-touches', json.dumps({
-                'type': 'tap',
-                'time': time(),
-                'args': args
-            }))
+            ad = {'type': 'tap', 'time': time(), 'args': args}
+        else if action == Action.SWIPE_LEFT or action == Action.SWIPE_RIGHT:
+            ad = {'type': 'swipe', 'time': time(), 'args': args}
+        else if action == Action.PASS:
+            ad = {'type': 'pass', 'time': time(), 'args': args}
+        if ad:
+            self.r.publish('ai-phone-touches', json.dumps(ad))
 
     def _take_action(self, action, args):
         if (action in self.actions_map):

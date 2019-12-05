@@ -1,6 +1,8 @@
 var img = document.getElementById('liveImg');
 var fpsText = document.getElementById('fps');
 var frameNumText = document.getElementById('frameNum');
+var actionHistoryEl = document.getElementById('action-history');
+var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 
 var target_fps = 10 // 24;
@@ -31,7 +33,9 @@ var renderState = {
   frameNum: 0,
   fps: 0,
   imageState: null,
-  recentTouch: null
+  recentTouch: null,
+  stateActions: [],
+  actionHistory: []
 };
 
 function setupLayout() {
@@ -50,11 +54,13 @@ function setupLayout() {
 }
 
 function updateRender() {
-  const { frameNum, fps, imageState, recentTouch } = renderState;
+  const { frameNum, fps, imageState, stateActions = [], actionHistory = [], recentTouch } = renderState;
   fpsText.textContent = fps;
   frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
+  renderStateActions(stateActions);
+  renderActionHistory(actionHistory);
 }
 
 /// Image State Rendering
@@ -152,7 +158,6 @@ function renderImageState(imageState, recentTouch) {
     ctx.strokeStyle = style.color;
     ctx.lineWidth = 10;
     ctx.font = `${style.fontSize}px Helvetica ${style.fontWeight}`;
-    console.log(ctx.font)
 
     // Draw Image Shape
     let textPoint = { x: 0, y: 0 }
@@ -197,6 +202,47 @@ function renderImageState(imageState, recentTouch) {
   }
 }
 
+function renderStateActions(stateActions) {
+  const actionEls = (stateActions || [])
+    .filter(a => a.length > 1 && !!a[1].object_type) // only render tap object actions :)
+    .map((a, i) => {
+      const v = a[1]
+      const el = document.createElement('div')
+      const text = `
+        Action #${i + 1}:
+        ${v.object_type || v.type}
+        (${v.x}, ${v.y})
+        ${v.img_obj ? ` - ${((v.img_obj.confidence || 0) * 100).toFixed(1)}%` : ''}
+      `
+      el.textContent = text
+      return el
+    })
+
+  stateActionsEl.innerHTML = ``
+  stateActionsEl.append(...actionEls)
+}
+
+function renderActionHistory(actionHistory) {
+  // reverse order because of the way we store the history ;p
+  const actionEls = []
+  for (let i = (actionHistory || []).length - 1; i >= 0; i--) {
+    const a = actionHistory[i]
+    const { label, p, prob } = a
+    const el = document.createElement('div')
+    const text = `
+      History #${i + 1}:
+      ${label}
+      (${p[0]}, ${p[1]})
+      - ${((prob || 0) * 100).toFixed(1)}% chance
+    `
+    el.textContent = text
+    actionEls.push(el)
+  }
+
+  actionHistoryEl.innerHTML = ``
+  actionHistoryEl.append(...actionEls)
+}
+
 /// Image Handling
 
 function requestImage() {
@@ -231,6 +277,8 @@ function handleImageMessage(arrayBuffer) {
 
 /// Metadata
 
+const parseMessageKey = (data, key) => typeof data[key] === 'string' ? JSON.parse(data[key]) : data[key]
+
 function handleMetadataMessage(data) {
   if (!playing) {
     return
@@ -238,8 +286,19 @@ function handleMetadataMessage(data) {
 
   renderState.frameNum = data.frameNum;
   renderState.imageState = typeof data.imageState === 'string' ? JSON.parse(data.imageState) : data.imageState;
+  renderState.stateActions = typeof data.stateActions === 'string' ? JSON.parse(data.stateActions) : data.stateActions;
   renderState.recentTouch = typeof data.recentTouch === 'string' ? JSON.parse(data.recentTouch) : data.recentTouch;
+
   updateRender();
+
+  // keep 100 item limited list of touch history in the render state :p
+  // we do this after render so that a current action is not shown in both history and current list
+  if (renderState.recentTouch) {
+    renderState.actionHistory.push(renderState.recentTouch)
+    if (renderState.actionHistory.length > 100) {
+      renderState.actionHistory.shift()
+    }
+  }
 }
 
 /// User Interaction
