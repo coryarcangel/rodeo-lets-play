@@ -1,0 +1,18 @@
+{
+  "name": "kim-ai-process-hub",
+  "private": true,
+  "version": "0.0.0",
+  "description": "single command-line admin hub for running kim ai suite",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Kevin Roark",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.8.19",
+    "colors": "^1.4.0",
+    "inquirer": "^7.0.4",
+    "moment": "^2.24.0",
+    "spawn-command": "0.0.2-1"
+  }
+}
