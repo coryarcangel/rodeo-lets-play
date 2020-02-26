@@ -13,6 +13,8 @@ REDIS_PORT = 6379
 DEVICE_HOST = '127.0.0.1'
 DEVICE_PORT = 5005
 
+WEB_BASED_IMAGE = True
+
 TFNET_CONFIG = {
     'model': 'cfg/tiny-yolo.cfg',
     'load': 'dfbin/tiny-yolo.weights',

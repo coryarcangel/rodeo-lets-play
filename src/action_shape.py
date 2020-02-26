@@ -14,6 +14,12 @@ class ActionShape(object):
     UNKNOWN = 'unknown'
 
 
+all_action_shapes = [
+    ActionShape.MENU_EXIT, ActionShape.CONFIRM_OK, ActionShape.MONEY_CHOICE,
+    ActionShape.TALK_CHOICE, ActionShape.UNKNOWN
+]
+
+
 # Label, Lower HSV, Upper HSV, Min Area
 action_shape_color_ranges = [
     ('Light Blue', (100, 160, 50), (120, 255, 255), 2000),

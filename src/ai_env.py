@@ -7,7 +7,8 @@ import json
 import redis
 from time import time
 from ai_actions import Action
-from ai_state import AIState, AIStateProcessor
+from ai_state_data import AIState
+from ai_state import AIStateProcessor
 from config import REDIS_HOST, REDIS_PORT, IMG_CONFIG_STUDIOBLU
 
 
@@ -123,12 +124,15 @@ class DeviceClientKimEnv(KimEnv):
             self.cur_screen_state = AIState.deserialize(data['state'])
 
     def _publish_action(self, action, args):
+        ad = None
         if action == Action.TAP_LOCATION:
-            self.r.publish('ai-phone-touches', json.dumps({
-                'type': 'tap',
-                'time': time(),
-                'args': args
-            }))
+            ad = {'type': 'tap', 'time': time(), 'args': args}
+        else if action == Action.SWIPE_LEFT or action == Action.SWIPE_RIGHT:
+            ad = {'type': 'swipe', 'time': time(), 'args': args}
+        else if action == Action.PASS:
+            ad = {'type': 'pass', 'time': time(), 'args': args}
+        if ad:
+            self.r.publish('ai-phone-touches', json.dumps(ad))
 
     def _take_action(self, action, args):
         if (action in self.actions_map):
