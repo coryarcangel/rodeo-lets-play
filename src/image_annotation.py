@@ -25,6 +25,10 @@ label_colors_map = {
 }
 
 
+def fp_2_ip(p):
+    return (int(p[0]), int(p[1]))
+
+
 def get_img_object_color(label, confidence):
     if label in label_colors_map:
         return label_colors_map[label]
@@ -57,7 +61,7 @@ def draw_img_text(img, p=(0, 0), text='text',
     Returns:
         numpy array with annotations
     """
-    cv2.putText(img, text, p, font, font_scale, color, thickness, cv2.LINE_AA)
+    cv2.putText(img, text, fp_2_ip(p), font, font_scale, color, thickness, cv2.LINE_AA)
     return img
 
 
@@ -75,7 +79,7 @@ def draw_img_rect(img, x=0, y=0, w=100, h=100,
     Returns:
         numpy array with annotations
     """
-    cv2.rectangle(img, (x, y), (x + w, y + h), color, thickness)
+    cv2.rectangle(img, fp_2_ip((x, y)), fp_2_ip((x + w, y + h)), color, thickness)
     return img
 
 
@@ -92,7 +96,7 @@ def draw_img_circle(img, x=0, y=0, r=100,
     Returns:
         numpy array with annotations
     """
-    cv2.circle(img, (x, y), r, color, thickness)
+    cv2.circle(img, fp_2_ip((x, y)), int(r), color, thickness)
     return img
 
 
@@ -107,7 +111,7 @@ def draw_img_line(img, p1=(0, 0), p2=(100, 100), color=colors['white'], thicknes
     Returns:
         numpy array with annotations
     """
-    cv2.line(img, p1, p2, color, thickness)
+    cv2.line(img, fp_2_ip(p1), fp_2_ip(p2), color, thickness)
     return img
 
 

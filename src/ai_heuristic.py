@@ -44,7 +44,7 @@ class HeuristicConfig(object):
         self.max_room_history_len = 100
 
         # What is the maximum number of times I might expect to select the same action in a given room?
-        self.object_tap_action_max_sel_count = 10
+        self.object_tap_action_max_sel_count = 5
         self.other_action_max_sel_count = 2
 
         # What should the denominator be when determining a_sel_count depression mult?
@@ -55,7 +55,7 @@ class HeuristicConfig(object):
         self.action_sel_depress_exp = 1.0
 
         # How many frames do I need to wait on the same exact screen before resetting?
-        self.image_sig_stag_limit = 20
+        self.image_sig_stag_limit = 100
 
         # Probabalistic weights to assign to found blobs of given colors
         self.blob_dom_color_weights = {
