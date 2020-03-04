@@ -12,7 +12,9 @@
     "blessed-contrib": "^4.8.19",
     "colors": "^1.4.0",
     "inquirer": "^7.0.4",
+    "lodash": "^4.17.15",
     "moment": "^2.24.0",
-    "spawn-command": "0.0.2-1"
+    "spawn-command": "0.0.2-1",
+    "yargs": "^15.1.0"
   }
 }
