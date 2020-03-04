@@ -8,13 +8,15 @@ const blessed = require('blessed')
 const contrib = require('blessed-contrib')
 const { argv } = require('yargs')
 const { range } = require('lodash')
+const treeKill = require('tree-kill')
 
 /// Config
 
-const DUMMY = true
-const DELAY_BETWEEN_STARTUPS = 200
+const DUMMY = argv.dummy !== undefined ? argv.dummy : false
+const DELAY_BETWEEN_STARTUPS = argv.delay || 200
 const ROWS = 24
 const COLS = 4
+const START_ALL = !!argv.startAll
 
 const startTime = moment()
 
@@ -137,7 +139,7 @@ class KimProcess {
     const line = buffer.toString('utf8').trimRight()
 
     const logLine = isErr ? line.red : line
-    logToDashboard(this.logger, this.name, type, logLine)
+    logToDashboard(this.logger, logLine)
 
     const arr = isErr ? this.errs : this.logs
     const limit = isErr ? this.errLimit : this.logLimit
@@ -200,7 +202,7 @@ class KimProcess {
     this.cancelled = true
 
     if (this.child) {
-      this.child.kill('SIGKILL')
+      treeKill(this.child.pid, 'SIGKILL')
     }
   }
 }
@@ -263,7 +265,7 @@ const getCurrentCommands = () => {
       }
     }),
 
-    { label: 'Xx Abort xX'.bgRed.white, fn: () => process.exit(0) }
+    { label: 'Xx Abort xX'.bgRed.white, fn: () => quit() }
   ]
 }
 
@@ -341,6 +343,17 @@ function drawDashboardLoop() {
 
 /// Main
 
+async function quit() {
+  kpManager.processes.forEach(p => {
+    // p.cancelProcess()
+    if (p.child) {
+      treeKill(p.child.pid)
+    }
+  })
+
+  return process.exit(0)
+}
+
 async function main() {
   genlog('Hello, User. Starting KIM AI processes now...')
 
@@ -357,7 +370,7 @@ async function main() {
   // start all necessary background processes
   kpManager.initBackgroundProcesses()
     .then(() => {
-      return argv.startAll ? kpManager.initForegroundProcesses() : null
+      return START_ALL ? kpManager.initForegroundProcesses() : null
     })
     .catch(err => {
       genlog(`Process Running Error:`.red, err)
@@ -366,14 +379,13 @@ async function main() {
 
   // allow quit on control C
   screen.key(['C-c'], function(ch, key) {
-    return process.exit(0)
+    return quit()
   })
 
   drawDashboardLoop()
 }
 
 main()
-  // .then(() => process.exit(0))
   .catch(err => {
     console.log(`FATAL ALL PROCESS ERROR:`, err)
     process.exit(1)
