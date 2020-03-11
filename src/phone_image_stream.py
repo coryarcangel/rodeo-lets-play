@@ -14,12 +14,12 @@ import mss
 import tensorflow as tf
 import redis
 from darkflow.net.build import TFNet
+from PIL import Image
 
-from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA, WEB_BASED_IMAGE
+from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA, WEB_BASED_IMAGE, ANN_TEST
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
 from window import set_window_rect, set_window_fullscreen
 from image_annotation import AnnotatedImageStream
-
 
 def show_image_test(x=0, y=0, width=200, height=200):
     sct = mss.mss()
@@ -127,12 +127,11 @@ class VysorDataStream(object):
         # This is the most important aspect of the whole project!!!!!!
         processor = AIStateProcessor(image_config=CURRENT_IMG_CONFIG)
 
-        # Create annotation stream to display the screen captures with overlays
-        # of what the AI sees on top!
         annotation_stream = None
-        if not WEB_BASED_IMAGE:
+        if not WEB_BASED_IMAGE or ANN_TEST:
+            # Create ann stream to display the screen captures with opencv
+            ann_display_size = (600, 320) if ANN_TEST else (1900, 1000)
             ann_window_name = 'annotations'
-            ann_display_size = (1900, 1000)
             annotation_stream = AnnotatedImageStream(ann_window_name)
 
             # Move annotation to fullscreen
@@ -164,10 +163,13 @@ class VysorDataStream(object):
                 self.r.publish('phone-image-states', json.dumps(message))
 
                 # Display
-                if not WEB_BASED_IMAGE:
+                if not WEB_BASED_IMAGE or ANN_TEST:
                     annotation_stream.show_image(img, ai_state, recent_touch, display_size=ann_display_size)
-                else:
-                    self.r.set('phone-image-data', img)
+
+                if WEB_BASED_IMAGE:
+                    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    pimg = Image.fromarray(rgb)
+                    self.r.set('phone-image-data', pimg.tobytes())
 
                 print('fps: {0}'.format(1 / (time.time() - last_time)))
 

@@ -14,6 +14,7 @@ DEVICE_HOST = '127.0.0.1'
 DEVICE_PORT = 5005
 
 WEB_BASED_IMAGE = True
+ANN_TEST = False
 
 TFNET_CONFIG = {
     'model': 'cfg/tiny-yolo.cfg',

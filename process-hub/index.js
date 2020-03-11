@@ -100,13 +100,13 @@ const delay = (ms) => new Promise(resolve =>
 
 class KimProcess {
   constructor(ops) {
-    const { name, abbrev, script, bg, index } = ops
+    const { name, abbrev, script, index } = ops
+    this.ops = ops
     this.name = name
     this.abbrev = abbrev
     this.script = DUMMY
       ? `echo ${script} && sleep ${Math.floor(Math.random() * 10)}`
       : script
-    this.background = bg
     this.index = index
 
     const colors = ['blue', 'yellow', 'magenta', 'cyan', 'white']
@@ -187,23 +187,30 @@ class KimProcess {
       await this.runScript()
         .then(() => {
           this.stopTimes.push({ err: null, when: moment() })
-          genlog(`Clean exit - ${this.name}`.yellow)
+          genlog(`Clean exit - ${this.getLabel()}`.yellow)
         })
         .catch(err => {
           this.stopTimes.push({ err, when: moment() })
-          genlog(`${this.name} - Crash #${this.stopTimes.length} Error:`.red, err)
+          genlog(`${this.getLabel()} - Crash #${this.stopTimes.length} Error:`.red, err)
         })
 
       await delay(this.timeBetweenScriptRuns)
     }
   }
 
+  killChild(sig = 'SIGTERM') {
+    return new Promise((resolve, reject) => {
+      if (this.child) {
+        treeKill(this.child.pid, sig, err => {
+          return err ? reject(err) : resolve()
+        })
+      }
+    })
+  }
+
   cancelProcess() {
     this.cancelled = true
-
-    if (this.child) {
-      treeKill(this.child.pid, 'SIGKILL')
-    }
+    return this.killChild('SIGKILL')
   }
 }
 
@@ -225,19 +232,12 @@ class KimProcessManager {
     })
   }
 
-  async initBackgroundProcesses() {
-    const bgProcesses = this.processes.filter(p => p.background)
-    for (const kp of bgProcesses) {
-      kp.startLoop()
-      await delay(DELAY_BETWEEN_STARTUPS)
-    }
-  }
-
-  async initForegroundProcesses() {
-    const fgProcesses = this.processes.filter(p => !p.background)
-    for (const kp of fgProcesses) {
-      kp.startLoop()
-      await delay(DELAY_BETWEEN_STARTUPS)
+  async initProcesses(startAll) {
+    for (const kp of this.processes) {
+      if (startAll || !kp.ops.main) {
+        kp.startLoop()
+        await delay(DELAY_BETWEEN_STARTUPS)
+      }
     }
   }
 }
@@ -253,14 +253,21 @@ const getCurrentCommands = () => {
     { label: 'Rest', fn: () => { } },
 
     ...kpManager.processes.map((p, i) => {
+      let hasRunFn = false
       return {
         label: `${p.name} - ${p.running ? 'Running'.green : p.cancelled || !p.started ? 'Select to Start'.yellow : 'Waiting to start'.red}`,
         fn: () => {
+          if (hasRunFn) {
+            return
+          }
+
           if (p.cancelled || !p.started) {
             p.startLoop()
           } else {
             p.cancelProcess()
           }
+
+          hasRunFn = true
         }
       }
     }),
@@ -344,12 +351,9 @@ function drawDashboardLoop() {
 /// Main
 
 async function quit() {
-  kpManager.processes.forEach(p => {
-    // p.cancelProcess()
-    if (p.child) {
-      treeKill(p.child.pid)
-    }
-  })
+  await Promise.all(kpManager.processes.map(async p => {
+    await p.killChild()
+  }))
 
   return process.exit(0)
 }
@@ -368,10 +372,7 @@ async function main() {
   })
 
   // start all necessary background processes
-  kpManager.initBackgroundProcesses()
-    .then(() => {
-      return START_ALL ? kpManager.initForegroundProcesses() : null
-    })
+  kpManager.initProcesses(START_ALL)
     .catch(err => {
       genlog(`Process Running Error:`.red, err)
       throw err

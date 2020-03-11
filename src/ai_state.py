@@ -114,7 +114,6 @@ class AIStateProcessor(object):
         # Gets Color Features
         def get_color_features():
             color_features = get_image_color_features(np_img_3chan)
-
             return {'color_features': color_features}
 
         state_data = {}

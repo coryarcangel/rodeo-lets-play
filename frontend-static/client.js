@@ -66,7 +66,7 @@ function updateRender() {
 /// Image State Rendering
 
 const labelColorsMap = {
-  'person': colors['tomato'],
+  'person': colors['blueviolet'],
   'clock': colors['springgreen'],
   'tvmonitor': colors['black'],
   'laptop': colors['black'],
@@ -75,7 +75,7 @@ const labelColorsMap = {
 
 function getImageObjectColor(label, confidence) {
   if (labelColorsMap[label])    return labelColorsMap[label]
-  if (label.includes('Circle')) return colors['orange']
+  if (label.includes('Circle')) return colors['cornflowerblue']
   if (label.includes('Blob'))   return colors['purple']
   if (!confidence)              return colors['black']
   if (confidence > 0.75)        return colors['b']
@@ -92,13 +92,14 @@ function drawLine(ctx, p1x, p1y, p2x, p2y) {
 }
 
 function getCanvasSize() {
-  const w = window.innerWidth
-  const h = window.innerHeight
+  // const w = window.innerWidth
+  // const h = window.innerHeight
+  const { width: w, height: h } = objectAnnCanvas
   return [w, h]
 }
 
 function translatePointToScreen(image_shape, x, y) {
-  const [h1, w1] = image_shape
+  const [w1, h1] = image_shape
   const [w2, h2] = getCanvasSize()
 
   // https://math.stackexchange.com/questions/1857632/translating-co-ordinate-from-one-rectangle-to-another-rectangle
@@ -110,7 +111,7 @@ function translatePointToScreen(image_shape, x, y) {
 function translateRectToScreen(image_shape, x, y, w, h) {
   const [xNew, yNew] = translatePointToScreen(image_shape, x, y)
 
-  const [h1, w1] = image_shape
+  const [w1, h1] = image_shape
   const [w2, h2] = getCanvasSize()
   const wNew = (w2 / w1) * w
   const hNew = (h2 / h1) * h
@@ -138,7 +139,7 @@ function renderImageState(imageState, recentTouch) {
 
     const style = {
       color: getImageObjectColor(label, confidence),
-      fontSize: 32,
+      fontSize: 34,
       fontWeight: 'bold'
     }
 
@@ -154,9 +155,9 @@ function renderImageState(imageState, recentTouch) {
     }
 
     // Set style
-    // ctx.fillStyle = style.color;
+    ctx.restore();
     ctx.strokeStyle = style.color;
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 5;
     ctx.font = `${style.fontSize}px Helvetica ${style.fontWeight}`;
 
     // Draw Image Shape
@@ -175,6 +176,11 @@ function renderImageState(imageState, recentTouch) {
 
     // Draw Text
     const text = confidence ? `${label} ${confidence.toFixed(2)}` : label;
+    ctx.fillStyle = style.color;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 3;
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
     ctx.fillText(text, textPoint.x, textPoint.y);
   })
 
