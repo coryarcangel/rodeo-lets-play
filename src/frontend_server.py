@@ -31,7 +31,8 @@ args = parser.parse_args()
 
 
 def log(text):
-    print(text, file=sys.stderr)
+    print(text, file=sys.stdout)
+    sys.stdout.flush()
 
 
 class RedisImageStream:
@@ -121,7 +122,8 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
 
 static_path = script_path + '/../frontend-static/'
 
-log("Starting server: http://localhost:" + str(args.port))
+server_url = "http://localhost:" + str(args.port)
+log("Starting server: " + server_url)
 
 app = tornado.web.Application([
         (r"/websocket", ImageWebSocket),

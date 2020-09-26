@@ -30,6 +30,11 @@ def set_window_rect(name, x, y, width, height):
     set_window_size(win_id, width, height)
 
 
+def open_chrome_url(url):
+    ''' opens chrome window / tab to given url '''
+    return run_cmd('google-chrome {}'.format(url))
+
+
 def set_window_fullscreen(name, scr='DP-1'):
     ''' moves window to fullscreen on given monitor (https://askubuntu.com/questions/702071/move-windows-to-specific-screens-using-the-command-line) '''
     # just a helper function, to reduce the amount of code

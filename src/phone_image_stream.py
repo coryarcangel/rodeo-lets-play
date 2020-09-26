@@ -16,10 +16,11 @@ import redis
 from darkflow.net.build import TFNet
 from PIL import Image
 
-from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA, WEB_BASED_IMAGE, ANN_TEST
+from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA, WEB_BASED_IMAGE, ANN_TEST, FRONTEND_WEB_URL
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
-from window import set_window_rect, set_window_fullscreen
+from window import set_window_rect, set_window_fullscreen, open_chrome_url
 from image_annotation import AnnotatedImageStream
+
 
 def show_image_test(x=0, y=0, width=200, height=200):
     sct = mss.mss()
@@ -136,6 +137,10 @@ class VysorDataStream(object):
 
             # Move annotation to fullscreen
             set_window_fullscreen(ann_window_name)
+
+        if WEB_BASED_IMAGE:
+            open_chrome_url(FRONTEND_WEB_URL)
+            set_window_fullscreen('Google Chrome')
 
         x, y, w, h = VYSOR_CAP_AREA
         mon = {'top': y, 'left': x, 'width': w, 'height': h}

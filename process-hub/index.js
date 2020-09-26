@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const inquirer = require('inquirer')
-const spawnCommand = require('spawn-command')
+const childProcess = require('child_process')
 const moment = require('moment')
 require('colors')
 const blessed = require('blessed')
@@ -87,7 +87,10 @@ const aiStatusBox = grid.set(ROWS / 4 * 3, COLS / 2, ROWS / 4, COLS / 2, blessed
 
 const logToDashboard = (dashboardLogger, ...strings) => {
   const now = moment().format('YY-MM-DD HH:mm:ss')
-  dashboardLogger.log(`${now}: ${strings.join(' ')}`)
+  const lines = strings.join('\n').split('\n')
+  lines.forEach(l => {
+    dashboardLogger.log(`${now}: ${l}`)
+  })
 }
 
 const genlog = (...strings) => logToDashboard(mainDashboardLogger, ...strings)
@@ -133,35 +136,51 @@ class KimProcess {
     this.timeBetweenScriptRuns = 3000
   }
 
-  addStreamBufferLine(type, buffer) {
+  addStreamBufferData(type, buffer) {
     const isErr = type === 'stderr'
 
-    const line = buffer.toString('utf8').trimRight()
+    const lines = buffer.toString('utf8').trimRight().split('\n')
 
-    const logLine = isErr ? line.red : line
-    logToDashboard(this.logger, logLine)
+    const logLines = isErr ? lines.map(l => l.red) : lines
+    logToDashboard(this.logger, ...logLines)
 
     const arr = isErr ? this.errs : this.logs
     const limit = isErr ? this.errLimit : this.logLimit
-    arr.unshift({ when: moment(), line })
+    logLines.forEach(line => {
+      arr.unshift({ when: moment(), line })
+    })
+
     if (arr.length > limit) {
       arr.splice(limit, arr.length - limit)
     }
   }
 
+  getLabel = () => this.child ? `${this.name} (PID ${this.child.pid})` : this.name
+
   runScript() {
-    genlog(`Starting Process - ${this.name}`.green)
     return new Promise((resolve, reject) => {
+      if (this.child) {
+        this.killChild()
+      }
+
       this.running = true
-      const child = this.child = spawnCommand(this.script)
-
-      child.stdout.on('data', data => {
-        this.addStreamBufferLine('stdout', data)
+      const child = this.child = childProcess.spawn(this.script, {
+        // detached: true,
       })
 
-      child.stderr.on('data', data => {
-        this.addStreamBufferLine('stderr', data)
-      })
+      genlog(`Started Process - ${this.getLabel()}`.green)
+
+      const listenToStream = (name) => {
+        child[name].setEncoding('utf8')
+        child[name].on('data', data => this.addStreamBufferData(name, data))
+      }
+
+      listenToStream('stdout')
+      listenToStream('stderr')
+
+      // child.on('error', err => {
+      //   console.log(err)
+      // })
 
       child.on('exit', exitCode => {
         this.running = false
@@ -219,11 +238,11 @@ class KimProcess {
 class KimProcessManager {
   constructor() {
     const processConfigs = [
-      { abbrev: 'VY', name: 'Vysor', script: 'bin/start_vysor.sh', bg: true },
-      { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh', bg: true },
-      { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend.sh', bg: true },
-      { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh', bg: true },
-      { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', bg: false },
+      // { abbrev: 'VY', name: 'Vysor', script: 'bin/start_vysor.sh' },
+      { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh' },
+      { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
+      // { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
+      // { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true },
     ]
 
     this.processes = processConfigs.map((o, i) => {
