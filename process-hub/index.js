@@ -95,9 +95,7 @@ const logToDashboard = (dashboardLogger, ...strings) => {
 
 const genlog = (...strings) => logToDashboard(mainDashboardLogger, ...strings)
 
-const delay = (ms) => new Promise(resolve =>
-  setTimeout(() => resolve(), ms)
-)
+const delay = (ms) => new Promise(resolve => setTimeout(() => resolve(), ms))
 
 /// Kim Process
 
@@ -238,7 +236,7 @@ class KimProcess {
 class KimProcessManager {
   constructor() {
     const processConfigs = [
-      // { abbrev: 'VY', name: 'Vysor', script: 'bin/start_vysor.sh' },
+      { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
       { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh' },
       { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
       // { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
