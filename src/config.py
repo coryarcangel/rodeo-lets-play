@@ -15,6 +15,7 @@ DEVICE_PORT = 5005
 
 WEB_BASED_IMAGE = True
 FRONTEND_WEB_URL = 'http://localhost:8888'
+FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
 ANN_TEST = False
 
 TFNET_CONFIG = {

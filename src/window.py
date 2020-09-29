@@ -32,11 +32,15 @@ def set_window_rect(name, x, y, width, height):
 
 def open_chrome_url(url):
     ''' opens chrome window / tab to given url '''
-    return run_cmd('google-chrome {}'.format(url))
+    return run_cmd('google-chrome --new-window {}'.format(url))
 
 
 def set_window_fullscreen(name, scr='DP-1'):
-    ''' moves window to fullscreen on given monitor (https://askubuntu.com/questions/702071/move-windows-to-specific-screens-using-the-command-line) '''
+    '''
+    moves window to fullscreen on given monitor
+    https://askubuntu.com/questions/702071/move-windows-to-specific-screens-using-the-command-line
+    list screens like so: xrandr --query
+    '''
     # just a helper function, to reduce the amount of code
     get = lambda cmd: subprocess.check_output(cmd).decode("utf-8")
 
