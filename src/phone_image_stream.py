@@ -144,7 +144,7 @@ class VysorDataStream(object):
             open_chrome_url(FRONTEND_WEB_URL)
             time.sleep(0.5)
             # set_window_fullscreen(FRONTEND_NAME)
-            set_window_rect(FRONTEND_NAME, 400, 50, 1200, 675)
+            set_window_rect(FRONTEND_NAME, 800, 50, 1080, 608)
 
         x, y, w, h = VYSOR_CAP_AREA
         mon = {'top': y, 'left': x, 'width': w, 'height': h}

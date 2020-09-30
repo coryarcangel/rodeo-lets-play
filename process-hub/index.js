@@ -13,7 +13,7 @@ const treeKill = require('tree-kill')
 /// Config
 
 const DUMMY = argv.dummy !== undefined ? argv.dummy : false
-const DELAY_BETWEEN_STARTUPS = argv.delay || 200
+const DELAY_BETWEEN_STARTUPS = argv.delay || 1000
 const ROWS = 24
 const COLS = 4
 const START_ALL = !!argv.startAll
@@ -239,8 +239,8 @@ class KimProcessManager {
       { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
       { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh' },
       { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
-      // { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
-      // { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true },
+      { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
+      { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true },
     ]
 
     this.processes = processConfigs.map((o, i) => {

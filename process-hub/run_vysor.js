@@ -3,7 +3,7 @@
 const childProcess = require('child_process')
 const treeKill = require('tree-kill')
 
-const VYSOR_APP_PATH = '/home/cory/Downloads/Vysor-linux-3.1.4.AppImage'
+const VYSOR_APP_PATH = __dirname + '/../bin/Vysor-linux-3.1.4.AppImage' //  '/home/cory/Downloads/Vysor-linux-3.1.4.AppImage'
 
 const delay = (ms) => new Promise(resolve => setTimeout(() => resolve(), ms))
 
@@ -21,7 +21,7 @@ async function main() {
   vysor = childProcess.spawn(VYSOR_APP_PATH, {
     stdio: 'inherit'
   })
-  await delay(5000)
+  await delay(3000)
 
   // set up phone window
   try {
