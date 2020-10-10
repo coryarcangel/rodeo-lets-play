@@ -217,11 +217,13 @@ class KimProcess {
 
   killChild(sig = 'SIGTERM') {
     return new Promise((resolve, reject) => {
-      if (this.child) {
-        treeKill(this.child.pid, sig, err => {
-          return err ? reject(err) : resolve()
-        })
+      if (!this.child) {
+        return resolve()
       }
+
+      treeKill(this.child.pid, sig, err => {
+        return err ? reject(err) : resolve()
+      })
     })
   }
 
