@@ -9,6 +9,11 @@ def run_cmd(cmd):
         cmd.split(' '), stdout=subprocess.PIPE).communicate()[0]
 
 
+def run_cmd_bg(cmd):
+    ''' run shell command as background process '''
+    return subprocess.Popen(cmd.split(' '), stdout=subprocess.PIPE)
+
+
 def set_window_pos(win_id, x, y):
     ''' sets position of window with given id '''
     return run_cmd('xdotool windowmove {} {} {}'.format(win_id, x, y))
@@ -30,9 +35,10 @@ def set_window_rect(name, x, y, width, height):
     set_window_size(win_id, width, height)
 
 
-def open_chrome_url(url):
+def open_chrome_url(url, bg=True):
     ''' opens chrome window / tab to given url '''
-    return run_cmd('google-chrome --new-window {}'.format(url))
+    cmd = 'google-chrome --new-window {}'.format(url)
+    return run_cmd_bg(cmd) if bg else run_cmd(cmd)
 
 
 def set_window_fullscreen(name, scr='DP-1'):
