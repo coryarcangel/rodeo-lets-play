@@ -35,6 +35,16 @@ class BlobDetector(object):
 
         # NOTE: these parameters are currently optimized to find speech bubbles...
 
+        """
+        Parameters Kevin was using locally on 10/13/20:
+        params.maxThreshold = 500
+        params.filterByCircularity = False
+        params.minCircularity = 0.1
+        params.filterByConvexity = False
+        params.filterByInertia = False
+        params.maxInertiaRatio = 0.99
+        """
+
         # Change thresholds
         params.minThreshold = 10
         params.maxThreshold = 200

@@ -127,9 +127,9 @@ class DeviceClientKimEnv(KimEnv):
         ad = None
         if action == Action.TAP_LOCATION:
             ad = {'type': 'tap', 'time': time(), 'args': args}
-        else if action == Action.SWIPE_LEFT or action == Action.SWIPE_RIGHT:
+        elif action == Action.SWIPE_LEFT or action == Action.SWIPE_RIGHT:
             ad = {'type': 'swipe', 'time': time(), 'args': args}
-        else if action == Action.PASS:
+        elif action == Action.PASS:
             ad = {'type': 'pass', 'time': time(), 'args': args}
         if ad:
             self.r.publish('ai-phone-touches', json.dumps(ad))
