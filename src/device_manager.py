@@ -64,7 +64,7 @@ class DeviceManager(object):
                    delta_y=0, duration=1, steps=100):
         ''' Drags a finger along the device screen a given distance '''
         if start_pos is None:
-            start_pos = (150, 150)
+            start_pos = (400, 400)
 
         end_pos = (start_pos[0] + delta_x, start_pos[1] + delta_y)
         self.drag(start_pos, end_pos, duration, steps)
