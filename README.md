@@ -13,6 +13,12 @@ A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 Cuda Version 9.0.176
 OpenCV Version 2.4.9.1 (from `dpkg -l | grep libopencv`)
 Might need to start redis on computer start (in the redis docs)
+Node.js v12.16.1
+Tensorflow 1.9.0
+Ubuntu 16.04 LTS 64-bit
+Nvidia Driver Version 384.130
+Intel® Core™ i3-7100 CPU @ 3.90GHz × 4
+Quadro FX NVS 810/PCIe/SSE2
 
 ## Directory Structure
 
