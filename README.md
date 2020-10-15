@@ -20,6 +20,9 @@ Nvidia Driver Version 384.130
 Intel® Core™ i3-7100 CPU @ 3.90GHz × 4
 Quadro FX NVS 810/PCIe/SSE2
 
+Follow these instructions to prevent "login keyring did not open" error message
+on first chrome open: https://askubuntu.com/questions/867/how-can-i-stop-being-prompted-to-unlock-the-default-keyring-on-boot
+
 ## Directory Structure
 
 * `src/ai` - neural net code; template for some parts taken from [reinforcement-learning](https://github.com/dennybritz/reinforcement-learning/)
