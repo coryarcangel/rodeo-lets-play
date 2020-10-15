@@ -25,16 +25,30 @@ TFNET_CONFIG = {
     'threshold': 0.1
 }
 
-# Extremely Hard Coded (to the galaxy 8) :) (:
+# Where the Vysor Window Is Moved To
 VYSOR_RECT = Rect(0, 0, 776, 466)
-VYSOR_CAP_AREA = Rect(62, 98, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 88)
-VYSOR_WINDOW_NAME = 'Kim'  # 'Vysor'
+
+# Name of the phone in vysor (change in vysor settings)
+VYSOR_WINDOW_NAME = 'VysorKim'
 
 # Raw Phone Size
 GALAXY8_RECT = Rect(0, 0, 2220, 1080)
 # The game doesn't use all phone real estate
 GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)
-CURRENT_PHONE_GAME_RECT = GALAXY8_GAME_RECT
+# Hard coded to galaxy 8
+GALAXY8_VYSOR_CAP_AREA = Rect(62, 98, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 88)
+
+GALAXY10_RECT = Rect(0, 0, 2280, 1080)
+GALAXY10_GAME_RECT = Rect(176, 25, 1968, 1060)
+# Hard coded to galaxy 10
+GALAXY10_VYSOR_CAP_AREA = Rect(70, 71, VYSOR_RECT[-2] - 125, VYSOR_RECT[-1] - 96)
+
+# CURRENT_PHONE_GAME_RECT = GALAXY8_GAME_RECT
+CURRENT_PHONE_GAME_RECT = GALAXY10_GAME_RECT
+
+# Area of the screen to capture for phone image stream (handles game aspect ratio)
+# VYSOR_CAP_AREA = GALAXY8_VYSOR_CAP_AREA
+VYSOR_CAP_AREA = GALAXY10_VYSOR_CAP_AREA
 
 # Image Configs
 ImageConfig = collections.namedtuple("ImageConfig", [
