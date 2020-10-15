@@ -43,12 +43,19 @@ GALAXY10_GAME_RECT = Rect(176, 25, 1968, 1060)
 # Hard coded to galaxy 10
 GALAXY10_VYSOR_CAP_AREA = Rect(70, 71, VYSOR_RECT[-2] - 125, VYSOR_RECT[-1] - 96)
 
-# CURRENT_PHONE_GAME_RECT = GALAXY8_GAME_RECT
-CURRENT_PHONE_GAME_RECT = GALAXY10_GAME_RECT
+"""
+Phone Rect / Game Rect is about the raw phone size.
+These two things are related...
 
-# Area of the screen to capture for phone image stream (handles game aspect ratio)
-# VYSOR_CAP_AREA = GALAXY8_VYSOR_CAP_AREA
-VYSOR_CAP_AREA = GALAXY10_VYSOR_CAP_AREA
+Vysor cap area is area of the screen to capture for phone image stream
+(handles game aspect ratio).
+"""
+
+CURRENT_PHONE_GAME_RECT = GALAXY8_GAME_RECT
+VYSOR_CAP_AREA = GALAXY8_VYSOR_CAP_AREA
+
+# CURRENT_PHONE_GAME_RECT = GALAXY10_GAME_RECT
+# VYSOR_CAP_AREA = GALAXY10_VYSOR_CAP_AREA
 
 # Image Configs
 ImageConfig = collections.namedtuple("ImageConfig", [

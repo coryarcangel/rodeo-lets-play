@@ -329,7 +329,7 @@ ws.onopen = function() {
 
   // set up interval such that if we haven't gotten an image in a while we request more
   setInterval(() => {
-    if (performance.now() - request_start_time > 2000) {
+    if (performance.now() - request_start_time > 1000) {
       requestImage();
     }
   }, 300);
