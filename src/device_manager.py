@@ -86,6 +86,12 @@ class DeviceManager(object):
         ''' Removes finger down from given location '''
         self.device.touch(x, y, MonkeyDevice.UP)
 
+    def unlock_phone(self):
+        ''' Swipe up to unlock phone if necessary... '''
+        self.device.wake()
+        sleep(0.8)
+        self.drag_delta((500, 1800), 0, -500, 1)
+
     def launch_browser(self):
         """ Launches Google Chrome """
         self._launch_app(BROWSER_COMPONENT)
@@ -104,6 +110,7 @@ class DeviceManager(object):
 
     def reset_hollywood(self):
         """ Restarts the KK:Hollywood app, and waits until game is playable """
+        self.unlock_phone()
         self.restart_hollywood()
         sleep(5)
 

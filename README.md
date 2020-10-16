@@ -23,6 +23,10 @@ Quadro FX NVS 810/PCIe/SSE2
 Follow these instructions to prevent "login keyring did not open" error message
 on first chrome open: https://askubuntu.com/questions/867/how-can-i-stop-being-prompted-to-unlock-the-default-keyring-on-boot
 
+We start the process hub on boot by using Ubuntu's built-in "startup applications"
+panel and running the `bin/start_all_delay.sh` script.
+gnome-terminal -e /home/cory/watson-hollywood/bin/start_all_delay.sh --geometry="180x60+0+0"
+
 ## Directory Structure
 
 * `src/ai` - neural net code; template for some parts taken from [reinforcement-learning](https://github.com/dennybritz/reinforcement-learning/)

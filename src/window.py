@@ -24,15 +24,25 @@ def set_window_size(win_id, width, height):
     return run_cmd('xdotool windowsize {} {} {}'.format(win_id, width, height))
 
 
-def set_window_rect(name, x, y, width, height):
-    ''' moves rect with given name to specified location and size '''
-    win_id = run_cmd(
+def get_window_id(name):
+    ''' gets xdotool window id for window with given name '''
+    return run_cmd(
         "xdotool search --onlyvisible --name {}".format(name)).strip().decode('UTF-8')
-    if not win_id:
-        return
 
-    set_window_pos(win_id, x, y)
-    set_window_size(win_id, width, height)
+
+def set_window_rect(win_id, x, y, width, height):
+    ''' moves rect with given win_id to specified location and size '''
+    if win_id:
+        set_window_pos(win_id, x, y)
+        set_window_size(win_id, width, height)
+
+
+def click_in_window(win_id, x, y):
+    ''' moves rect with given win_id to specified location and size '''
+    if win_id:
+        run_cmd('xdotool windowactivate {}'.format(win_id))
+        run_cmd('xdotool mousemove --window {} {} {}'.format(win_id, x, y))
+        run_cmd('xdotool click 1')
 
 
 def open_chrome_url(url, bg=True):

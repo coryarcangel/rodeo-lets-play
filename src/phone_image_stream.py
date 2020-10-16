@@ -8,6 +8,7 @@ Process that:
 
 import time
 import json
+import sys
 import numpy as np
 import cv2
 import mss
@@ -18,10 +19,15 @@ from PIL import Image
 
 from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
 from config import VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA
-from config import WEB_BASED_IMAGE, ANN_TEST, FRONTEND_WEB_URL, FRONTEND_NAME
+from config import WEB_BASED_IMAGE, ANN_TEST
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
-from window import set_window_rect, set_window_fullscreen, open_chrome_url
+from window import get_window_id, set_window_rect, set_window_fullscreen
 from image_annotation import AnnotatedImageStream
+
+
+def log(text):
+    print(text, file=sys.stdout)
+    sys.stdout.flush()
 
 
 def show_image_test(x=0, y=0, width=200, height=200):
@@ -41,9 +47,9 @@ def show_image_test(x=0, y=0, width=200, height=200):
 
         # Get YOLO results
         yolo_result = tfnet.return_predict(img)
-        print(yolo_result)
+        log(yolo_result)
 
-        print('fps: {0}'.format(1 / (time.time() - last_time)))
+        log('fps: {0}'.format(1 / (time.time() - last_time)))
 
         # Press "q" to quit
         if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -54,7 +60,8 @@ def show_image_test(x=0, y=0, width=200, height=200):
 def setup_vysor_window():
     ''' Moves the Vysor window to fixed location for capture via mss '''
     x, y, w, h = VYSOR_RECT
-    set_window_rect(VYSOR_WINDOW_NAME, x, y, w, h)
+    win_id = get_window_id(VYSOR_WINDOW_NAME)
+    set_window_rect(win_id, x, y, w, h)
 
 
 def vysor_show_image_test():
@@ -140,12 +147,6 @@ class VysorDataStream(object):
             # Move annotation to fullscreen
             set_window_fullscreen(ann_window_name)
 
-        if WEB_BASED_IMAGE:
-            open_chrome_url(FRONTEND_WEB_URL)
-            time.sleep(0.5)
-            # set_window_fullscreen(FRONTEND_NAME)
-            set_window_rect(FRONTEND_NAME, 800, 50, 1080, 608)
-
         x, y, w, h = VYSOR_CAP_AREA
         mon = {'top': y, 'left': x, 'width': w, 'height': h}
 
@@ -180,7 +181,7 @@ class VysorDataStream(object):
                     pimg = Image.fromarray(rgb)
                     self.r.set('phone-image-data', pimg.tobytes())
 
-                print('fps: {0}'.format(1 / (time.time() - last_time)))
+                log('fps: {0}'.format(1 / (time.time() - last_time)))
 
                 # increment then Just Give It A Break
                 screen_num += 1

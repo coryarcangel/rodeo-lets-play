@@ -13,10 +13,9 @@ const treeKill = require('tree-kill')
 /// Config
 
 const DUMMY = argv.dummy !== undefined ? argv.dummy : false
-const DELAY_BETWEEN_STARTUPS = argv.delay || 1000
 const ROWS = 24
 const COLS = 4
-const START_ALL = !!argv.startAll
+const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
 
 const startTime = moment()
 
@@ -110,8 +109,8 @@ class KimProcess {
       : script
     this.index = index
 
-    const colors = ['blue', 'yellow', 'magenta', 'cyan', 'white']
-    const logColors = ['#8282ff', 'yellow', 'magenta', 'cyan', '#ff8a00']
+    const colors = ['blue', 'yellow', 'magenta', 'cyan', 'white', 'red']
+    const logColors = ['#8282ff', 'yellow', 'magenta', 'cyan', '#ff8a00', '#ff8aff']
     this.color = colors[index] || colors[0]
     this.logColor = logColors[index] || logColors[0]
 
@@ -229,7 +228,7 @@ class KimProcess {
 
   cancelProcess() {
     this.cancelled = true
-    return this.killChild('SIGKILL')
+    return this.killChild()
   }
 }
 
@@ -241,9 +240,15 @@ class KimProcessManager {
       { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
       { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh' },
       { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
+      { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
       { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
-      { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true },
+      { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true, delayBefore: 10000 },
     ]
+
+    // normalize process config script locations
+    processConfigs.forEach(c => {
+      c.script = `${__dirname}/../${c.script}`
+    })
 
     this.processes = processConfigs.map((o, i) => {
       const kp = new KimProcess({ ...o, index: i })
@@ -254,8 +259,10 @@ class KimProcessManager {
   async initProcesses(startAll) {
     for (const kp of this.processes) {
       if (startAll || !kp.ops.main) {
+        const delayAmt = kp.ops.delayBefore || 3000
+        await delay(delayAmt)
+
         kp.startLoop()
-        await delay(DELAY_BETWEEN_STARTUPS)
       }
     }
   }
