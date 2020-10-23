@@ -8,6 +8,7 @@ import sys
 
 from config import FRONTEND_WEB_URL, FRONTEND_NAME
 from window import set_window_rect, open_chrome_url, click_in_window, get_window_id
+from kim_current_app_monitor import KimCurrentAppMonitor
 
 
 def log(text):
@@ -15,7 +16,13 @@ def log(text):
     sys.stdout.flush()
 
 
-def open_frontend_client():
+def run_frontend_client():
+    """
+    Two jobs:
+        1. Open chrome to the frontend view, and ensure chrome doesnt die.
+        2. Run the KimCurrentAppMonitor loop.
+    """
+
     chrome_p = None
     try:
         log('Opening Chrome to Frontend at {}'.format(FRONTEND_WEB_URL))
@@ -32,13 +39,18 @@ def open_frontend_client():
         # ** remove the "chrome didnt shut down correctly"
         # click_in_window(win_id, 800, 100)
 
+        kim_monitor = KimCurrentAppMonitor()
+
         while True:
             if chrome_p and chrome_p.poll() is not None:
                 # chrome has exited, abort!
                 log('Restarting due to dead Chrome')
                 sys.exit()
 
+            kim_monitor.run_monitor_loop()
+
             time.sleep(1)
+
     except (KeyboardInterrupt, SystemExit) as e:
         log("Caught closure exception")
         if chrome_p:
@@ -46,4 +58,4 @@ def open_frontend_client():
 
 
 if __name__ == '__main__':
-    open_frontend_client()
+    run_frontend_client()

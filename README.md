@@ -27,6 +27,9 @@ We start the process hub on boot by using Ubuntu's built-in "startup application
 panel and running the `bin/start_all_delay.sh` script.
 gnome-terminal -e /home/cory/watson-hollywood/bin/start_all_delay.sh --geometry="180x60+0+0"
 
+kim_current_app_monitor currently runs inside of the frontend client.
+maybe that could be better separated but I think its fine.
+
 ## Directory Structure
 
 * `src/ai` - neural net code; template for some parts taken from [reinforcement-learning](https://github.com/dennybritz/reinforcement-learning/)

@@ -8,6 +8,7 @@ COMMAND_SEP = '|'
 
 class KimCommand(object):
     ACK = 'ACK'
+    GET_PROCESS = 'GET_PROCESS'
     SCREENSHOT = 'SCREENSHOT'
     RESET = 'RESET'
     DRAG_X = 'DRAG_X'
@@ -28,6 +29,7 @@ class AsyncchatKim(asynchat.async_chat):
         self.logger = logging.getLogger(logger_name)
         self.command_id = 0
         self.command_ack_map = {}
+        self.command_res_queue = []
         self.comm = None
         self.py2 = py2
         self.use_encoding = True
@@ -47,13 +49,16 @@ class AsyncchatKim(asynchat.async_chat):
         parts = msg.split(COMMAND_SEP)
         command_id, command, data = parts[0], parts[1], parts[2:]
         if command == KimCommand.ACK:
-            self._handle_ack(command_id)
+            self._handle_ack(command_id, data)
         else:
             self._handle_command(command_id, command, data)
 
-    def _handle_ack(self, command_id):
+    def _handle_ack(self, command_id, data):
         self.logger.debug('Received ACK for %s', command_id)
         self.command_ack_map[command_id] = True
+        self.command_res_queue.append((command_id, data))
+        if len(self.command_res_queue) > 10:
+            self.command_res_queue.pop(0)
 
     def _handle_command(self, command_id, command, data):
         self.logger.debug('need to handle %s' % command)
@@ -74,7 +79,19 @@ class AsyncchatKim(asynchat.async_chat):
         # increment id for next command
         self.command_id += 1
 
-    def send_ack(self, command_id):
-        ''' Sends ACK of completed command with given id '''
-        msg = COMMAND_SEP.join((command_id, KimCommand.ACK)) + '\n'
+    def send_ack(self, command_id, res_data):
+        ''' Sends ACK of completed command with given id and optional data '''
+        parts = [command_id, KimCommand.ACK]
+        if res_data is not None:
+            parts.append(res_data)
+
+        msg = COMMAND_SEP.join(parts) + '\n'
         self._send_message(msg)
+
+    def get_command_res_data(self, command_id):
+        """ finds res_data from given command if it still exists in deque """
+        for id, data in self.command_res_queue:
+            if id == command_id:
+                return data
+
+        return None

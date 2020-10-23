@@ -26,6 +26,7 @@ class DeviceMessageHandler(AsyncchatKim):
 
         self.command_handlers = {
             KimCommand.SCREENSHOT: self._handle_screenshot,
+            KimCommand.GET_PROCESS: self._handle_get_process,
             KimCommand.RESET: self._handle_reset,
             KimCommand.DRAG_X: self._handle_drag_x,
             KimCommand.TAP: self._handle_tap
@@ -33,8 +34,9 @@ class DeviceMessageHandler(AsyncchatKim):
 
     def _handle_command(self, command_id, command, data):
         if command in self.command_handlers:
+            res_data = None
             try:
-                self.command_handlers[command](data)
+                res_data = self.command_handlers[command](data)
             except TypeError, e:
                 self.logger.error(
                     'TypeError handling command (%s, %s, %s): %s' %
@@ -46,7 +48,7 @@ class DeviceMessageHandler(AsyncchatKim):
         else:
             self.logger.error('Received unknown command: %s', command)
 
-        self.send_ack(command_id)
+        self.send_ack(command_id, res_data)
 
     def _handle_screenshot(self, data):
         filename = data[0]
@@ -54,6 +56,10 @@ class DeviceMessageHandler(AsyncchatKim):
             'Handling screenshot command with filename: %s',
             filename)
         self.device_manager.save_screenshot(filename)
+
+    def _handle_get_process(self, data):
+        self.logger.debug('Handling get_process command')
+        return self.device_manager.get_cur_app_name()
 
     def _handle_reset(self, data):
         self.logger.debug('Handling reset command')

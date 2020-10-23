@@ -127,6 +127,13 @@ class DeviceManager(object):
         self.logger.debug('Wrote image to file: %s', filename)
         return filename
 
+    def get_cur_app_name(self):
+        """ Return name of active package for MonkeyDevice """
+        try:
+            return self.device.getProperty('am.current.package')
+        except Exception:
+            return ''
+
 
 def get_default_device():
     ''' Connects to default android device (either emulator or physical phone) and returns monkeyrunner device'''

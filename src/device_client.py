@@ -42,16 +42,25 @@ class DeviceClient(AsyncchatKim):
                     command_id)
                 break
 
+        data = self.get_command_res_data(command_id)
+        return data
+
     def _send_command(self, *args):
         command_id = str(self.command_id)
         AsyncchatKim._send_command(self, *args)
 
         # Wait for ack for "consistency!!"
-        self._wait_for_ack(command_id)
+        res_data = self._wait_for_ack(command_id)
+        return res_data
 
     def send_screenshot_command(self, filename):
         """ Sends a command to save screenshot to given filename """
         self._send_command(KimCommand.SCREENSHOT, filename)
+
+    def get_cur_process_command(self):
+        """ Sends a command to get current process from monkey device """
+        name = self._send_command(KimCommand.GET_PROCESS)
+        return name[0] if len(name) > 0 else None
 
     def send_reset_command(self):
         """ Sends a command to restart the game """

@@ -321,7 +321,7 @@ class HeuristicActionSelector(object):
         return a_tup
 
 
-def heuristic_learning(sess, env, num_episodes=100, max_episode_length=100000):
+def heuristic_learning(sess, env, num_episodes=1000, max_episode_length=100000):
     """
     Args:
         sess: Tensorflow Session object

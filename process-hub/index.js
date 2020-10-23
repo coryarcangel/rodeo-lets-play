@@ -19,6 +19,15 @@ const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
 
 const startTime = moment()
 
+const processConfigs = [
+  { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
+  { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh' },
+  { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
+  { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
+  { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
+  { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true, delayBefore: 10000 },
+]
+
 /// Dashboard Setup
 
 const screen = blessed.screen()
@@ -236,15 +245,6 @@ class KimProcess {
 
 class KimProcessManager {
   constructor() {
-    const processConfigs = [
-      { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
-      { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh' },
-      { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
-      { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
-      { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
-      { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true, delayBefore: 10000 },
-    ]
-
     // normalize process config script locations
     processConfigs.forEach(c => {
       c.script = `${__dirname}/../${c.script}`
