@@ -61,9 +61,7 @@ class KimProcess {
       }
 
       this.running = true
-      const child = this.child = childProcess.spawn(this.script, {
-        // detached: true,
-      })
+      const child = this.child = childProcess.spawn(this.script)
 
       genlog(`Started Process - ${this.getLabel()}`.green)
 

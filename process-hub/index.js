@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const moment = require('moment')
+const redis = require('redis')
 const { argv } = require('yargs')
 const { screen, dashboardParts, genlog } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
@@ -20,6 +21,39 @@ const processConfigs = [
   { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
   { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true, delayBefore: 10000 },
 ]
+
+/// Redis
+
+const redisChannels = [
+  { name: 'phone-image-states', handler: handlePhoneImageStates },
+]
+
+const rSubscriber = redis.createClient()
+
+rSubscriber.on('message', (channel, message) => {
+  const item = redisChannels.find(rc => rc.name === channel)
+  if (item) {
+    let data = {}
+    try {
+      data = JSON.parse(message)
+    } catch (err) {}
+
+    item.handler(data)
+  }
+})
+
+redisChannels.forEach(rc => rSubscriber.subscribe(rc.name))
+
+function handlePhoneImageStates(data) {
+  const { index, recent_touch, state } = data
+  const lines = [
+    '',
+    `Screen Index: ${index}`.red,
+    `Recent Touch: ${recent_touch ? recent_touch.label : 'None'}`,
+    `# Image Objects: ${state && state.image_objects ? state.image_objects.length : '?'}`,
+  ].map(l => '  ' + l)
+  dashboardParts.aiStatusBox.content = lines.join('\n')
+}
 
 /// Current State
 
