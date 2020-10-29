@@ -42,9 +42,10 @@ def run_frontend_client():
         kim_monitor = KimCurrentAppMonitor()
 
         while True:
-            if chrome_p and chrome_p.poll() is not None:
+            code = chrome_p.poll()
+            if chrome_p and code is not None:
                 # chrome has exited, abort!
-                log('Restarting due to dead Chrome')
+                log('Restarting due to dead Chrome: exit code {}'.format(code))
                 sys.exit()
 
             kim_monitor.run_monitor_loop()
