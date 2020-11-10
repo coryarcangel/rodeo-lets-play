@@ -128,16 +128,24 @@ class ActionWeighter(object):
             return self.ActionWeights[action]
         return 1
 
-    def select_action(self, actions, get_weight):
-        ''' Selects action from list based on weight provided from get_weight fn '''
-
-        # Assign weighted probabilities
+    def get_action_probs(self, actions, get_weight):
+        ''' Create list of probabilities assocaited with each action based on weight '''
         action_weights = [get_weight(a) for a in actions]
         total_weight = float(sum(action_weights))
         action_probs = [w / total_weight for w in action_weights]
+        return action_probs
 
-        # Choose
+    def _select_action_from_probs(self, actions, action_probs):
         action_idx = np.random.choice(len(actions), p=action_probs)
         action, args = actions[action_idx]
         args['action_prob'] = action_probs[action_idx]
         return (action, args)
+
+    def select_action(self, actions, get_weight):
+        ''' Selects action from list based on weight provided from get_weight fn '''
+
+        # Assign weighted probabilities
+        action_probs = self.get_action_probs(actions, get_weight)
+
+        # Choose
+        return self._select_action_from_probs(actions, action_probs)

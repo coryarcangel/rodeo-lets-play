@@ -3,6 +3,7 @@
 const moment = require('moment')
 const redis = require('redis')
 const { argv } = require('yargs')
+const { chunk } = require('lodash')
 const { screen, dashboardParts, genlog } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 
@@ -22,10 +23,25 @@ const processConfigs = [
   { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true, delayBefore: 10000 },
 ]
 
+/// Current State
+
+const kpManager = new KimProcessManager({ processConfigs, dummy: DUMMY })
+
+let commands = []
+let phoneImageStateLines = []
+let aiStatusUpdateLines = []
+
+const getCurrentCommands = () => [
+  { label: 'Rest', fn: () => { } },
+  ...kpManager.getProcessCommands(),
+  { label: 'Xx Abort xX'.bgRed.white, fn: () => quit() },
+]
+
 /// Redis
 
 const redisChannels = [
   { name: 'phone-image-states', handler: handlePhoneImageStates },
+  { name: 'ai-status-updates', handler: handleAIStatusUpdates },
 ]
 
 const rSubscriber = redis.createClient()
@@ -46,26 +62,48 @@ redisChannels.forEach(rc => rSubscriber.subscribe(rc.name))
 
 function handlePhoneImageStates(data) {
   const { index, recent_touch, state } = data
-  const lines = [
-    '',
+  phoneImageStateLines = [
     `Screen Index: ${index}`.red,
     `Recent Touch: ${recent_touch ? recent_touch.label : 'None'}`,
     `# Image Objects: ${state && state.image_objects ? state.image_objects.length : '?'}`,
-  ].map(l => '  ' + l)
-  dashboardParts.aiStatusBox.content = lines.join('\n')
+  ]
 }
 
-/// Current State
+function handleAIStatusUpdates(data) {
+  const actionTypeNames = {
+    0: 'PASS', 1: 'SWIPE_LEFT', 2: 'SWIPE_RIGHT', 3: 'TAP', 99: 'RESET',
+  }
 
-const kpManager = new KimProcessManager({ processConfigs, dummy: DUMMY })
+  const actions = data && data.actions || []
+  const actionProbs = data && data.action_probs || []
+  const actionTextList = actions
+    .map((a, i) => {
+      const p = actionProbs[i] || 0
+      const [type, data] = a
+      return { type, data, prob: p }
+    })
+    .sort((a, b) => b.prob - a.prob)
+    .map(({ type, data, prob }, i) => {
+      const name = actionTypeNames[type] || 'Unknown'
+      const parts = [
+        `#${i + 1}. ${name}`,
+        ...(name === 'TAP' ? [
+          [
+            data.object_type || data.type,
+            `(${data.x}, ${data.y})`,
+            ...(data.img_obj ? [`- ${((data.img_obj.confidence || 0) * 100).toFixed(1)}%`] : []),
+          ].join(' ')
+        ] : []),
+        `${(prob * 100).toFixed(2)}%`
+      ]
+      return parts.join(' - ')
+    })
 
-let commands = []
-
-const getCurrentCommands = () => [
-  { label: 'Rest', fn: () => { } },
-  ...kpManager.getProcessCommands(),
-  { label: 'Xx Abort xX'.bgRed.white, fn: () => quit() },
-]
+  aiStatusUpdateLines = [
+    `Actions:`,
+    ...chunk(actionTextList, 2).map(items => items.join('\t')),
+  ]
+}
 
 /// Dashboard Drawing
 
@@ -78,6 +116,13 @@ function drawDashboard() {
 
   const startDiff = moment.utc(moment().diff(startTime)).format('HH:mm:ss')
   dashboardParts.timerLcd.setDisplay(startDiff)
+
+  dashboardParts.aiStatusBox.content = [
+    '',
+    ...phoneImageStateLines,
+    '',
+    ...aiStatusUpdateLines,
+  ].map(l => '  ' + l).join('\n')
 
   screen.render()
 }

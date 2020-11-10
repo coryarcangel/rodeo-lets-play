@@ -60,7 +60,7 @@ class DeviceClient(AsyncchatKim):
     def get_cur_process_command(self):
         """ Sends a command to get current process from monkey device """
         name = self._send_command(KimCommand.GET_PROCESS)
-        return name[0] if len(name) > 0 else None
+        return name[0] if name is not None and len(name) > 0 else None
 
     def send_reset_command(self):
         """ Sends a command to restart the game """

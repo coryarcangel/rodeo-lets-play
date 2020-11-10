@@ -5,7 +5,7 @@ const moment = require('moment')
 
 /// Config
 
-const ROWS = 24
+const ROWS = 48
 const COLS = 4
 
 /// Dashboard Setup
@@ -13,8 +13,10 @@ const COLS = 4
 const screen = blessed.screen()
 const grid = new contrib.grid({ rows: ROWS, cols: COLS, screen: screen })
 
+let processStopPos = { row: ROWS / 4, height: ROWS / 3 }
+
 const dashboardParts = {
-  mainDashboardLogger: grid.set(0, 0, ROWS / 4, COLS / 2, contrib.log, {
+  mainDashboardLogger: grid.set(0, 0, ROWS / 6, COLS / 2, contrib.log, {
     label: 'Dashboard Log',
     fg: 'white',
     selectedFg: 'white',
@@ -43,7 +45,7 @@ const dashboardParts = {
     style: { bg: 'black' }
   }),
 
-  processStopLineGraph: grid.set(ROWS / 4, COLS / 2, 8, COLS / 2, contrib.line, {
+  processStopLineGraph: grid.set(processStopPos.row, COLS / 2, processStopPos.height, COLS / 2, contrib.line, {
     label: 'Restarts Over Time',
     wholeNumbersOnly: true,
     showLegend: true,
@@ -58,7 +60,7 @@ const dashboardParts = {
     }
   }),
 
-  processStopBarGraph: grid.set(14, COLS / 2, 4, COLS / 2, contrib.stackedBar, {
+  processStopBarGraph: grid.set(processStopPos.row + processStopPos.height, COLS / 2, ROWS / 6, COLS / 2, contrib.stackedBar, {
     label: 'Total Process Restarts',
     barWidth: 12,
     barSpacing: 20,
@@ -66,7 +68,7 @@ const dashboardParts = {
     barBgColor: ['green', 'red']
   }),
 
-  aiStatusBox: grid.set(ROWS / 4 * 3, COLS / 2, ROWS / 4, COLS / 2, blessed.box, {
+  aiStatusBox: grid.set(ROWS - ROWS / 4, COLS / 2, ROWS / 4, COLS / 2, blessed.box, {
     label: 'Current AI Status',
     content: 'Unknown at this time'.red.bold,
     style: { bg: 'blue', fg: 'white' },
@@ -76,7 +78,7 @@ const dashboardParts = {
 /// Logging
 
 // give a process index, get a logger in the grid
-const getProcessLogger = (name, index, isMain, color) => grid.set(6 + index * 3, 0, isMain ? ROWS / 4 : 3, COLS / 2, contrib.log, {
+const getProcessLogger = (name, index, isMain, color) => grid.set(ROWS / 6 + index * (ROWS / 8), 0, isMain ? 10 : ROWS / 8, COLS / 2, contrib.log, {
   label: `${name} Log`,
   fg: color,
   selectedFg: color,

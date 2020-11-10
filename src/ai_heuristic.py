@@ -55,7 +55,7 @@ class HeuristicConfig(object):
         self.action_sel_depress_exp = 1.0
 
         # How many frames do I need to wait on the same exact screen before resetting?
-        self.image_sig_stag_limit = 100
+        self.image_sig_stag_limit = 50
 
         # Probabalistic weights to assign to found blobs of given colors
         self.blob_dom_color_weights = {
@@ -315,10 +315,20 @@ class HeuristicActionSelector(object):
         # Select the action from the room
         a_tup = room.select_from_actions(actions)
 
+        a_probs = room.action_weighter.get_action_probs(actions, room.get_action_weight)
+
         # Complete state
         self.state_idx += 1
 
         return a_tup
+
+    def get_state_status(self, state):
+        actions = ActionGetter.get_actions_from_state(state)
+
+        room = self.state_room_seq[-1]
+        a_probs = room.action_weighter.get_action_probs(actions, room.get_action_weight)
+
+        return {'actions': actions, 'action_probs': a_probs}
 
 
 def heuristic_learning(sess, env, num_episodes=1000, max_episode_length=100000):
@@ -357,12 +367,18 @@ def heuristic_learning(sess, env, num_episodes=1000, max_episode_length=100000):
             if action == Action.RESET:
                 break
 
+            # Get status
+            status = selector.get_state_status(state)
+
             # Take a step
             next_state, reward, done, _ = env.step(action, args)
 
             # Update statistics
             stats.episode_rewards[i_episode] = reward
             stats.episode_lengths[i_episode] = step
+
+            # Publish status
+            env._publish_data('ai-status-updates', status)
 
             if done or step >= max_episode_length:
                 break
