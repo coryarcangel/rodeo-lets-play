@@ -71,7 +71,12 @@ function handlePhoneImageStates(data) {
 
 function handleAIStatusUpdates(data) {
   const actionTypeNames = {
-    0: 'PASS', 1: 'SWIPE_LEFT', 2: 'SWIPE_RIGHT', 3: 'TAP', 99: 'RESET',
+    0: 'PASS',
+    1: 'SWIPE_LEFT',
+    2: 'SWIPE_RIGHT',
+    3: 'TAP',
+    4: 'DOUBLE_TAP',
+    99: 'RESET',
   }
 
   const actions = data && data.actions || []
@@ -87,8 +92,9 @@ function handleAIStatusUpdates(data) {
       const name = actionTypeNames[type] || 'Unknown'
       const parts = [
         `#${i + 1}. ${name}`,
-        ...(name === 'TAP' ? [
+        ...(name === 'TAP' || name === 'DOUBLE_TAP' ? [
           [
+            name === 'TAP' ? 'Tap' : 'Double Tap',
             data.object_type || data.type,
             `(${data.x}, ${data.y})`,
             ...(data.img_obj ? [`- ${((data.img_obj.confidence || 0) * 100).toFixed(1)}%`] : []),

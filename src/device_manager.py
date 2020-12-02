@@ -74,7 +74,19 @@ class DeviceManager(object):
         self.logger.debug('Tapping at (%d, %d)' % (x, y))
         # self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
         self.touch_down(x, y)
-        sleep(0.5)
+        sleep(0.4)
+        self.touch_up(x, y)
+        sleep(1)  # Reasonable Down Time
+
+    def double_tap(self, x, y):
+        ''' Double Taps device at given location '''
+        self.logger.debug('Double Tapping at (%d, %d)' % (x, y))
+        self.touch_down(x, y)
+        sleep(0.3)
+        self.touch_up(x, y)
+        sleep(0.2)
+        self.touch_down(x, y)
+        sleep(0.3)
         self.touch_up(x, y)
         sleep(1)  # Reasonable Down Time
 

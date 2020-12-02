@@ -14,6 +14,7 @@ class Action(object):
     SWIPE_LEFT = 1
     SWIPE_RIGHT = 2
     TAP_LOCATION = 3
+    DOUBLE_TAP_LOCATION = 4
     RESET = 99
 
 
@@ -22,6 +23,7 @@ ACTIONS = [
     Action.SWIPE_LEFT,
     Action.SWIPE_RIGHT,
     Action.TAP_LOCATION,
+    Action.DOUBLE_TAP_LOCATION,
     Action.RESET
 ]
 
@@ -37,19 +39,25 @@ def get_action_type_str(action_type):
         return 'swipe_right'
     elif action_type == Action.RESET:
         return 'reset'
+    elif action_type == Action.DOUBLE_TAP_LOCATION:
+        return 'double_tap_location'
     else:
         return 'tap_location'
 
 
-def _get_object_tap_action(obj):
+def _get_object_action_data(obj):
     x, y = get_rect_center(obj['rect'])
-    return (Action.TAP_LOCATION, {
+    return {
         'x': int(x),
         'y': int(y),
         'type': 'object',
         'object_type': obj['object_type'] if 'obj_type' in obj else obj['label'],
         'img_obj': obj
-    })
+    }
+
+
+def _get_object_tap_action(obj):
+    return (Action.TAP_LOCATION, _get_object_action_data(obj))
 
 
 class ActionGetter(object):
@@ -78,11 +86,16 @@ class ActionGetter(object):
         if not state:
             return ActionGetter.Base
 
-        object_taps = [_get_object_tap_action(
-            obj) for obj in state.image_objects]
+        def get_tap(obj):
+            return (Action.TAP_LOCATION, _get_object_action_data(obj))
 
-        # return object_taps if len(object_taps) > 0 else ActionGetter.Base
-        return ActionGetter.Base + object_taps
+        def get_dbl_tap(obj):
+            return (Action.DOUBLE_TAP_LOCATION, _get_object_action_data(obj))
+
+        obj_taps = [get_tap(obj) for obj in state.image_objects]
+        obj_dbl_taps = [get_dbl_tap(obj) for obj in state.image_objects]
+
+        return ActionGetter.Base + obj_taps + obj_dbl_taps
 
 
 class ActionWeighter(object):
@@ -94,6 +107,7 @@ class ActionWeighter(object):
             Action.SWIPE_LEFT: 50,
             Action.SWIPE_RIGHT: 50,
             Action.TAP_LOCATION: 100,
+            Action.DOUBLE_TAP_LOCATION: 50,
             Action.RESET: 0.01
         }
         self.TapTypeWeights = {
@@ -120,7 +134,9 @@ class ActionWeighter(object):
         action, args = a_tup
         action_type = args['type'] if 'type' in args else None
         object_type = args['object_type'].lower() if 'object_type' in args else None
-        if action == Action.TAP_LOCATION and action_type in self.TapTypeWeights:
+        is_tap = action == Action.TAP_LOCATION or action == Action.DOUBLE_TAP_LOCATION
+
+        if is_tap and action_type in self.TapTypeWeights:
             if object_type and object_type in self.TapObjectTypeWeights:
                 return self.TapObjectTypeWeights[object_type]
             return self.TapTypeWeights[action_type]

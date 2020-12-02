@@ -82,3 +82,8 @@ class DeviceClient(AsyncchatKim):
         ''' Sends command to tap device at given location '''
         nx, ny = self._img_point_to_device_point((x, y))
         self._send_command(KimCommand.TAP, nx, ny, type)
+
+    def send_double_tap_command(self, x, y, type):
+        ''' Sends command to tap device at given location '''
+        nx, ny = self._img_point_to_device_point((x, y))
+        self._send_command(KimCommand.DOUBLE_TAP, nx, ny, type)

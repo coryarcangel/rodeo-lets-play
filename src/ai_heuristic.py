@@ -134,14 +134,15 @@ class HeuristicRoom(object):
 
     def _get_action_rep(self, a_tup):
         action_type, args = a_tup
-        if action_type != Action.TAP_LOCATION:
+        if action_type != Action.TAP_LOCATION and action_type != Action.DOUBLE_TAP_LOCATION:
             return get_action_type_str(action_type)
 
+        name = 'tap' if action_type == Action.TAP_LOCATION else 'double_tap'
         type = args['type'] if 'type' in args else 'none'
         if type != 'object':
-            return 'tap_' + type
+            return name + '_' + type
 
-        return 'tap_object_{}_y{}'.format(args['object_type'].lower(), args['y'])
+        return name + '_object_{}_y{}'.format(args['object_type'].lower(), args['y'])
 
     def _have_recently_been_here(self):
         return self.rooms_since_last_visit < self.config.recent_room_threshold
@@ -189,7 +190,7 @@ class HeuristicRoom(object):
     def get_action_weight(self, a_tup):
         ''' Gets weight of an action (for weighted-random selection) based on heuristics listed above '''
         action_type, args = a_tup
-        is_tap = action_type == Action.TAP_LOCATION
+        is_tap = action_type == Action.TAP_LOCATION or action_type == Action.DOUBLE_TAP_LOCATION
         is_object_tap = is_tap and 'type' in args and args['type'] == 'object'
 
         # The more we select an action, the less likely we are to pick it again in this room

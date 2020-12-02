@@ -29,7 +29,8 @@ class DeviceMessageHandler(AsyncchatKim):
             KimCommand.GET_PROCESS: self._handle_get_process,
             KimCommand.RESET: self._handle_reset,
             KimCommand.DRAG_X: self._handle_drag_x,
-            KimCommand.TAP: self._handle_tap
+            KimCommand.TAP: self._handle_tap,
+            KimCommand.DOUBLE_TAP: self._handle_double_tap,
         }
 
     def _handle_command(self, command_id, command, data):
@@ -82,6 +83,16 @@ class DeviceMessageHandler(AsyncchatKim):
             y,
             type)
         self.device_manager.tap(x, y)
+
+    def _handle_double_tap(self, data):
+        x, y = intarr(data[0:2])
+        type = data[2]
+        self.logger.debug(
+            'Handling Double Tap Command with (x, y, type): (%d, %d, %s)',
+            x,
+            y,
+            type)
+        self.device_manager.double_tap(x, y)
 
 
 class DeviceServer(asyncore.dispatcher):

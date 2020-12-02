@@ -13,6 +13,7 @@ class KimCommand(object):
     RESET = 'RESET'
     DRAG_X = 'DRAG_X'
     TAP = 'TAP'
+    DOUBLE_TAP = 'DOUBLE_TAP'
 
 
 class AsyncchatKim(asynchat.async_chat):

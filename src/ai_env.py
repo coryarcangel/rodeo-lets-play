@@ -94,7 +94,8 @@ class DeviceClientKimEnv(KimEnv):
             Action.PASS: self._perform_pass_action,
             Action.SWIPE_LEFT: self._perform_swipe_left_action,
             Action.SWIPE_RIGHT: self._perform_swipe_right_action,
-            Action.TAP_LOCATION: self._perform_tap_action
+            Action.TAP_LOCATION: self._perform_tap_action,
+            Action.DOUBLE_TAP_LOCATION: self._perform_double_tap_action,
         }
 
         # Redis to grab the screen state from the phone_image_stream process
@@ -130,6 +131,8 @@ class DeviceClientKimEnv(KimEnv):
         ad = None
         if action == Action.TAP_LOCATION:
             ad = {'type': 'tap', 'time': time(), 'args': args}
+        elif action == Action.DOUBLE_TAP_LOCATION:
+            ad = {'type': 'double_tap', 'time': time(), 'args': args}
         elif action == Action.SWIPE_LEFT or action == Action.SWIPE_RIGHT:
             ad = {'type': 'swipe', 'time': time(), 'args': args}
         elif action == Action.PASS:
@@ -156,6 +159,11 @@ class DeviceClientKimEnv(KimEnv):
         x, y, type = [args[k] for k in ['x', 'y', 'type']]
         type = args['object_type'] if type == 'object' else type
         self.client.send_tap_command(x, y, type)
+
+    def _perform_double_tap_action(self, args):
+        x, y, type = [args[k] for k in ['x', 'y', 'type']]
+        type = args['object_type'] if type == 'object' else type
+        self.client.send_double_tap_command(x, y, type)
 
 
 class ScreenshotKimEnv(KimEnv):
