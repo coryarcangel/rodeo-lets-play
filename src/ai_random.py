@@ -64,7 +64,7 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
             stats.episode_rewards[i_episode] = reward
             stats.episode_lengths[i_episode] = step
 
-            if done or step >= max_episode_length:
+            if done or (max_episode_length > 0 and step >= max_episode_length):
                 break
 
             state = next_state

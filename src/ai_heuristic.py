@@ -381,7 +381,7 @@ def heuristic_learning(sess, env, num_episodes=1000, max_episode_length=100000):
             # Publish status
             env._publish_data('ai-status-updates', status)
 
-            if done or step >= max_episode_length:
+            if done or (max_episode_length > 0 and step >= max_episode_length):
                 break
 
             state = next_state

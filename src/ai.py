@@ -68,9 +68,9 @@ def main():
         # Create Learning Generator
         learning_gen = None
         if learning_mode == LearningMode.RANDOM:
-            learning_gen = random_learning(sess=sess, env=env, max_episode_length=1000)
+            learning_gen = random_learning(sess=sess, env=env, max_episode_length=0)
         elif learning_mode == LearningMode.HEURISTIC:
-            learning_gen = heuristic_learning(sess=sess, env=env, max_episode_length=1000)
+            learning_gen = heuristic_learning(sess=sess, env=env, max_episode_length=0)
         else:
             learning_gen = deep_q_learning(sess=sess,
                                            env=env,
