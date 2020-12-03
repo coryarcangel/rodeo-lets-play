@@ -4,7 +4,7 @@ const moment = require('moment')
 const redis = require('redis')
 const { argv } = require('yargs')
 const { chunk } = require('lodash')
-const { screen, dashboardParts, genlog } = require('./dashboard')
+const { screen, dashboardParts, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 
 /// Config
@@ -144,6 +144,8 @@ async function quit() {
   await Promise.all(kpManager.processes.map(async p => {
     await p.killChild()
   }))
+
+  await endLogWriteStreams()
 
   return process.exit(0)
 }
