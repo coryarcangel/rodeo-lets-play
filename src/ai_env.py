@@ -75,15 +75,12 @@ class KimEnv(object):
     def _get_state(self):
         pass
 
-    def _perform_pass_action(self, args):
-        pass
 
-
-class DeviceClientKimEnv(KimEnv):
-    """Implements KimEnv with a DeviceClient"""
+class DeviceClientEnvActionStateManager(object):
+    """ Uses a DeviceClient to handle actions and state management on a
+    KK:Hollywood environment """
 
     def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
-        KimEnv.__init__(self)
         self.client = client
 
         self.cur_screen_index = 0
@@ -91,11 +88,11 @@ class DeviceClientKimEnv(KimEnv):
 
         # Setup Actions Map
         self.actions_map = {
-            Action.PASS: self._perform_pass_action,
-            Action.SWIPE_LEFT: self._perform_swipe_left_action,
-            Action.SWIPE_RIGHT: self._perform_swipe_right_action,
-            Action.TAP_LOCATION: self._perform_tap_action,
-            Action.DOUBLE_TAP_LOCATION: self._perform_double_tap_action,
+            Action.PASS: self.perform_pass_action,
+            Action.SWIPE_LEFT: self.perform_swipe_left_action,
+            Action.SWIPE_RIGHT: self.perform_swipe_right_action,
+            Action.TAP_LOCATION: self.perform_tap_action,
+            Action.DOUBLE_TAP_LOCATION: self.perform_double_tap_action,
         }
 
         # Redis to grab the screen state from the phone_image_stream process
@@ -105,17 +102,11 @@ class DeviceClientKimEnv(KimEnv):
         self.p = self.r.pubsub(ignore_subscribe_messages=True)
 
         self.p.subscribe(**{
-            'phone-image-states': self._handle_phone_yolo
+            'phone-image-states': self._handle_phone_image_states
         })
         self.p_thread = self.p.run_in_thread(sleep_time=0.001)
 
-    def _do_reset(self):
-        self.client.send_reset_command()
-
-    def _get_state(self):
-        return self.cur_screen_state
-
-    def _handle_phone_yolo(self, message):
+    def _handle_phone_image_states(self, message):
         if message['type'] != 'message':
             return
 
@@ -124,10 +115,10 @@ class DeviceClientKimEnv(KimEnv):
             self.cur_screen_index = data['index']
             self.cur_screen_state = AIState.deserialize(data['state'])
 
-    def _publish_data(self, channel, data):
+    def publish_data(self, channel, data):
         self.r.publish(channel, json.dumps(data))
 
-    def _publish_action(self, action, args):
+    def publish_action(self, action, args):
         ad = None
         if action == Action.TAP_LOCATION:
             ad = {'type': 'tap', 'time': time(), 'args': args}
@@ -138,32 +129,50 @@ class DeviceClientKimEnv(KimEnv):
         elif action == Action.PASS:
             ad = {'type': 'pass', 'time': time(), 'args': args}
         if ad:
-            self._publish_data('ai-phone-touches', ad)
+            self.publish_data('ai-phone-touches', ad)
 
-    def _take_action(self, action, args):
-        if (action in self.actions_map):
-            self._publish_action(action, args)
-            self.actions_map[action](args)
-        else:
-            self.logger.debug('unrecognized action %s' % action)
+    def perform_pass_action(self, args):
+        pass
 
-    def _perform_swipe_left_action(self, args):
+    def perform_swipe_left_action(self, args):
         distance = args['distance'] if 'distance' in args else 200
         self.client.send_drag_x_command(distance=-distance)
 
-    def _perform_swipe_right_action(self, args):
+    def perform_swipe_right_action(self, args):
         distance = args['distance'] if 'distance' in args else 200
         self.client.send_drag_x_command(distance=distance)
 
-    def _perform_tap_action(self, args):
+    def perform_tap_action(self, args):
         x, y, type = [args[k] for k in ['x', 'y', 'type']]
         type = args['object_type'] if type == 'object' else type
         self.client.send_tap_command(x, y, type)
 
-    def _perform_double_tap_action(self, args):
+    def perform_double_tap_action(self, args):
         x, y, type = [args[k] for k in ['x', 'y', 'type']]
         type = args['object_type'] if type == 'object' else type
         self.client.send_double_tap_command(x, y, type)
+
+
+class DeviceClientKimEnv(KimEnv):
+    """Implements KimEnv with a DeviceClient"""
+
+    def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
+        KimEnv.__init__(self)
+        self.action_state_manager = DeviceClientEnvActionStateManager(client, host, port)
+        self.client = client
+
+    def _do_reset(self):
+        self.client.send_reset_command()
+
+    def _get_state(self):
+        return self.action_state_manager.cur_screen_state
+
+    def _take_action(self, action, args):
+        if (action in self.action_state_manager.actions_map):
+            self.action_state_manager.publish_action(action, args)
+            self.action_state_manager.actions_map[action](args)
+        else:
+            self.logger.debug('unrecognized action %s' % action)
 
 
 class ScreenshotKimEnv(KimEnv):
