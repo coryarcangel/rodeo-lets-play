@@ -6,6 +6,7 @@ const { argv } = require('yargs')
 const { chunk } = require('lodash')
 const { screen, dashboardParts, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
+import { getSystemInfoObject } from './system-info'
 
 /// Config
 
@@ -45,6 +46,7 @@ const redisChannels = [
 ]
 
 const rSubscriber = redis.createClient()
+const rPublisher = redis.createClient()
 
 rSubscriber.on('message', (channel, message) => {
   const item = redisChannels.find(rc => rc.name === channel)
@@ -109,6 +111,13 @@ function handleAIStatusUpdates(data) {
     `Actions:`,
     ...chunk(actionTextList, 2).map(items => items.join('\t')),
   ]
+}
+
+async function systemInfoPublishLoop() {
+  const data = await getSystemInfoObject()
+  rPublisher.publish('system-info-updates', JSON.stringify(data))
+
+  setTimeout(systemInfoPublishLoop, 15000)
 }
 
 /// Dashboard Drawing
@@ -176,6 +185,7 @@ async function main() {
   })
 
   drawDashboardLoop()
+  systemInfoPublishLoop()
 }
 
 main()

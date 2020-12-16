@@ -44,6 +44,7 @@ class RedisImageStream:
         self.phone_image_state_obj = None
         self.phone_image_index = 0
         self.phone_recent_touch = None
+        self.system_info_data = {}
         self.size = (width, height)
         self.quality = quality
 
@@ -55,7 +56,8 @@ class RedisImageStream:
 
         self.pubsub = self.r.pubsub(ignore_subscribe_messages=True)
         self.pubsub.subscribe(**{
-            'phone-image-states': self._handle_phone_image_state
+            'phone-image-states': self._handle_phone_image_state,
+            'system-info-updates': self._handle_system_info_update,
         })
         self.pubsub.run_in_thread(sleep_time=0.001)
 
@@ -69,6 +71,14 @@ class RedisImageStream:
             self.phone_image_state_obj = AIState.deserialize(self.phone_image_state_data)
             self.phone_recent_touch = data['recent_touch']
             self.phone_image_index = data['index']
+
+    def _handle_system_info_update(self, message):
+        if message['type'] != 'message':
+            return
+
+        data = json.loads(message['data'].decode('utf-8'))
+        if data:
+            self.system_info_data = data
 
     def get_jpeg_image_bytes(self):
         image_data = self.r.get('phone-image-data')
@@ -85,7 +95,11 @@ class RedisImageStream:
 
     def get_jpeg_image_with_state(self):
         data = self.get_jpeg_image_bytes()
-        return (self.phone_image_index, self.phone_image_state_data, self.phone_image_state_obj, self.phone_recent_touch, data)
+        return (
+            self.phone_image_index, self.phone_image_state_data,
+            self.phone_image_state_obj, self.phone_recent_touch,
+            self.system_info_data, data
+        )
 
 
 image_stream = RedisImageStream(args.width, args.height, args.quality)
@@ -103,7 +117,9 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         log("WebSocket opened from: " + self.request.remote_ip)
 
     def on_message(self, message):
-        frame_num, image_state, state_obj, recent_touch, jpeg_bytes = image_stream.get_jpeg_image_with_state()
+        frame_num, image_state, state_obj,
+        recent_touch, system_info, jpeg_bytes = data_tup
+
         if jpeg_bytes:
             self.write_message(jpeg_bytes, binary=True)
 
@@ -111,6 +127,7 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         self.write_message({
             'frameNum': frame_num,
             'imageState': image_state,
+            'systemInfo': system_info,
             'stateActions': actions,
             'recentTouch': recent_touch
         })

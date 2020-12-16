@@ -35,6 +35,7 @@ var renderState = {
   imageState: null,
   recentTouch: null,
   stateActions: [],
+  systemInfo: {},
   actionHistory: []
 };
 
@@ -54,13 +55,14 @@ function setupLayout() {
 }
 
 function updateRender() {
-  const { frameNum, fps, imageState, stateActions = [], actionHistory = [], recentTouch } = renderState;
+  const { frameNum, fps, imageState, stateActions = [], actionHistory = [], systemInfo, recentTouch } = renderState;
   fpsText.textContent = fps;
   frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
   renderStateActions(stateActions);
   renderActionHistory(actionHistory);
+  renderSystemInfo(systemInfo);
 }
 
 /// Image State Rendering
@@ -249,6 +251,15 @@ function renderActionHistory(actionHistory) {
   actionHistoryEl.append(...actionEls)
 }
 
+function renderSystemInfo(systemInfo) {
+  if (!systemInfo) {
+    return
+  }
+
+  // TODO: henry here will be a json object with various keys you can log and play with.
+  // some docs: https://github.com/sebhildebrandt/systeminformation
+}
+
 /// Image Handling
 
 function requestImage() {
@@ -294,6 +305,7 @@ function handleMetadataMessage(data) {
   renderState.imageState = typeof data.imageState === 'string' ? JSON.parse(data.imageState) : data.imageState;
   renderState.stateActions = typeof data.stateActions === 'string' ? JSON.parse(data.stateActions) : data.stateActions;
   renderState.recentTouch = typeof data.recentTouch === 'string' ? JSON.parse(data.recentTouch) : data.recentTouch;
+  renderState.systemInfo = typeof data.systemInfo === 'string' ? JSON.parse(data.systemInfo) : data.systemInfo;
 
   updateRender();
 
