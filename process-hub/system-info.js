@@ -32,7 +32,7 @@ async function getStaticSystemInfo() {
 }
 
 async function getSystemInfoObject() {
-  const [staticInfo, lscpu, dynamicSystemInfo] = await Promise.all([
+  const [staticInfo, lscpu, dynamicSystemInfo, gpuStats] = await Promise.all([
     getStaticSystemInfo(),
 
     runCommand('lscpu').then(lines => {
@@ -57,17 +57,31 @@ async function getSystemInfoObject() {
       networkStats: '*',
     }),
 
-    // runCommand('nvidia-smi stats'),
-    //
+    runCommand('nvidia-smi stats -d pwrDraw,temp,gpuUtil,memUtil,encUtil,decUtil,procClk,memClk -c 1').then(lines => {
+      const gpuStats = {}
+      lines.forEach(l => {
+        const [device, key, _, value] = l.split(',').map(p => p.trim())
+        if (!device) return
+
+        const deviceKey = `gpu${device}`
+        if (!gpuStats[deviceKey]) {
+          gpuStats[deviceKey] = {}
+        }
+
+        const obj = gpuStats[deviceKey]
+        if (!obj[key] || Number(value) > obj[key]) {
+          obj[key] = Number(value) || null
+        }
+      })
+
+      return gpuStats
+    }),
+
     // runCommand('nvidia-smi -q --display=POWER,TEMPERATURE,MEMORY,PIDS'),
 
   ])
 
-  return { ...staticInfo, lscpu, dynamicSystemInfo }
+  return { ...staticInfo, lscpu, dynamicSystemInfo, gpuStats }
 }
 
 module.exports = { getSystemInfoObject }
-
-getSystemInfoObject().then(d => {
-  console.log(d)
-})

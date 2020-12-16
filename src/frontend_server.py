@@ -117,8 +117,9 @@ class ImageWebSocket(tornado.websocket.WebSocketHandler):
         log("WebSocket opened from: " + self.request.remote_ip)
 
     def on_message(self, message):
-        frame_num, image_state, state_obj,
-        recent_touch, system_info, jpeg_bytes = data_tup
+        data = image_stream.get_jpeg_image_with_state()
+        (frame_num, image_state, state_obj,
+        recent_touch, system_info, jpeg_bytes) = data
 
         if jpeg_bytes:
             self.write_message(jpeg_bytes, binary=True)

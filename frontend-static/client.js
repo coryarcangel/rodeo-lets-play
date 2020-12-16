@@ -252,6 +252,7 @@ function renderActionHistory(actionHistory) {
 }
 
 function renderSystemInfo(systemInfo) {
+  console.log('system info', systemInfo)
   if (!systemInfo) {
     return
   }

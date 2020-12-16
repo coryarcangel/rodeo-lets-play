@@ -6,7 +6,7 @@ const { argv } = require('yargs')
 const { chunk } = require('lodash')
 const { screen, dashboardParts, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
-import { getSystemInfoObject } from './system-info'
+const { getSystemInfoObject } = require('./system-info')
 
 /// Config
 

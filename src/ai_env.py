@@ -82,6 +82,7 @@ class DeviceClientEnvActionStateManager(object):
 
     def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
         self.client = client
+        self.logger = logging.getLogger('DeviceClientEnvActionStateManager')
 
         self.cur_screen_index = 0
         self.cur_screen_state = None
