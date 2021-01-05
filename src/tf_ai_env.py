@@ -83,7 +83,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         self.step_num += 1
 
-        action_name, args = self._transform_tf_action1_to_ai_action(tf_action)
+        action_name, args = self.tf_action_to_ai_action(tf_action)
         if action_name == Action.RESET:
             return self.reset()
 
@@ -124,12 +124,12 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         return np.array((label_val, confidence, x, y), dtype=np.int32)
 
-    def _get_ai_state_observation(self, state):
+    def ai_state_to_observation(self, state):
         """Transform AIState to numpy array following observation_spec"""
         num_img_objs = len(state.image_objects)
         obj_vectors = []
         for i in range(self.num_observation_objects):
-            vec = np.array((self.obj_name_int_vals['none'], 0, 0, 0))
+            vec = np.array((self.obj_name_int_vals['none'], 0, 0, 0), dtype=np.int32)
             if i < num_img_objs:
                 obj = state.image_objects[i]
                 vec = self._get_image_object_observation_vec(obj)
@@ -137,13 +137,20 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         return np.array(obj_vectors, dtype=np.int32)
 
+    def observation_to_ai_state(self, observation):
+        # TODO: do I need the reverse transformation?
+        pass
+
+    def get_cur_ai_state(self):
+        return self.action_state_manager.cur_screen_state
+
     def _get_current_tf_obs(self):
-        ai_state = self.action_state_manager.cur_screen_state
-        return self._get_ai_state_observation(ai_state)
+        ai_state = self.get_cur_ai_state()
+        return self.ai_state_to_observation(ai_state)
 
     def _get_empty_tf_obs(self):
         empty_state = AIState()
-        return self._get_ai_state_observation(empty_state)
+        return self.ai_state_to_observation(empty_state)
 
     def _cleanup_current_step(self):
         pass
@@ -152,7 +159,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
     def _get_ai_state_reward(self, ai_state=None):
         if ai_state is None:
-            ai_state = self.action_state_manager.cur_screen_state
+            ai_state = self.get_cur_ai_state()
         return ai_state.get_reward()
 
     # Implement this if my reward spec is unusual (it doesnt have to be)
@@ -164,10 +171,18 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
     """ Transforming Actions to and from TF-Agent matrices """
 
+    def tf_action_to_ai_action(self, tf_action):
+        # Could switch this if we are using tfaction2 mode
+        return self._tf_action1_to_ai_action(tf_action)
+
+    def ai_action_to_tf_action(self, ai_action_tup):
+        action, args = ai_action_tup
+        return self._ai_action_to_tf_action1(action, args)
+
     def _get_tap_action(self, action_name, x_blur, y_blur):
         x, y = (x_blur * self.grid_blur_factor, y_blur * self.grid_blur_factor)
 
-        ai_state = self.action_state_manager.cur_screen_state
+        ai_state = self.get_cur_ai_state()
         img_obj = ai_state.find_object_from_point(x, y) if ai_state else None
 
         action_data = get_object_action_data(img_obj) if img_obj else {
@@ -182,7 +197,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     def _get_swipe_action(self, action_name):
         return (action_name, {'distance': 400})
 
-    def _transform_tf_action1_to_ai_action(self, tf_action1):
+    def _tf_action1_to_ai_action(self, tf_action1):
         action_name, x_blur, y_blur = tf_action1[0:2]
         if action_name in [Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]:
             return self._get_tap_action(action_name, x_blur, y_blur)
@@ -193,7 +208,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         else:
             return (Action.PASS, {})
 
-    def _transform_tf_action2_to_ai_action(self, tf_action2):
+    def _tf_action2_to_ai_action(self, tf_action2):
         if tf_action2 in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
             return self._get_swipe_action(tf_action2)
         elif tf_action2 in [Action.PASS, Action.RESET]:
@@ -209,6 +224,23 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             x_blur = int(grid_val / bw)
             y_blur = grid_val % bw
             return self._get_tap_action(action_name, x_blur, y_blur)
+
+    def _get_ai_action_blur_grid_point(self, action_val, args):
+        hasxy = action_val in [Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]
+        x, y = [args[k] for k in ('x', 'y')] if hasxy else (0, 0)
+        x_blur, y_blur = [int(v) / self.grid_blur_factor for v in (x, y)]
+        return x_blur, y_blur
+
+    def _ai_action_to_tf_action1(self, action_val, args):
+        x_blur, y_blur = self._get_ai_action_blur_grid_point(action_val, args)
+        return np.array((action_val, x_blur, y_blur), dtype=np.int32)
+
+    def _ai_action_to_tf_action2(self, action_val, args):
+        x_blur, y_blur = self._get_ai_action_blur_grid_point(action_val, args)
+        grid_val = (x_blur * self.blur_width) + y_blur  # 0-val if not tap
+        multiplier = 2 if action_val == Action.DOUBLE_TAP_LOCATION else 1
+        val = action_val + (grid_val * multiplier)
+        return val
 
     def _take_ai_action(self, action, args):
         self.action_state_manager.attempt_action(action, args)
