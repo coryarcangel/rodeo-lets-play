@@ -8,7 +8,8 @@ from tf_agents.environments import py_environment
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
 
-from ai_actions import Action
+from ai_actions import Action, get_object_action_data
+from ai_state_data import AIState
 from ai_env import DeviceClientEnvActionStateManager
 from object_name_values import get_object_name_int_values
 from config import REDIS_HOST, REDIS_PORT
@@ -20,74 +21,83 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     """
 
     def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
-        self.logger = logging.getLogger('KimEnv')
+        self.logger = logging.getLogger('TfKimEnv')
         self.client = client
         self.action_state_manager = DeviceClientEnvActionStateManager(
             client, host, port)
 
+        # [0,1] domain, lower makes next step reward less important
+        self.std_discount = 0.5
+
         self.num_observation_objects = 100
         self.obj_name_int_vals, self.obj_name_int_max_val = get_object_name_int_values()
 
-        self._action_spec = array_spec.BoundedArraySpec(
-            shape=(), dtype=np.int32, minimum=(), maximum=(), name='action')
+        max_width = client.img_rect[2]
+        max_height = client.img_rect[3]
 
+        bf = self.grid_blur_factor = 4
+        blur_width = self.blur_width = int(max_width / bf)
+        blur_height = self.blur_height = int(max_height / bf)
+        self.max_action_vals_1 = [5, blur_width, blur_height]
+        self.max_action_vals_2 = 3 + (2 * blur_width) + (2 * blur_height)
+
+        # Type 1 - (action, x, y) (blurred)
+        self._action_spec_1 = array_spec.BoundedArraySpec(
+            shape=(3,), dtype=np.int32,
+            minimum=[0, 0, 0], maximum=self.max_action_vals_1, name='action')
+
+        # Type 2 - int like P, SL, SR, R, T00, T01, ..., T10, T11, ..., DT00,
+        self._action_spec_2 = array_spec.BoundedArraySpec(
+            shape=(), dtype=np.int32,
+            minimum=0, maximum=self.max_action_vals_2, name='action')
+
+        # a list objects with type, confidence, x, y vals
         self._observation_spec = array_spec.BoundedArraySpec(
-            shape=(4, self.num_observation_objects),  # a list objects with type, confidence, x, y vals
-            dtype=np.int64,
-            minimum=[0, 0, 0],
-            maximum=[self.obj_name_int_max_val, 100, client.img_rect[2], client.img_rect[3]],
+            shape=(4, self.num_observation_objects),
+            dtype=np.int32,
+            minimum=[0, 0, 0, 0],
+            maximum=[self.obj_name_int_max_val, 100, max_width, max_height],
             name='observation')
 
-        self._reward_spec = array_spec.BoundedArraySpec(
-            shape=(2,),  # money, stars
-            dtype=np.int64, minimum=0, name='reward')
-
-        self._time_step_spec = time_step.time_step_spec(
-            observation_spec=self._observation_spec,
-            reward_spec=self._reward_spec)
+    """ Implementing TF-Agent PyEnvironment Abstract Methods """
 
     def action_spec(self):
-        return self._action_spec
+        return self._action_spec_1
 
     def observation_spec(self):
         return self._observation_spec
 
-    def time_step_spec(self):
-        return self._time_step_spec
-
-    def reset(self):
-        """Return initial_time_step."""
-        self._current_time_step = self._do_reset()
+    def _reset(self):
         self.logger.debug('Reset AI Environment')
-        return self._current_time_step
+        self._cleanup_current_step()
+        self.client.send_reset_command()
+        self.step_num = 0
+        return time_step.restart(self._get_empty_tf_obs())
 
-    def step(self, action):
+    def _step(self, tf_action):
         """Apply action for single time step and return new time_step.
         Need to do translation work of action from numeric space to
         (action, action_args) space."""
+
         self._cleanup_current_step()
-
-        if self._current_time_step is None:
-            return self.reset()
-
-        self._current_time_step = self._step(action)
-        return self._current_time_step
 
         self.step_num += 1
 
-        # Perform relevant action
-        self._take_action(action, action_args)
+        action_name, args = self._transform_tf_action1_to_ai_action(tf_action)
+        if action_name == Action.RESET:
+            return self.reset()
 
-        # Get new state
-        self.logger.debug('Getting state for Step #%d', self.step_num)
-        next_state = self._get_state()
-        self.logger.debug('State for Step #%d: %s', self.step_num, next_state)
+        self._take_ai_action(action_name, args)
 
-        reward = next_state.get_reward() if next_state else None
-        done = False
-        info = {}
+        observation = self._get_current_tf_obs()
+        reward = self._get_ai_state_reward()
 
-        return next_state, reward, done, info
+        self.logger.debug('Taking Step #%d with reward %d', self.step_num, reward)
+
+        return time_step.transition(
+            observation, reward=reward, discount=self.std_discount)
+
+    """ Transforming AIStateData to TF-Agent Observation """
 
     def _get_image_object_observation_vec(self, obj):
         """Transform image_object from AIState to vector"""
@@ -112,7 +122,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         confidence = int(obj['confidence'] * 100) if obj['confidence'] is not None else 10
 
-        return np.array((label_val, confidence, x, y))
+        return np.array((label_val, confidence, x, y), dtype=np.int32)
 
     def _get_ai_state_observation(self, state):
         """Transform AIState to numpy array following observation_spec"""
@@ -125,21 +135,80 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
                 vec = self._get_image_object_observation_vec(obj)
             obj_vectors.append(vec)
 
-        return np.array(obj_vectors)
+        return np.array(obj_vectors, dtype=np.int32)
+
+    def _get_current_tf_obs(self):
+        ai_state = self.action_state_manager.cur_screen_state
+        return self._get_ai_state_observation(ai_state)
+
+    def _get_empty_tf_obs(self):
+        empty_state = AIState()
+        return self._get_ai_state_observation(empty_state)
 
     def _cleanup_current_step(self):
         pass
 
-    def _do_reset(self):
-        self._cleanup_current_step()
-        self.client.send_reset_command()
+    """ Getting Reward from State """
 
-    def _get_state(self):
-        return self.action_state_manager.cur_screen_state
+    def _get_ai_state_reward(self, ai_state=None):
+        if ai_state is None:
+            ai_state = self.action_state_manager.cur_screen_state
+        return ai_state.get_reward()
 
-    def _take_action(self, action, args):
-        if (action in self.action_state_manager.actions_map):
-            self.action_state_manager.publish_action(action, args)
-            self.action_state_manager.actions_map[action](args)
+    # Implement this if my reward spec is unusual (it doesnt have to be)
+    # self._reward_spec = array_spec.BoundedArraySpec(
+    #     shape=(2,),  # money, stars
+    #     dtype=np.int64, minimum=0, name='reward')
+    # def reward_spec(self):
+    #     return self._reward_spec
+
+    """ Transforming Actions to and from TF-Agent matrices """
+
+    def _get_tap_action(self, action_name, x_blur, y_blur):
+        x, y = (x_blur * self.grid_blur_factor, y_blur * self.grid_blur_factor)
+
+        ai_state = self.action_state_manager.cur_screen_state
+        img_obj = ai_state.find_object_from_point(x, y) if ai_state else None
+
+        action_data = get_object_action_data(img_obj) if img_obj else {
+            'x': int(x),
+            'y': int(y),
+            'type': 'object',
+            'object_type': 'deep_q',
+            'img_obj': {'confidence': 0.1}
+        }
+        return (action_name, action_data)
+
+    def _get_swipe_action(self, action_name):
+        return (action_name, {'distance': 400})
+
+    def _transform_tf_action1_to_ai_action(self, tf_action1):
+        action_name, x_blur, y_blur = tf_action1[0:2]
+        if action_name in [Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]:
+            return self._get_tap_action(action_name, x_blur, y_blur)
+        elif action_name in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
+            return self._get_swipe_action(action_name)
+        elif action_name in [Action.PASS, Action.RESET]:
+            return (action_name, {})
         else:
-            self.logger.debug('unrecognized action %s' % action)
+            return (Action.PASS, {})
+
+    def _transform_tf_action2_to_ai_action(self, tf_action2):
+        if tf_action2 in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
+            return self._get_swipe_action(tf_action2)
+        elif tf_action2 in [Action.PASS, Action.RESET]:
+            return (tf_action2, {})
+        else:
+            # convert single digit to coded action, x, y value (see above docs)
+            val = tf_action2 - 4
+            bw, bh = (self.blur_width, self.blur_height)
+            midpoint = bw * bh
+            action_name = Action.TAP_LOCATION \
+                if val <= midpoint else Action.DOUBLE_TAP_LOCATION
+            grid_val = val if val <= midpoint else val - midpoint
+            x_blur = int(grid_val / bw)
+            y_blur = grid_val % bw
+            return self._get_tap_action(action_name, x_blur, y_blur)
+
+    def _take_ai_action(self, action, args):
+        self.action_state_manager.attempt_action(action, args)

@@ -171,3 +171,15 @@ class AIState(object):
     def to_input(self):
         """ Converts high-level object into numbers with shape STATE_INPUT_SHAPE """
         return np.array([1, self.money, self.stars])
+
+    def find_object_from_point(self, x, y):
+        min_dist, min_obj = (1000000, None)
+        for obj in self.image_objects:
+            x1, y1, _, _ = obj['rect']
+            xd, yd = (x - x1, y - y1)
+            dist = (xd * xd) + (yd * yd)
+            if dist < min_dist:
+                min_dist = dist
+                min_obj = obj
+
+        return min_obj if min_dist < 50 else None

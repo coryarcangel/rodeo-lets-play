@@ -11,11 +11,11 @@ img_rect_center = get_rect_center(img_rect)
 class Action(object):
     """Enum-like iteration of all available actions"""
     PASS = 0
-    SWIPE_LEFT = 1
-    SWIPE_RIGHT = 2
-    TAP_LOCATION = 3
-    DOUBLE_TAP_LOCATION = 4
-    RESET = 99
+    RESET = 1
+    SWIPE_LEFT = 2
+    SWIPE_RIGHT = 3
+    TAP_LOCATION = 4
+    DOUBLE_TAP_LOCATION = 5
 
 
 ACTIONS = [
@@ -45,7 +45,7 @@ def get_action_type_str(action_type):
         return 'tap_location'
 
 
-def _get_object_action_data(obj):
+def get_object_action_data(obj):
     x, y = get_rect_center(obj['rect'])
     return {
         'x': int(x),
@@ -54,10 +54,6 @@ def _get_object_action_data(obj):
         'object_type': obj['object_type'] if 'obj_type' in obj else obj['label'],
         'img_obj': obj
     }
-
-
-def _get_object_tap_action(obj):
-    return (Action.TAP_LOCATION, _get_object_action_data(obj))
 
 
 class ActionGetter(object):
@@ -87,10 +83,10 @@ class ActionGetter(object):
             return ActionGetter.Base
 
         def get_tap(obj):
-            return (Action.TAP_LOCATION, _get_object_action_data(obj))
+            return (Action.TAP_LOCATION, get_object_action_data(obj))
 
         def get_dbl_tap(obj):
-            return (Action.DOUBLE_TAP_LOCATION, _get_object_action_data(obj))
+            return (Action.DOUBLE_TAP_LOCATION, get_object_action_data(obj))
 
         obj_taps = [get_tap(obj) for obj in state.image_objects]
         obj_dbl_taps = [get_dbl_tap(obj) for obj in state.image_objects]

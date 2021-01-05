@@ -153,6 +153,13 @@ class DeviceClientEnvActionStateManager(object):
         type = args['object_type'] if type == 'object' else type
         self.client.send_double_tap_command(x, y, type)
 
+    def attempt_action(self, action, args):
+        if action in self.actions_map:
+            self.publish_action(action, args)
+            self.actions_map[action](args)
+        else:
+            self.logger.debug('unrecognized action %s' % action)
+
 
 class DeviceClientKimEnv(KimEnv):
     """Implements KimEnv with a DeviceClient"""
@@ -169,11 +176,7 @@ class DeviceClientKimEnv(KimEnv):
         return self.action_state_manager.cur_screen_state
 
     def _take_action(self, action, args):
-        if (action in self.action_state_manager.actions_map):
-            self.action_state_manager.publish_action(action, args)
-            self.action_state_manager.actions_map[action](args)
-        else:
-            self.logger.debug('unrecognized action %s' % action)
+        self.action_state_manager.attempt_action(action, args)
 
 
 class ScreenshotKimEnv(KimEnv):
