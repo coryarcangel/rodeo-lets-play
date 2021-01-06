@@ -1,7 +1,6 @@
 import sys
 from datetime import datetime
 
-from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
 from device_client import DeviceClient
 
 KK_HOLLYWOOD_PACKAGE = 'com.glu.stardomkim'
@@ -25,7 +24,7 @@ class KimCurrentAppMonitor(object):
         self.last_kim_process_time = datetime.now()
         self.max_non_kim_time = 25  # 25 seconds until we force a reset.
 
-        self.client = DeviceClient(CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA)
+        self.client = DeviceClient()
         self.client.start()
 
     def run_monitor_loop(self):

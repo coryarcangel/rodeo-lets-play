@@ -5,6 +5,7 @@ import time
 import socket
 import threading
 from asyncchat_kim import AsyncchatKim, KimCommand
+from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
 
 
 class DeviceClient(AsyncchatKim):
@@ -16,7 +17,9 @@ class DeviceClient(AsyncchatKim):
     for performance reasons.
     '''
 
-    def __init__(self, phone_game_rect, img_rect):
+    def __init__(self,
+                 phone_game_rect=CURRENT_PHONE_GAME_RECT,
+                 img_rect=VYSOR_CAP_AREA):
         AsyncchatKim.__init__(self, py2=False, logger_name='DeviceClient')
         self.phone_game_rect = phone_game_rect
         self.img_rect = img_rect

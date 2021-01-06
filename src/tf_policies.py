@@ -20,7 +20,6 @@ class TfAgentHeuristicPolicy(py_policy.PyPolicy):
     def _action(self, time_step, policy_state):
         # NOTE: I don't actually use the time_step because I can't yet reverse
         # transform observation to AIState... I grab cur state from env...
-
         ai_state = self.env.get_cur_ai_state()
         ai_action_tup = self.selector.select_state_action(ai_state)
         tf_action = self.env.ai_action_to_tf_action(ai_action_tup)
@@ -86,11 +85,11 @@ class TfAgentPolicyFactory(object):
         return deep_q_agent.policy
 
     def get_blended_policy(self,
-                           deep_q_agent,
+                           deep_q_policy,
                            deep_q_weight=0.5,
                            heuristic_weight=0.4,
                            random_weight=0.1):
-        dq_policy = (self.get_deep_q_policy(deep_q_agent), deep_q_weight)
+        dq_policy = (deep_q_policy, deep_q_weight)
 
         other_policies = [p for p in [
             (self.get_heuristic_policy(), heuristic_weight),

@@ -6,7 +6,7 @@ from datetime import datetime
 import tensorflow as tf
 
 # Local Imports
-from config import configure_logging, CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
+from config import configure_logging
 from ai_deep_q import deep_q_learning
 from ai_random import random_learning
 from ai_heuristic import heuristic_learning
@@ -53,9 +53,7 @@ def main():
     target_estimator = QEstimator(scope="target_q") if is_deep_q else None
 
     # Device Client
-    device_client = DeviceClient(
-        CURRENT_PHONE_GAME_RECT,
-        VYSOR_CAP_AREA) if not STATIC_SCREENSHOT else None
+    device_client = DeviceClient() if not STATIC_SCREENSHOT else None
     device_client.start()
 
     # Env
