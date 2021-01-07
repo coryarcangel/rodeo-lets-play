@@ -2,6 +2,7 @@
 Contains KimEnv class for controlling the game via the learning algorithm.
 """
 
+import json
 import logging
 import numpy as np
 from tf_agents.environments import py_environment
@@ -243,4 +244,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         return val
 
     def _take_ai_action(self, action, args):
+        f = 'Step %d: Taking Action (%d, %s)'
+        self.logger.debug(f, self.step_num, action, json.dumps(args))
+
         self.action_state_manager.attempt_action(action, args)
