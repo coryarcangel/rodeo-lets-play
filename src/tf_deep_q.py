@@ -17,23 +17,6 @@ def load_saved_policy(policy_dir):
     return saved_policy
 
 
-def compute_avg_return(env, policy, max_episode_length=100, num_episodes=10):
-    total_return = 0.0
-    for _ in range(num_episodes):
-        time_step = env.reset()
-        episode_return = 0.0
-        episode_length = 0
-        while not time_step.is_last() and episode_length < max_episode_length:
-            action_step = policy.action(time_step)
-            time_step = env.step(action_step.action)
-            episode_return += time_step.reward
-            episode_length += 1
-    total_return += episode_return
-
-    avg_return = total_return / num_episodes
-    return avg_return.numpy()[0]
-
-
 # https://www.tensorflow.org/agents/tutorials/10_checkpointer_policysaver_tutorial
 class TfAgentDeepQManager(object):
     def __init__(self, env, params={}):
@@ -55,7 +38,7 @@ class TfAgentDeepQManager(object):
         self.replay_batch_size = p_val('replay_batch_size', 64)
         self.train_log_interval = p_val('train_log_interval', 5)
         self.train_eval_interval = p_val('train_eval_interval', 1000)
-        num_eval_episodes = p_val('num_eval_episodes', 10)
+        num_eval_steps = p_val('num_eval_steps', 100)
 
         # Saving / Loading Params
         save_dir = self.save_dir = p_val('save_dir', os.getcwd() + '/deep_q_save')
@@ -88,14 +71,20 @@ class TfAgentDeepQManager(object):
             batch_size=self.tf_env.batch_size,
             max_length=replay_buffer_capacity)
 
-        self.avg_return_metric = py_metrics.AverageReturnMetric(
-            buffer_size=num_eval_episodes)
-
         self.collect_driver = dynamic_step_driver.DynamicStepDriver(
             self.tf_env,
             agent.collect_policy,
-            observers=[self.replay_buffer.add_batch, self.avg_return_metric],
+            observers=[self.replay_buffer.add_batch],
             num_steps=collect_steps_per_iteration)
+
+        self.avg_return_metric = py_metrics.AverageReturnMetric(
+            buffer_size=num_eval_steps)
+
+        self.eval_driver = dynamic_step_driver.DynamicStepDriver(
+            self.tf_env,
+            agent.policy,
+            observers=[self.avg_return_metric],
+            num_steps=num_eval_steps)
 
         self.has_collected_initial_data = False
 
@@ -125,7 +114,7 @@ class TfAgentDeepQManager(object):
 
         self.has_collected_initial_data = True
 
-    def train(self, num_iterations=200):
+    def train(self, num_iterations=20000):
         if not self.has_collected_initial_data:
             self.collect_initial_data()
 
@@ -150,6 +139,7 @@ class TfAgentDeepQManager(object):
                     step, train_loss))
 
             if step % self.train_eval_interval == 0:
+                self.eval_driver.run()
                 avg_return = self.avg_return_metric.result()
                 self.logger.info('step = {0}: Average Return = {1}'.format(
                     step, avg_return))
