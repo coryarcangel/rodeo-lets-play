@@ -41,12 +41,13 @@ def show_image_test(x=0, y=0, width=200, height=200):
 
         # Get raw pixels from the screen, save it to a Numpy array
         img = np.array(sct.grab(mon))
+        img_3chan = img[:, :, :3]
 
         # Display the picture
         cv2.imshow('OpenCV/Numpy normal', img)
 
         # Get YOLO results
-        yolo_result = tfnet.return_predict(img)
+        yolo_result = tfnet.return_predict(img_3chan)
         log(yolo_result)
 
         log('fps: {0}'.format(1 / (time.time() - last_time)))
