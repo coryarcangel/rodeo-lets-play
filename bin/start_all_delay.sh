@@ -9,10 +9,11 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 DELAY=${1:-30} # delay default to 30 seconds
+startAll=${2:-true} # start all default to true
 
 echo "waiting for $DELAY seconds before starting process hub..."
 sleep $DELAY
 
 echo "starting process hub"
 cd $DIR/..
-node process-hub/index.js
+node process-hub/index.js --startAll $startAll
