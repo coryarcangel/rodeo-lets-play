@@ -10,6 +10,12 @@ A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 4. Jython made pipenv tricky I think. I would try installing the requirements directly to the system from requirements.txt with pip3.
   Everything except for the monkeyrunner stuff should be running in python 3 now.
 
+## Vysor Config
+1. Name the device "vysorkim" in the window settings
+2. Uncheck the "navigation bar" option in window settings.
+3. You can alter video quality settings as needed.
+4. Save.
+
 Cuda Version 9.0.176
 OpenCV Version 2.4.9.1 (from `dpkg -l | grep libopencv`)
 Might need to start redis on computer start (in the redis docs)

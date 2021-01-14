@@ -36,7 +36,7 @@ GALAXY8_RECT = Rect(0, 0, 2220, 1080)
 # The game doesn't use all phone real estate
 GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)
 # Hard coded to galaxy 8
-GALAXY8_VYSOR_CAP_AREA = Rect(62, 98, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 88)
+GALAXY8_VYSOR_CAP_AREA = Rect(62, 68, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 82)
 
 GALAXY10_RECT = Rect(0, 0, 2280, 1080)
 GALAXY10_GAME_RECT = Rect(176, 25, 1968, 1060)
