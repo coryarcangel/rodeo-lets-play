@@ -39,6 +39,12 @@ TFNET_CONFIG = {
     'threshold': 0.1
 }
 
+TF_AI_POLICY_WEIGHTS = {
+    'deep_q': 0.5,
+    'heuristic': 0.4,
+    'random': 0.1
+}
+
 # Where the Vysor Window Is Moved To
 VYSOR_RECT = Rect(0, 0, 776, 466)
 
