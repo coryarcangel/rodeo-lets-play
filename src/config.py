@@ -27,7 +27,10 @@ MONITORS = [
 
 NUM_MONITORS = len(MONITORS)
 MON_NAMES = [s[0] for s in MONITORS]
-SCREEN_SIZES = {s[0]: s[1] for s in MONITORS}
+
+SCREEN_SIZES = {}
+for s in MONITORS:
+    SCREEN_SIZES[s[0]] = s[1]
 
 TFNET_CONFIG = {
     'model': 'cfg/tiny-yolo.cfg',
