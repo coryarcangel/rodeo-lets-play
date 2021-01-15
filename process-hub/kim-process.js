@@ -33,7 +33,7 @@ class KimProcess {
     this.timeBetweenScriptRuns = 3000
   }
 
-  addStreamBufferData(type, buffer) {
+  logChildStreamBuferData(type, buffer) {
     const isErr = type === 'stderr'
 
     const lines = buffer.toString('utf8').trimRight().split('\n')
@@ -50,6 +50,8 @@ class KimProcess {
     if (arr.length > limit) {
       arr.splice(limit, arr.length - limit)
     }
+
+    this.lastLogTime = Date.now()
   }
 
   getLabel = () => this.child ? `${this.name} (PID ${this.child.pid})` : this.name
@@ -67,11 +69,22 @@ class KimProcess {
 
       const listenToStream = (name) => {
         child[name].setEncoding('utf8')
-        child[name].on('data', data => this.addStreamBufferData(name, data))
+        child[name].on('data', data => this.logChildStreamBuferData(name, data))
       }
 
       listenToStream('stdout')
       listenToStream('stderr')
+
+      this.lastLogTime = Date.now()
+      const monitorInterval = setInterval(() => {
+        const { maxTimeBetweenLogs } = this.ops
+        if (maxTimeBetweenLogs && Date.now() - this.lastLogTime > maxTimeBetweenLogs) {
+          if (monitorInterval) {
+            clearInterval(monitorInterval)
+            this.killChild()
+          }
+        }
+      }, 1000)
 
       // child.on('error', err => {
       //   console.log(err)

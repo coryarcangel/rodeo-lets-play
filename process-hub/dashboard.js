@@ -38,7 +38,7 @@ const getLogger = (name, row, col, width, height, color) => {
 
   const log = (line) => {
     logger.log(line)
-    stream.write(line)
+    stream.write(line + '\n')
   }
 
   return { name, filepath, stream, logger, log }

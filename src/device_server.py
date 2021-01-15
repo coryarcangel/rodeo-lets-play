@@ -2,8 +2,11 @@
 
 import asyncore
 import logging
+import os
 import socket
+import signal
 import sys
+import traceback
 
 from config import DEVICE_HOST, DEVICE_PORT
 from device_manager import get_default_device_manager
@@ -19,7 +22,7 @@ class DeviceMessageHandler(AsyncchatKim):
     def __init__(self, device_manager, sock):
         AsyncchatKim.__init__(
             self,
-            logger_name='DeviceMessageHandler',
+            logger_name='DSMsgHandler',
             py2=True,
             sock=sock)
         self.device_manager = device_manager
@@ -148,4 +151,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        traceback.print_exc()
+        os.kill(os.getpid(), signal.SIGKILL)
+
+    sys.exit(0)
