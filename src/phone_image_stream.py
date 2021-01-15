@@ -19,9 +19,9 @@ from PIL import Image
 
 from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
 from config import VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA
-from config import WEB_BASED_IMAGE, ANN_TEST
+from config import WEB_BASED_IMAGE, ANN_TEST, NUM_MONITORS, MONITORS
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
-from window import get_window_id, set_window_rect, set_window_fullscreen
+from window import set_window_fullscreen, move_window_to_screen, activate_window_by_name
 from image_annotation import AnnotatedImageStream
 
 
@@ -61,8 +61,9 @@ def show_image_test(x=0, y=0, width=200, height=200):
 def setup_vysor_window():
     ''' Moves the Vysor window to fixed location for capture via mss '''
     x, y, w, h = VYSOR_RECT
-    win_id = get_window_id(VYSOR_WINDOW_NAME)
-    set_window_rect(win_id, x, y, w, h)
+    mon_name, _ = MONITORS[1 if NUM_MONITORS >= 2 else 0]
+    move_window_to_screen(VYSOR_WINDOW_NAME, x, y, w, h, mon_name)
+    activate_window_by_name(VYSOR_WINDOW_NAME)
 
 
 def vysor_show_image_test():
@@ -148,8 +149,20 @@ class VysorDataStream(object):
             # Move annotation to fullscreen
             set_window_fullscreen(ann_window_name)
 
+        # if more than 1 monitor, we go to the second monitor
+        # confusing calc but have to find the "left" pos of 2nd mon for mss
+        mon_left = 0 if NUM_MONITORS == 1 else MONITORS[0][1][0]
+        all_mon_lefts = [m['left'] for m in sct.monitors]
+        mon_num = all_mon_lefts.index(mon_left) if mon_left in all_mon_lefts else 1
+
         x, y, w, h = VYSOR_CAP_AREA
-        mon = {'top': y, 'left': x, 'width': w, 'height': h}
+        mon = {
+            'top': y + sct.monitors[mon_num]['top'],
+            'left': x + sct.monitors[mon_num]['left'],
+            'width': w,
+            'height': h,
+            'mon': mon_num
+        }
 
         with tf.Session() as sess:
             screen_num = 0

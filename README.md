@@ -16,6 +16,9 @@ A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 3. You can alter video quality settings as needed.
 4. Save.
 
+## Monitor Config
+* Update the MONITORS variable in config.py with a list of up to 3 monitor names and their sizes (get names from xrandr)
+
 Cuda Version 9.0.176
 OpenCV Version 2.4.9.1 (from `dpkg -l | grep libopencv`)
 Might need to start redis on computer start (in the redis docs)

@@ -6,8 +6,8 @@ the window to the proper place
 import time
 import sys
 
-from config import FRONTEND_WEB_URL, FRONTEND_NAME
-from window import set_window_rect, open_chrome_url, click_in_window, get_window_id
+from config import FRONTEND_WEB_URL, FRONTEND_NAME, NUM_MONITORS, MON_NAMES
+from window import open_chrome_url, click_in_window, move_window_to_screen, set_window_fullscreen, activate_window_by_name
 from kim_current_app_monitor import KimCurrentAppMonitor
 
 
@@ -32,9 +32,12 @@ def run_frontend_client():
         time.sleep(2)
 
         # ** Move Chrome to the correct place
-        # set_window_fullscreen(FRONTEND_NAME)
-        win_id = get_window_id(FRONTEND_NAME)
-        set_window_rect(win_id, 800, 50, 1080, 608)
+        mon_name = MON_NAMES[0]
+        if NUM_MONITORS >= 2:
+            set_window_fullscreen(FRONTEND_NAME, mon_name)
+        else:
+            move_window_to_screen(FRONTEND_NAME, 800, 50, 1080, 608, mon_name)
+        activate_window_by_name(FRONTEND_NAME)
 
         # ** remove the "chrome didnt shut down correctly"
         # click_in_window(win_id, 800, 100)

@@ -18,6 +18,17 @@ FRONTEND_WEB_URL = 'http://localhost:8888'
 FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
 ANN_TEST = False
 
+# monitor config is system dependent
+MONITORS = [
+    ('HDMI-1-1', (1920, 1080)),
+    ('DP-1', (1920, 1080)),
+    # ('DP-2', (1920, 1080))
+]
+
+NUM_MONITORS = len(MONITORS)
+MON_NAMES = [s[0] for s in MONITORS]
+SCREEN_SIZES = {s[0]: s[1] for s in MONITORS}
+
 TFNET_CONFIG = {
     'model': 'cfg/tiny-yolo.cfg',
     'load': 'dfbin/tiny-yolo.weights',
@@ -36,7 +47,7 @@ GALAXY8_RECT = Rect(0, 0, 2220, 1080)
 # The game doesn't use all phone real estate
 GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)
 # Hard coded to galaxy 8
-GALAXY8_VYSOR_CAP_AREA = Rect(62, 68, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 82)
+GALAXY8_VYSOR_CAP_AREA = Rect(52, 68, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 82)
 
 GALAXY10_RECT = Rect(0, 0, 2280, 1080)
 GALAXY10_GAME_RECT = Rect(176, 25, 1968, 1060)

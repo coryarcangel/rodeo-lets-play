@@ -7,11 +7,13 @@ const { chunk } = require('lodash')
 const { screen, dashboardParts, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 const { getSystemInfoObject } = require('./system-info')
+const { setWindowTitle, setupProcessHubScreen } = require('./util')
 
 /// Config
 
 const DUMMY = argv.dummy !== undefined ? argv.dummy : false
 const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
+const WIN_TITLE = 'AI Dashboard'
 
 const startTime = moment()
 
@@ -161,6 +163,9 @@ async function quit() {
 
 async function main() {
   genlog('Hello, User. Starting KIM AI processes now...')
+
+  setWindowTitle(WIN_TITLE)
+  setupProcessHubScreen(WIN_TITLE)
 
   dashboardParts.commandList.focus()
 
