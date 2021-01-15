@@ -11,7 +11,7 @@ from tf_agents.trajectories import time_step
 
 from ai_actions import Action, get_object_action_data
 from ai_state_data import AIState
-from ai_env import DeviceClientEnvActionStateManager
+from env_action_state_manager import DeviceClientEnvActionStateManager
 from object_name_values import get_object_name_int_values
 from config import REDIS_HOST, REDIS_PORT
 

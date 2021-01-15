@@ -19,6 +19,17 @@ A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 ## Monitor Config
 * Update the MONITORS variable in config.py with a list of up to 3 monitor names and their sizes (get names from xrandr)
 
+## Installing Python 3.7 / Conda for TF Agents
+* sudo apt update -y
+* sudo apt install python3.8
+* download miniconda python 3.8 installer https://docs.conda.io/en/latest/miniconda.html#linux-installers
+* Install with `bash ~/Downloads/Miniconda3-latest-Linux-x86_64.sh`. Select yes for last step of conda init.
+* Docs here: https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html
+* Run `conda config --set auto_activate_base false`
+* Create environment with `conda create --name tf-ai-env python=3.8`
+* Run `conda activate tf-ai-env` to activate environment
+* Run `pip install -r tf_ai_env_pip_requirements.txt`
+
 Cuda Version 9.0.176
 OpenCV Version 2.4.9.1 (from `dpkg -l | grep libopencv`)
 Might need to start redis on computer start (in the redis docs)

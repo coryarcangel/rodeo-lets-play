@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-python3 src/tf_ai_runner.py
+conda activate tf-ai-env
+python src/tf_ai_runner.py

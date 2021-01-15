@@ -7,7 +7,9 @@ def get_object_name_int_values():
     """ returns a dict mapping all known object names to integer values """
 
     image_names = []
-    image_names_file = os.getcwd() + '/../cfg/coco.names'
+
+    my_dir = os.path.dirname(os.path.realpath(__file__))
+    image_names_file = my_dir + '/../cfg/coco.names'
     with open(image_names_file) as f:
         lines = f.readlines()
         image_names = [x.strip() for x in lines if len(x.strip()) > 0]
@@ -28,4 +30,4 @@ def get_object_name_int_values():
         name_values[name] = cur_val
         cur_val += 1
 
-    return name_values, max_val
+    return name_values, cur_val
