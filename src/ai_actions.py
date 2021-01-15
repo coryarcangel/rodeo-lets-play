@@ -41,8 +41,10 @@ def get_action_type_str(action_type):
         return 'reset'
     elif action_type == Action.DOUBLE_TAP_LOCATION:
         return 'double_tap_location'
-    else:
+    elif action_type == Action.TAP_LOCATION:
         return 'tap_location'
+    else:
+        return 'uknown - ' + str(action_type)
 
 
 def get_object_action_data(obj):

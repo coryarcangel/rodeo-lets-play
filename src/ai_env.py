@@ -5,6 +5,7 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 import logging
 from ai_actions import Action
 from ai_state import AIStateProcessor
+from env_action_state_manager import DeviceClientEnvActionStateManager
 from config import REDIS_HOST, REDIS_PORT, IMG_CONFIG_STUDIOBLU
 
 

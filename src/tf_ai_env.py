@@ -9,7 +9,7 @@ from tf_agents.environments import py_environment
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
 
-from ai_actions import Action, get_object_action_data
+from ai_actions import Action, get_object_action_data, get_action_type_str
 from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from object_name_values import get_object_name_int_values
@@ -85,6 +85,10 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.step_num += 1
 
         action_name, args = self.tf_action_to_ai_action(tf_action)
+
+        self.logger.debug('Step %d - Taking Action (%s, %s)',
+            self.step_num, get_action_type_str(action_name), json.dumps(args))
+
         if action_name == Action.RESET:
             return self.reset()
 
@@ -93,7 +97,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         observation = self._get_current_tf_obs()
         reward = self._get_ai_state_reward()
 
-        self.logger.debug('Taking Step #%d with reward %d', self.step_num, reward)
+        self.logger.debug('Step %d - Reward %d', self.step_num, reward)
 
         return time_step.transition(
             observation, reward=reward, discount=self.std_discount)
@@ -205,7 +209,9 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         elif action_name in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
             return self._get_swipe_action(action_name)
         elif action_name in [Action.PASS, Action.RESET]:
-            return (action_name, {})
+            # reset only is reset if x and y are also zero :)
+            # prevents random policy / untrained deep q from too many resets
+            return (action_name, {}) if x_blur == 0 and y_blur == 0 else (Action.PASS, {})
         else:
             return (Action.PASS, {})
 
@@ -244,7 +250,4 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         return val
 
     def _take_ai_action(self, action, args):
-        f = 'Step %d: Taking Action (%d, %s)'
-        self.logger.debug(f, self.step_num, action, json.dumps(args))
-
         self.action_state_manager.attempt_action(action, args)

@@ -1,4 +1,7 @@
 import os
+import signal
+import sys
+import traceback
 
 from tf_agents.environments import tf_py_environment
 
@@ -61,5 +64,11 @@ def run_ai_with_saved_blended_policy(name='policy',
 
 
 if __name__ == '__main__':
-    run_ai_with_random_policy()
-    # run_ai_with_saved_blended_policy()
+    try:
+        run_ai_with_random_policy()
+        # run_ai_with_saved_blended_policy()
+    except Exception as e:
+        traceback.print_exc()
+        os.kill(os.getpid(), signal.SIGKILL)
+
+    sys.exit(0)
