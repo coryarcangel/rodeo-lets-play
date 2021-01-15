@@ -8,6 +8,7 @@ from ai_actions import Action
 from ai_state_data import AIState
 from config import REDIS_HOST, REDIS_PORT
 
+
 class DeviceClientEnvActionStateManager(object):
     """ Uses a DeviceClient to handle actions and state management on a
     KK:Hollywood environment """

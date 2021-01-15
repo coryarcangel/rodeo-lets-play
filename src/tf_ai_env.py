@@ -54,9 +54,9 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         # a list objects with type, confidence, x, y vals
         self._observation_spec = array_spec.BoundedArraySpec(
-            shape=(4, self.num_observation_objects),
+            shape=(self.num_observation_objects, 4),
             dtype=np.int32,
-            minimum=[0, 0, 0, 0],
+            minimum=[(0, 0, 0, 0)],
             maximum=[self.obj_name_int_max_val, 100, max_width, max_height],
             name='observation')
 
@@ -199,7 +199,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         return (action_name, {'distance': 400})
 
     def _tf_action1_to_ai_action(self, tf_action1):
-        action_name, x_blur, y_blur = tf_action1[0:2]
+        action_name, x_blur, y_blur = tf_action1[0:3]
         if action_name in [Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]:
             return self._get_tap_action(action_name, x_blur, y_blur)
         elif action_name in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
