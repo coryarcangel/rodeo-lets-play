@@ -6,6 +6,7 @@ import socket
 import threading
 from asyncchat_kim import AsyncchatKim, KimCommand
 from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
+from window import setup_vysor_window
 
 
 class DeviceClient(AsyncchatKim):
@@ -65,9 +66,11 @@ class DeviceClient(AsyncchatKim):
         name = self._send_command(KimCommand.GET_PROCESS)
         return name[0] if name is not None and len(name) > 0 else None
 
-    def send_reset_command(self):
+    def reset_game(self):
         """ Sends a command to restart the game """
         self._send_command(KimCommand.RESET)
+        setup_vysor_window()
+        time.sleep(1)
 
     def _img_point_to_device_point(self, img_point):
         x, y = img_point

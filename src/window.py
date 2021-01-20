@@ -2,7 +2,8 @@
 
 import subprocess
 
-from config import SCREEN_SIZES
+from config import SCREEN_SIZES, VYSOR_WINDOW_NAME, VYSOR_RECT
+from config import NUM_MONITORS, MONITORS
 
 
 def run_cmd(cmd):
@@ -96,3 +97,11 @@ def set_window_fullscreen(name, scr='DP-1'):
     ''' moves window to fullscreen on given monitor '''
     size = SCREEN_SIZES[scr] if scr in SCREEN_SIZES else (1920, 1080)
     move_window_to_screen(name, 0, 0, size[0], size[1], scr)
+
+
+def setup_vysor_window():
+    ''' Moves the Vysor window to fixed location for capture via mss '''
+    x, y, w, h = VYSOR_RECT
+    mon_name, _ = MONITORS[1 if NUM_MONITORS >= 2 else 0]
+    move_window_to_screen(VYSOR_WINDOW_NAME, x, y, w, h, mon_name)
+    activate_window_by_name(VYSOR_WINDOW_NAME)

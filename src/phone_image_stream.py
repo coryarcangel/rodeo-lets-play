@@ -21,7 +21,7 @@ from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
 from config import VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA
 from config import WEB_BASED_IMAGE, ANN_TEST, NUM_MONITORS, MONITORS
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
-from window import set_window_fullscreen, move_window_to_screen, activate_window_by_name
+from window import setup_vysor_window, set_window_fullscreen
 from image_annotation import AnnotatedImageStream
 
 
@@ -56,14 +56,6 @@ def show_image_test(x=0, y=0, width=200, height=200):
         if cv2.waitKey(25) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
-
-
-def setup_vysor_window():
-    ''' Moves the Vysor window to fixed location for capture via mss '''
-    x, y, w, h = VYSOR_RECT
-    mon_name, _ = MONITORS[1 if NUM_MONITORS >= 2 else 0]
-    move_window_to_screen(VYSOR_WINDOW_NAME, x, y, w, h, mon_name)
-    activate_window_by_name(VYSOR_WINDOW_NAME)
 
 
 def vysor_show_image_test():

@@ -71,7 +71,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     def _reset(self):
         self.logger.debug('Reset AI Environment')
         self._cleanup_current_step()
-        self.client.send_reset_command()
+        self.client.reset_game()
         self.step_num = 0
         return time_step.restart(self._get_empty_tf_obs())
 

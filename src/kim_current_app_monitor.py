@@ -41,7 +41,7 @@ class KimCurrentAppMonitor(object):
         if diff.seconds >= self.max_non_kim_time:
             # reset to kim app.
             log('kim app monitor is resetting to kim.')
-            self.client.send_reset_command()
+            self.client.reset_game()
             self.last_kim_process_time = now
 
         self.last_ping_time = now

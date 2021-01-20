@@ -82,7 +82,7 @@ class DeviceClientKimEnv(KimEnv):
         self.client = client
 
     def _do_reset(self):
-        self.client.send_reset_command()
+        self.client.reset_game()
 
     def _get_state(self):
         return self.action_state_manager.cur_screen_state
