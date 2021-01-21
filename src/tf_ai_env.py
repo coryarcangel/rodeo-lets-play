@@ -13,6 +13,7 @@ from ai_actions import Action, get_object_action_data, get_action_type_str
 from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from object_name_values import get_object_name_int_values
+from device_client import DeviceClient
 from config import REDIS_HOST, REDIS_PORT
 
 
@@ -26,6 +27,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.client = client
         self.action_state_manager = DeviceClientEnvActionStateManager(
             client, host, port)
+        self.action_spec_mode = 2  # either 1 (matrix) or 2 (vector)
 
         # [0,1] domain, lower makes next step reward less important
         self.std_discount = 0.5
@@ -36,11 +38,12 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         max_width = client.img_rect[2]
         max_height = client.img_rect[3]
 
-        bf = self.grid_blur_factor = 4
+        bf = self.grid_blur_factor = 10
         blur_width = self.blur_width = int(max_width / bf)
         blur_height = self.blur_height = int(max_height / bf)
+        blur_area = self.blur_area = blur_width * blur_height
         self.max_action_vals_1 = [5, blur_width, blur_height]
-        self.max_action_vals_2 = 3 + (2 * blur_width) + (2 * blur_height)
+        self.max_action_vals_2 = 3 + (blur_area * 2)
 
         # Type 1 - (action, x, y) (blurred)
         self._action_spec_1 = array_spec.BoundedArraySpec(
@@ -63,7 +66,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     """ Implementing TF-Agent PyEnvironment Abstract Methods """
 
     def action_spec(self):
-        return self._action_spec_1
+        return self._action_spec_1 if self.action_spec_mode == 1 else self._action_spec_2
 
     def observation_spec(self):
         return self._observation_spec
@@ -177,12 +180,17 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     """ Transforming Actions to and from TF-Agent matrices """
 
     def tf_action_to_ai_action(self, tf_action):
-        # Could switch this if we are using tfaction2 mode
-        return self._tf_action1_to_ai_action(tf_action)
+        if self.action_spec_mode == 1:
+            return self._tf_action1_to_ai_action(tf_action)
+        else:
+            return self._tf_action2_to_ai_action(tf_action)
 
     def ai_action_to_tf_action(self, ai_action_tup):
         action, args = ai_action_tup
-        return self._ai_action_to_tf_action1(action, args)
+        if self.action_spec_mode == 1:
+            return self._ai_action_to_tf_action1(action, args)
+        else:
+            return self._ai_action_to_tf_action2(action, args)
 
     def _get_tap_action(self, action_name, x_blur, y_blur):
         x, y = (x_blur * self.grid_blur_factor, y_blur * self.grid_blur_factor)
@@ -216,26 +224,27 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             return (Action.PASS, {})
 
     def _tf_action2_to_ai_action(self, tf_action2):
-        if tf_action2 in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
-            return self._get_swipe_action(tf_action2)
-        elif tf_action2 in [Action.PASS, Action.RESET]:
-            return (tf_action2, {})
+        if tf_action2 < Action.TAP_LOCATION:
+            action_name = int(tf_action2)
+            if action_name in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
+                return self._get_swipe_action(action_name)
+            else:
+                return (action_name, {})
         else:
             # convert single digit to coded action, x, y value (see above docs)
-            val = tf_action2 - 4
-            bw, bh = (self.blur_width, self.blur_height)
-            midpoint = bw * bh
+            val = tf_action2 - Action.TAP_LOCATION
+            bw, midpoint = (self.blur_width, self.blur_area)
             action_name = Action.TAP_LOCATION \
                 if val <= midpoint else Action.DOUBLE_TAP_LOCATION
             grid_val = val if val <= midpoint else val - midpoint
-            x_blur = int(grid_val / bw)
-            y_blur = grid_val % bw
+            y_blur = int(grid_val / bw)
+            x_blur = grid_val % bw
             return self._get_tap_action(action_name, x_blur, y_blur)
 
     def _get_ai_action_blur_grid_point(self, action_val, args):
         hasxy = action_val in [Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]
         x, y = [args[k] for k in ('x', 'y')] if hasxy else (0, 0)
-        x_blur, y_blur = [int(v) / self.grid_blur_factor for v in (x, y)]
+        x_blur, y_blur = [int(v / self.grid_blur_factor) for v in (x, y)]
         return x_blur, y_blur
 
     def _ai_action_to_tf_action1(self, action_val, args):
@@ -243,11 +252,24 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         return np.array((action_val, x_blur, y_blur), dtype=np.int32)
 
     def _ai_action_to_tf_action2(self, action_val, args):
+        if action_val not in[Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]:
+            return action_val
+
         x_blur, y_blur = self._get_ai_action_blur_grid_point(action_val, args)
-        grid_val = (x_blur * self.blur_width) + y_blur  # 0-val if not tap
-        multiplier = 2 if action_val == Action.DOUBLE_TAP_LOCATION else 1
-        val = action_val + (grid_val * multiplier)
+        grid_val = (y_blur * self.blur_width) + x_blur
+        val = Action.TAP_LOCATION + grid_val
+        if action_val == Action.DOUBLE_TAP_LOCATION:
+            val += self.blur_area
         return val
 
     def _take_ai_action(self, action, args):
         self.action_state_manager.attempt_action(action, args)
+
+
+def create_tf_ai_env():
+    device_client = DeviceClient()
+    device_client.start()
+
+    env = DeviceClientTfEnv(device_client)
+
+    return env

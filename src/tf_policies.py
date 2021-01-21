@@ -23,7 +23,8 @@ class TfAgentHeuristicPolicy(py_policy.PyPolicy):
         ai_state = self.env.get_cur_ai_state()
         ai_action_tup = self.selector.select_state_action(ai_state)
         tf_action = self.env.ai_action_to_tf_action(ai_action_tup)
-        tf_action = np.array([tf_action])
+        if self.env.action_spec_mode == 1:
+            tf_action = np.array([tf_action])
 
         # NOTE: should I pass info here? probably not necessary?
         info = ()

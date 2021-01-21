@@ -246,6 +246,7 @@ class HeuristicRoom(object):
         ''' Selects an action from possible list based on... heuristics '''
 
         if self.needs_reset:
+            self.needs_reset = False
             return (Action.RESET, {})
 
         # Choose with custom weights

@@ -6,19 +6,9 @@ import traceback
 from tf_agents.environments import tf_py_environment
 
 from config import TF_AI_POLICY_WEIGHTS
-from device_client import DeviceClient
-from tf_ai_env import DeviceClientTfEnv
+from tf_ai_env import create_tf_ai_env
 from tf_deep_q import load_saved_policy
 from tf_policies import TfAgentPolicyFactory
-
-
-def create_client_env():
-    device_client = DeviceClient()
-    device_client.start()
-
-    env = DeviceClientTfEnv(device_client)
-
-    return env
 
 
 def run_ai_with_policy(env, policy):
@@ -32,7 +22,7 @@ def run_ai_with_policy(env, policy):
 
 
 def run_ai_with_random_policy():
-    env = create_client_env()
+    env = create_tf_ai_env()
 
     factory = TfAgentPolicyFactory(env)
     policy = factory.get_random_policy()
@@ -41,7 +31,7 @@ def run_ai_with_random_policy():
 
 
 def run_ai_with_heuristic_policy():
-    env = create_client_env()
+    env = create_tf_ai_env()
 
     factory = TfAgentPolicyFactory(env)
     policy = factory.get_heuristic_policy()
@@ -52,7 +42,7 @@ def run_ai_with_heuristic_policy():
 def run_ai_with_saved_blended_policy(name='policy',
                                      dir=os.getcwd() + '/deep_q_save',
                                      weights=TF_AI_POLICY_WEIGHTS):
-    env = create_client_env()
+    env = create_tf_ai_env()
 
     def get_weight(key):
         return weights[key] if key in weights else 0

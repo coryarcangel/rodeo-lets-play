@@ -102,10 +102,10 @@ class ActionWeighter(object):
     def __init__(self):
         self.ActionWeights = {
             Action.PASS: 25,
-            Action.SWIPE_LEFT: 50,
-            Action.SWIPE_RIGHT: 50,
+            Action.SWIPE_LEFT: 150,
+            Action.SWIPE_RIGHT: 150,
             Action.TAP_LOCATION: 100,
-            Action.DOUBLE_TAP_LOCATION: 50,
+            Action.DOUBLE_TAP_LOCATION: 40,
             Action.RESET: 0.01
         }
         self.TapTypeWeights = {
