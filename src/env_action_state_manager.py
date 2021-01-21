@@ -1,9 +1,9 @@
 """ Shared manager between old ai_env and tf_ai_env """
 
-import logging
 import json
 import redis
 from time import time
+from kim_logs import get_kim_logger
 from ai_actions import Action
 from ai_state_data import AIState
 from config import REDIS_HOST, REDIS_PORT
@@ -15,7 +15,7 @@ class DeviceClientEnvActionStateManager(object):
 
     def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
         self.client = client
-        self.logger = logging.getLogger('DeviceClientEnvActionStateManager')
+        self.logger = get_kim_logger('DeviceClientEnvActionStateManager')
 
         self.cur_screen_index = 0
         self.cur_screen_state = None

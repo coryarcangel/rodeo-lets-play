@@ -50,10 +50,10 @@ const getProcessLogger = (name, index, isMain, color) => {
 }
 
 const logToDashboard = (dashboardLogger, ...strings) => {
-  const now = moment().format('YY-MM-DD HH:mm:ss')
+  const now = moment().format('MM-DD HH:mm:ss')
   const lines = strings.join('\n').split('\n')
   lines.forEach(l => {
-    dashboardLogger.log(`${now}: ${l}`)
+    dashboardLogger.log(`${now} - ${l}`)
   })
 }
 

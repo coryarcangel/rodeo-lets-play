@@ -63,7 +63,12 @@ class KimProcess {
       }
 
       this.running = true
-      const child = this.child = childProcess.spawn(this.script)
+      const child = this.child = childProcess.spawn(this.script, {
+        env: {
+          ...process.env,
+          PROCESS_HUB: 'true'
+        }
+      })
 
       genlog(`Started Process - ${this.getLabel()}`.green)
 
@@ -81,6 +86,7 @@ class KimProcess {
         if (maxTimeBetweenLogs && Date.now() - this.lastLogTime > maxTimeBetweenLogs) {
           if (monitorInterval) {
             clearInterval(monitorInterval)
+            genlog(`Killing Inactive Process - ${this.getLabel()}`.red)
             this.killChild()
           }
         }

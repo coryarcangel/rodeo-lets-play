@@ -1,13 +1,13 @@
 """Implements the "Deep Q Learning" algorithm"""
 
 import itertools
-import logging
 import os
 import random
 from collections import namedtuple
 import numpy as np
 import tensorflow as tf
 import plotting
+from kim_logs import get_kim_logger
 from ai_actions import ACTIONS, NUM_ACTIONS
 
 
@@ -95,7 +95,7 @@ def deep_q_learning(sess,
         "Transition", [
             "state", "action", "reward", "next_state", "done"])
 
-    logger = logging.getLogger('deep_q_learning')
+    logger = get_kim_logger('deep_q_learning')
 
     # The replay memory
     replay_memory = []

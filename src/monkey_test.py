@@ -1,11 +1,9 @@
 from time import sleep
 from random import randint
 
-from config import configure_logging
 from util import measure_task
 from device_manager import get_default_device_manager
 
-configure_logging()
 device_manager = get_default_device_manager()
 
 '''

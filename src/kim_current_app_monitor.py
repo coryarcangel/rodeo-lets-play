@@ -1,14 +1,8 @@
-import sys
 from datetime import datetime
-
+from kim_logs import get_kim_logger
 from device_client import DeviceClient
 
 KK_HOLLYWOOD_PACKAGE = 'com.glu.stardomkim'
-
-
-def log(text):
-    print(text, file=sys.stdout)
-    sys.stdout.flush()
 
 
 class KimCurrentAppMonitor(object):
@@ -20,6 +14,7 @@ class KimCurrentAppMonitor(object):
     """
 
     def __init__(self):
+        self.logger = get_kim_logger('CurAppMonitor')
         self.last_ping_time = datetime.now()
         self.last_kim_process_time = datetime.now()
         self.max_non_kim_time = 25  # 25 seconds until we force a reset.
@@ -40,7 +35,7 @@ class KimCurrentAppMonitor(object):
         diff = now - self.last_kim_process_time
         if diff.seconds >= self.max_non_kim_time:
             # reset to kim app.
-            log('kim app monitor is resetting to kim.')
+            self.logger.info('Resetting to KK:Hollywood.')
             self.client.reset_game()
             self.last_kim_process_time = now
 

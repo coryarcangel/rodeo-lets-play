@@ -1,4 +1,3 @@
-import logging
 import os
 import tensorflow as tf
 
@@ -10,6 +9,8 @@ from tf_agents.networks import q_network
 from tf_agents.policies import policy_saver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.utils import common
+
+from kim_logs import get_kim_logger
 
 
 def load_saved_policy(policy_dir):
@@ -23,7 +24,7 @@ class TfAgentDeepQManager(object):
         def p_val(key, defaultVal):
             return params[key] if key in params else defaultVal
 
-        self.logger = logging.getLogger('TfAgentDeepQManager')
+        self.logger = get_kim_logger('TfAgentDeepQManager')
         self.env = env
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
 

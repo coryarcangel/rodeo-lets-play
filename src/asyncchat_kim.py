@@ -1,6 +1,5 @@
 import asynchat
-import logging
-
+from kim_logs import get_kim_logger
 from config import DEVICE_HOST, DEVICE_PORT
 
 COMMAND_SEP = '|'
@@ -27,7 +26,7 @@ class AsyncchatKim(asynchat.async_chat):
         asynchat.async_chat.__init__(self, sock)
         self.host = host
         self.port = port
-        self.logger = logging.getLogger(logger_name)
+        self.logger = get_kim_logger(logger_name)
         self.command_id = 0
         self.command_ack_map = {}
         self.command_res_queue = []
@@ -55,7 +54,7 @@ class AsyncchatKim(asynchat.async_chat):
             self._handle_command(command_id, command, data)
 
     def _handle_ack(self, command_id, data):
-        self.logger.debug('Received ACK for %s', command_id)
+        # self.logger.debug('Received ACK for %s', command_id)
         self.command_ack_map[command_id] = True
         self.command_res_queue.append((command_id, data))
         if len(self.command_res_queue) > 10:

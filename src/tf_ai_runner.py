@@ -5,7 +5,7 @@ import traceback
 
 from tf_agents.environments import tf_py_environment
 
-from config import configure_logging, TF_AI_POLICY_WEIGHTS
+from config import TF_AI_POLICY_WEIGHTS
 from device_client import DeviceClient
 from tf_ai_env import DeviceClientTfEnv
 from tf_deep_q import load_saved_policy
@@ -13,8 +13,6 @@ from tf_policies import TfAgentPolicyFactory
 
 
 def create_client_env():
-    configure_logging()
-
     device_client = DeviceClient()
     device_client.start()
 

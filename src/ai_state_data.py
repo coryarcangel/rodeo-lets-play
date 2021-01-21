@@ -1,10 +1,10 @@
 """ Code to store images from KK:Hollywood as data state """
 
 import json
-import logging
 import random
 import numpy as np
 # import tensorflow as tf
+from kim_logs import get_kim_logger
 from math import pow
 from action_shape import get_shape_data_label, all_action_shapes
 
@@ -54,7 +54,7 @@ class AIState(object):
                  color_features=None,
                  blobs=[],
                  shapes=[]):
-        self.logger = logging.getLogger('AIState')
+        self.logger = get_kim_logger('AIState')
         self.image_shape = image_shape
         self.money = money
         self.stars = stars

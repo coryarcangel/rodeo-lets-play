@@ -2,7 +2,7 @@
 Contains KimEnv class for controlling the game via the learning algorithm.
 """
 
-import logging
+from kim_logs import get_kim_logger
 from ai_actions import Action
 from ai_state import AIStateProcessor
 from env_action_state_manager import DeviceClientEnvActionStateManager
@@ -16,7 +16,7 @@ class KimEnv(object):
 
     def __init__(self):
         self.step_num = 0
-        self.logger = logging.getLogger('KimEnv')
+        self.logger = get_kim_logger('KimEnv')
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.

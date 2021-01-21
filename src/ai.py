@@ -1,12 +1,11 @@
 """Glues all of the modules together and runs the ai gamer on a device."""
 
-import logging
 import os
 from datetime import datetime
 import tensorflow as tf
 
 # Local Imports
-from config import configure_logging
+from kim_logs import get_kim_logger
 from ai_deep_q import deep_q_learning
 from ai_random import random_learning
 from ai_heuristic import heuristic_learning
@@ -25,7 +24,6 @@ class LearningMode(object):
 # Config
 learning_mode = LearningMode.HEURISTIC
 STATIC_SCREENSHOT = False
-configure_logging()
 
 
 def main():
@@ -39,7 +37,7 @@ def main():
     start_time = datetime.now()
     # Where we save our checkpoints and graphs
     experiment_dir = os.path.abspath("./experiments/{}".format(start_time))
-    logger = logging.getLogger('main')
+    logger = get_kim_logger('main')
 
     # Tensorflow setup
     tf.reset_default_graph()

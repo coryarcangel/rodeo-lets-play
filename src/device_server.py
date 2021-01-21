@@ -1,13 +1,12 @@
 """ DeviceServer class to communicate with DeviceManager by commands over network """
 
 import asyncore
-import logging
 import os
 import socket
 import signal
 import sys
 import traceback
-
+from kim_logs import get_kim_logger
 from config import DEVICE_HOST, DEVICE_PORT
 from device_manager import get_default_device_manager
 from asyncchat_kim import AsyncchatKim, KimCommand
@@ -106,7 +105,7 @@ class DeviceServer(asyncore.dispatcher):
     def __init__(self, device_manager, host=DEVICE_HOST, port=DEVICE_PORT):
         asyncore.dispatcher.__init__(self)
         self.device_manager = device_manager
-        self.logger = logging.getLogger('DeviceServer')
+        self.logger = get_kim_logger('DeviceServer')
 
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.bind((DEVICE_HOST, port))
@@ -140,12 +139,6 @@ def get_default_device_server():
 
 def main():
     """ Starts the default server if file is run as a script """
-    logging.basicConfig(
-        stream=sys.stdout,
-        format='%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s:%(message)s',
-        level=logging.DEBUG,
-        datefmt='%Y-%m-%d %H:%M:%S')
-
     server = get_default_device_server()
     server.start()
 

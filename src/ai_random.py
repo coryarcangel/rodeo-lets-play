@@ -1,10 +1,10 @@
 """Selects actions basically randomly based on predefined probabilities."""
 
 import itertools
-import logging
 import numpy as np
 import tensorflow as tf
 import plotting
+from kim_logs import get_kim_logger
 from ai_actions import ActionGetter, ActionWeighter, Action
 
 
@@ -33,7 +33,7 @@ def random_learning(sess, env, num_episodes=100, max_episode_length=100000):
         An EpisodeStats object with two numpy arrays for episode_lengths and episode_rewards.
     """
 
-    logger = logging.getLogger('random_learning')
+    logger = get_kim_logger('random_learning')
 
     # Keeps track of useful statistics
     stats = plotting.EpisodeStats(

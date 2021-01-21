@@ -8,12 +8,8 @@ import sys
 
 from config import FRONTEND_WEB_URL, FRONTEND_NAME, NUM_MONITORS, MON_NAMES
 from window import open_chrome_url, click_in_window, move_window_to_screen, set_window_fullscreen, activate_window_by_name
+from kim_logs import get_kim_logger
 from kim_current_app_monitor import KimCurrentAppMonitor
-
-
-def log(text):
-    print(text, file=sys.stdout)
-    sys.stdout.flush()
 
 
 def run_frontend_client():
@@ -22,6 +18,11 @@ def run_frontend_client():
         1. Open chrome to the frontend view, and ensure chrome doesnt die.
         2. Run the KimCurrentAppMonitor loop.
     """
+
+    logger = get_kim_logger('FrontendClient')
+
+    def log(text):
+        logger.info(text)
 
     chrome_p = None
     try:

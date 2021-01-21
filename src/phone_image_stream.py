@@ -20,14 +20,10 @@ from PIL import Image
 from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
 from config import VYSOR_WINDOW_NAME, VYSOR_RECT, VYSOR_CAP_AREA
 from config import WEB_BASED_IMAGE, ANN_TEST, NUM_MONITORS, MONITORS
+from kim_logs import get_kim_logger
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
 from window import setup_vysor_window, set_window_fullscreen
 from image_annotation import AnnotatedImageStream
-
-
-def log(text):
-    print(text, file=sys.stdout)
-    sys.stdout.flush()
 
 
 def show_image_test(x=0, y=0, width=200, height=200):
@@ -48,9 +44,9 @@ def show_image_test(x=0, y=0, width=200, height=200):
 
         # Get YOLO results
         yolo_result = tfnet.return_predict(img_3chan)
-        log(yolo_result)
+        print(yolo_result)
 
-        log('fps: {0}'.format(1 / (time.time() - last_time)))
+        print('fps: {0}'.format(1 / (time.time() - last_time)))
 
         # Press "q" to quit
         if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -71,6 +67,7 @@ class VysorDataStream(object):
     ''' runs the process as described in module docs '''
 
     def __init__(self):
+        self.logger = get_kim_logger('VysorDataStream')
         self.r = redis.StrictRedis(
             host=REDIS_HOST,
             port=REDIS_PORT,
@@ -187,7 +184,7 @@ class VysorDataStream(object):
                     pimg = Image.fromarray(rgb)
                     self.r.set('phone-image-data', pimg.tobytes())
 
-                log('fps: {0}'.format(1 / (time.time() - last_time)))
+                self.logger.info('fps: {0}'.format(1 / (time.time() - last_time)))
 
                 # increment then Just Give It A Break
                 screen_num += 1

@@ -4,7 +4,6 @@ import argparse
 import os
 import io
 import json
-import sys
 import redis
 
 import tornado.ioloop
@@ -14,6 +13,7 @@ import tornado.websocket
 from PIL import Image
 
 from config import REDIS_HOST, REDIS_PORT
+from kim_logs import get_kim_logger
 from ai_actions import ActionGetter
 from ai_state_data import AIState
 
@@ -30,9 +30,11 @@ parser.add_argument('--stopdelay', default=7, type=int, help='Delay in seconds b
 args = parser.parse_args()
 
 
+logger = get_kim_logger('FrontendServer')
+
+
 def log(text):
-    print(text, file=sys.stdout)
-    sys.stdout.flush()
+    logger.info(text)
 
 
 class RedisImageStream:

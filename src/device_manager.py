@@ -1,8 +1,8 @@
 """ DeviceManager class to control an Android emulator or phone """
 
-import logging
 from time import sleep
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+from kim_logs import get_kim_logger
 
 # Constants
 BROWSER_PACKAGE = 'com.android.chrome'
@@ -20,7 +20,7 @@ class DeviceManager(object):
     def __init__(self, device):
         self.device = device
         self.frame_count = 0
-        self.logger = logging.getLogger('DeviceManager')
+        self.logger = get_kim_logger('DeviceManager')
 
     def log_info(self):
         """ Logs information about the connected device """
@@ -150,7 +150,7 @@ class DeviceManager(object):
 def get_default_device():
     ''' Connects to default android device (either emulator or physical phone) and returns monkeyrunner device'''
 
-    default_logger = logging.getLogger('default')
+    default_logger = get_kim_logger('default')
     default_logger.info('Connecting to device...')
 
     # Connects to the current device, returning a MonkeyDevice object

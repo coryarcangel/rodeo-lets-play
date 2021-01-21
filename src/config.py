@@ -1,6 +1,4 @@
 import collections
-import logging
-import sys
 
 from util import Rect
 
@@ -119,11 +117,3 @@ IMG_CONFIG_GALAXY8 = ImageConfig(
 )
 
 CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY8
-
-
-def configure_logging():
-    logging.basicConfig(
-        stream=sys.stdout,
-        format='%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s:%(message)s',
-        level=logging.DEBUG,
-        datefmt='%Y-%m-%d %H:%M:%S')

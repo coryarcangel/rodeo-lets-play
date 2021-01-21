@@ -3,12 +3,12 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 """
 
 import json
-import logging
 import numpy as np
 from tf_agents.environments import py_environment
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
 
+from kim_logs import get_kim_logger
 from ai_actions import Action, get_object_action_data, get_action_type_str
 from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
@@ -22,7 +22,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     """
 
     def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
-        self.logger = logging.getLogger('TfKimEnv')
+        self.logger = get_kim_logger('TfKimEnv')
         self.client = client
         self.action_state_manager = DeviceClientEnvActionStateManager(
             client, host, port)

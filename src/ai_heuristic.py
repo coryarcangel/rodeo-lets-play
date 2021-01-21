@@ -1,10 +1,10 @@
 """Selects actions based on predefined probabilities and according to a combination of known heuristics."""
 
 import itertools
-import logging
 import numpy as np
 import tensorflow as tf
 import plotting
+from kim_logs import get_kim_logger
 from collections import deque
 from math import pow
 from ai_actions import ActionGetter, ActionWeighter, Action, get_action_type_str
@@ -342,7 +342,7 @@ def heuristic_learning(sess, env, num_episodes=1000, max_episode_length=100000):
         An EpisodeStats object with two numpy arrays for episode_lengths and episode_rewards.
     """
 
-    logger = logging.getLogger('heuristic_learning')
+    logger = get_kim_logger('heuristic_learning')
 
     # Keeps track of useful statistics
     stats = plotting.EpisodeStats(
