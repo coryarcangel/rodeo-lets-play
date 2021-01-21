@@ -22,6 +22,14 @@ def set_window_pos(win_id, x, y):
     return run_cmd('xdotool windowmove {} {} {}'.format(win_id, x, y))
 
 
+def get_window_size(win_id):
+    ''' gets size of window with given id '''
+    lines = run_cmd('xdotool getwindowgeometry {}'.format(win_id)).strip().decode('UTF-8').split('\n')
+    size = [l.split(': ')[1] for l in lines if 'Geometry:' in l][0]
+    width, height = [int(x) for x in size.split('x')]
+    return (width, height)
+
+
 def set_window_size(win_id, width, height):
     ''' sets size of window with given id '''
     return run_cmd('xdotool windowsize {} {} {}'.format(win_id, width, height))
