@@ -29,15 +29,15 @@ class TfAgentDeepQManager(object):
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
 
         # Agent Params
-        fc_layer_params = p_val('fc_layer_params', (100,))
+        fc_layer_params = p_val('fc_layer_params', (75,40))
         learning_rate = p_val('learning_rate', 1e-3)
         errors_loss_fn = p_val('errors_loss_fn', common.element_wise_squared_loss)
 
         # Training Params
-        collect_steps_per_iteration = p_val('collect_steps_per_iteration', 100)
+        self.collect_steps_per_iteration = p_val('collect_steps_per_iteration', 100)
         replay_buffer_capacity = p_val('replay_buffer_capacity', 100000)
         self.replay_batch_size = p_val('replay_batch_size', 64)
-        self.train_log_interval = p_val('train_log_interval', 5)
+        self.train_log_interval = p_val('train_log_interval', 1)
         self.train_eval_interval = p_val('train_eval_interval', 1000)
         num_eval_steps = p_val('num_eval_steps', 100)
 
@@ -63,7 +63,7 @@ class TfAgentDeepQManager(object):
             optimizer=self.optimizer,
             td_errors_loss_fn=errors_loss_fn,
             train_step_counter=self.train_step_counter)
-        self.agent.initalize()
+        self.agent.initialize()
 
         agent.train = common.function(agent.train)
 
@@ -76,7 +76,7 @@ class TfAgentDeepQManager(object):
             self.tf_env,
             agent.collect_policy,
             observers=[self.replay_buffer.add_batch],
-            num_steps=collect_steps_per_iteration)
+            num_steps=self.collect_steps_per_iteration)
 
         self.avg_return_metric = py_metrics.AverageReturnMetric(
             buffer_size=num_eval_steps)
@@ -102,7 +102,7 @@ class TfAgentDeepQManager(object):
         self.policy_saver = policy_saver.PolicySaver(agent.policy)
 
     def collect_initial_data(self):
-        # Initial data collection
+        self.logger.info('Collecting Initial Data')
         self.collect_driver.run()
 
         # Dataset generates trajectories with shape [BxTx...] where
@@ -115,7 +115,10 @@ class TfAgentDeepQManager(object):
 
         self.has_collected_initial_data = True
 
-    def train(self, num_iterations=20000):
+    def train(self, num_iterations=100):
+        self.logger.info('Training {} Iterations of {} Steps each'.format(
+        num_iterations, self.collect_steps_per_iteration))
+
         if not self.has_collected_initial_data:
             self.collect_initial_data()
 
@@ -136,18 +139,19 @@ class TfAgentDeepQManager(object):
             step = self.agent.train_step_counter.numpy()
 
             if step % self.train_log_interval == 0:
-                self.logger.info('step = {0}: loss = {1}'.format(
+                self.logger.info('training iteration = {0}: loss = {1}'.format(
                     step, train_loss))
 
             if step % self.train_eval_interval == 0:
                 self.eval_driver.run()
                 avg_return = self.avg_return_metric.result()
-                self.logger.info('step = {0}: Average Return = {1}'.format(
+                self.logger.info('training iteration = {0}: Average Return = {1}'.format(
                     step, avg_return))
                 returns.append(avg_return)
 
     def save_policy(self, name='policy'):
         policy_save_dir = os.path.join(self.save_dir, name)
+        self.logger.info('Saving To Policy Dir: {}'.format(policy_save_dir))
         self.policy_saver.save(policy_save_dir)
 
     def load_policy(self, name='policy'):
@@ -155,8 +159,10 @@ class TfAgentDeepQManager(object):
         return load_saved_policy(policy_save_dir)
 
     def save_checkpoint(self):
+        self.logger.info('Saving To Checkpoint')
         self.train_checkpointer.save(self.train_step_counter)
 
     def restore_checkpoint(self):
+        self.logger.info('Restoring From Checkpoint')
         self.train_checkpointer.initialize_or_restore()
         self.train_step_counter = tf.compat.v1.train.get_global_step()

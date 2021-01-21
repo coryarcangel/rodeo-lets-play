@@ -57,7 +57,7 @@ def run_frontend_client():
 
             kim_monitor.run_monitor_loop()
 
-            time.sleep(1)
+            time.sleep(5)
 
     except (KeyboardInterrupt, SystemExit) as e:
         log("Caught closure exception")

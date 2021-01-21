@@ -60,7 +60,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             shape=(self.num_observation_objects, 4),
             dtype=np.int32,
             minimum=[(0, 0, 0, 0)],
-            maximum=[self.obj_name_int_max_val, 100, max_width, max_height],
+            maximum=[(self.obj_name_int_max_val, 100, max_width, max_height)],
             name='observation')
 
     """ Implementing TF-Agent PyEnvironment Abstract Methods """
