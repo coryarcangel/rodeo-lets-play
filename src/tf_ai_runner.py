@@ -40,6 +40,15 @@ def run_ai_with_random_policy():
     run_ai_with_policy(env, policy)
 
 
+def run_ai_with_heuristic_policy():
+    env = create_client_env()
+
+    factory = TfAgentPolicyFactory(env)
+    policy = factory.get_heuristic_policy()
+
+    run_ai_with_policy(env, policy)
+
+
 def run_ai_with_saved_blended_policy(name='policy',
                                      dir=os.getcwd() + '/deep_q_save',
                                      weights=TF_AI_POLICY_WEIGHTS):
@@ -65,7 +74,8 @@ def run_ai_with_saved_blended_policy(name='policy',
 
 if __name__ == '__main__':
     try:
-        run_ai_with_random_policy()
+        # run_ai_with_random_policy()
+        run_ai_with_heuristic_policy()
         # run_ai_with_saved_blended_policy()
     except Exception as e:
         traceback.print_exc()

@@ -19,7 +19,7 @@ class KimLogs():
     def configure_logging(self):
         # format = '%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s:%(message)s'
         format = '%(message)s' if is_process_hub \
-            else '%(asctime)s:%(levelname)s:%(name)s:%(message)s'
+            else '%(asctime)s:%(levelname)s:%(name)s - %(message)s'
         logging.basicConfig(
             stream=sys.stdout,
             format=format,
