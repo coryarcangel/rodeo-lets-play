@@ -83,7 +83,8 @@ ImageConfig = collections.namedtuple("ImageConfig", [
     "top_menu_padding",
     "top_menu_item_width",
     "money_item_left",
-    "stars_item_left"
+    "stars_item_left",
+    "bolts_item_left",
 ])
 
 IMG_CONFIG_IPHONE7PLUS = ImageConfig(
@@ -91,6 +92,7 @@ IMG_CONFIG_IPHONE7PLUS = ImageConfig(
     height=1242,
     money_item_left=1170,
     stars_item_left=1568,
+    bolts_item_left=0,
     top_menu_height=115,
     top_menu_padding=30,
     top_menu_item_width=240
@@ -101,6 +103,7 @@ IMG_CONFIG_STUDIOBLU = ImageConfig(
     height=720,
     money_item_left=680,
     stars_item_left=884,
+    bolts_item_left=0,
     top_menu_height=60,
     top_menu_padding=10,
     top_menu_item_width=120
@@ -109,11 +112,14 @@ IMG_CONFIG_STUDIOBLU = ImageConfig(
 IMG_CONFIG_GALAXY8 = ImageConfig(
     width=VYSOR_CAP_AREA[2],
     height=VYSOR_CAP_AREA[3],
-    money_item_left=VYSOR_CAP_AREA[2] - 325,
-    stars_item_left=VYSOR_CAP_AREA[2] - 220,
+    money_item_left=VYSOR_CAP_AREA[2] - 312,
+    stars_item_left=VYSOR_CAP_AREA[2] - 205,
+    bolts_item_left=VYSOR_CAP_AREA[2] - 407,
     top_menu_height=40,
     top_menu_padding=10,
-    top_menu_item_width=65
+    top_menu_item_width=55
 )
+
+# TODO: IMG_CONFIG_GALAXY10
 
 CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY8

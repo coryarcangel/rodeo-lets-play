@@ -1,7 +1,7 @@
 """ Code to transform images from KK:Hollywood into numerical state """
 
 import tesserocr
-from PIL import Image
+from PIL import Image, ImageEnhance
 from concurrent import futures
 
 
@@ -29,6 +29,8 @@ class ImageOCRProcessor(object):
         width = self.image_config.top_menu_item_width
         item_crop_box = (left, padding, left + width, height - padding)
         hud_image = image.crop(item_crop_box)
+        hud_image = ImageEnhance.Contrast(hud_image).enhance(2)
+        hud_image = hud_image.resize((162, 100), Image.ANTIALIAS)
         value = read_num_from_img(hud_image)
         return value
 
@@ -48,7 +50,8 @@ class ImageOCRProcessor(object):
         with futures.ThreadPoolExecutor() as executor:
             future_to_key = {
                 executor.submit(self._read_hud_value, image, self.image_config.money_item_left): 'money',
-                executor.submit(self._read_hud_value, image, self.image_config.stars_item_left): 'stars'
+                executor.submit(self._read_hud_value, image, self.image_config.stars_item_left): 'stars',
+                # executor.submit(self._read_hud_value, image, self.image_config.bolts_item_left): 'bolts',
             }
             for future in futures.as_completed(future_to_key):
                 key = future_to_key[future]
