@@ -13,7 +13,8 @@ from tf_agents.utils import common
 from kim_logs import get_kim_logger
 
 
-def load_saved_policy(policy_dir):
+def load_saved_policy(save_dir, policy_dir_name):
+    policy_dir = os.path.join(save_dir, policy_dir_name)
     saved_policy = tf.compat.v2.saved_model.load(policy_dir)
     return saved_policy
 
@@ -155,8 +156,7 @@ class TfAgentDeepQManager(object):
         self.policy_saver.save(policy_save_dir)
 
     def load_policy(self, name='policy'):
-        policy_save_dir = os.path.join(self.save_dir, name)
-        return load_saved_policy(policy_save_dir)
+        return load_saved_policy(self.save_dir, name)
 
     def save_checkpoint(self):
         self.logger.info('Saving To Checkpoint')

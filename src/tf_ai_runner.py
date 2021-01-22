@@ -7,7 +7,7 @@ from tf_agents.environments import tf_py_environment
 
 from config import TF_AI_POLICY_WEIGHTS
 from tf_ai_env import create_tf_ai_env
-from tf_deep_q import load_saved_policy
+from tf_deep_q import TfAgentDeepQManager
 from tf_policies import TfAgentPolicyFactory
 
 
@@ -39,8 +39,8 @@ def run_ai_with_heuristic_policy():
     run_ai_with_policy(env, policy)
 
 
-def run_ai_with_saved_blended_policy(name='policy',
-                                     dir=os.getcwd() + '/deep_q_save',
+def run_ai_with_saved_blended_policy(policy_name='policy',
+                                     save_dir='test_deep_q',
                                      weights=TF_AI_POLICY_WEIGHTS):
     env = create_tf_ai_env()
 
@@ -48,13 +48,14 @@ def run_ai_with_saved_blended_policy(name='policy',
         return weights[key] if key in weights else 0
 
     # Load Deep Q Policy
-    policy_dir = os.path.join(dir, name)
-    deep_q_policy = load_saved_policy(policy_dir)
+    deep_q_manager = TfAgentDeepQManager(env, {'save_dir': save_dir})
+    deep_q_policy = deep_q_manager.load_policy(policy_name)
 
     # Create Blended Policy
     factory = TfAgentPolicyFactory(env)
 
-    blended_policy = factory.get_blended_policy(deep_q_policy,
+    blended_policy = factory.get_blended_policy(deep_q_manager,
+                                                deep_q_policy,
                                                 deep_q_weight=get_weight('deep_q'),
                                                 heuristic_weight=get_weight('heuristic'),
                                                 random_weight=get_weight('random'))
@@ -65,8 +66,8 @@ def run_ai_with_saved_blended_policy(name='policy',
 if __name__ == '__main__':
     try:
         # run_ai_with_random_policy()
-        run_ai_with_heuristic_policy()
-        # run_ai_with_saved_blended_policy()
+        # run_ai_with_heuristic_policy()
+        run_ai_with_saved_blended_policy()
     except Exception as e:
         traceback.print_exc()
         os.kill(os.getpid(), signal.SIGKILL)

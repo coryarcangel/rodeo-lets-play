@@ -3,6 +3,7 @@ import numpy as np
 from tf_agents.policies import py_policy, random_py_policy
 from tf_agents.trajectories import policy_step
 
+from kim_logs import get_kim_logger
 from ai_heuristic import HeuristicActionSelector
 
 
@@ -32,32 +33,41 @@ class TfAgentHeuristicPolicy(py_policy.PyPolicy):
 
 
 class TfAgentBlendedPolicy(py_policy.PyPolicy):
-    def __init__(self, env, deep_q_weighted_policy, other_weighted_policies):
+    def __init__(self, env, deep_q_manager, deep_q_weighted_policy, other_weighted_policies):
         """ Basically pretend to be a deep q policy, but use actions
         from other policies random-Probabalisticly """
         self.env = env
+        self.deep_q_manager = deep_q_manager
+        self.logger = get_kim_logger('TfAgentBlendedPolicy')
 
         policies = [wp[0] for wp in other_weighted_policies]
         dqp = self.deep_q_policy = deep_q_weighted_policy[0]
         self.policies = [dqp] + policies
 
-        dqpw = deep_q_weighted_policy[0]
+        dqpw = deep_q_weighted_policy[1]
         weights = [dqpw] + [wp[1] for wp in other_weighted_policies]
         total_weight = float(sum(weights))
         self.policy_probs = [w / total_weight for w in weights]
 
+        names = self.policy_names = ['DEEP_Q'] + [p[2] for p in other_weighted_policies]
+
+        weights_str = ' - '.join([names[i] + ': ' + str(weights[i]) for i in range(len(weights))])
+        self.logger.info('Policy weights: {}'.format(weights_str))
+
         super(TfAgentBlendedPolicy, self).__init__(
             time_step_spec=env.time_step_spec(),
             action_spec=env.action_spec(),
-            policy_state_spec=dqp.policy_state_spec(),
-            info_spec=dqp.info_spec())
+            policy_state_spec=deep_q_manager.agent.policy.policy_state_spec,
+            info_spec=deep_q_manager.agent.policy.info_spec)
 
-    def get_initial_state(self, batch_size=None):
+    def _get_initial_state(self, batch_size=None):
         return self.deep_q_policy.get_initial_state(batch_size)
 
     def _action(self, time_step, policy_state):
         probs = self.policy_probs
         policy_idx = np.random.choice(len(self.policies), p=probs)
+        policy_name = self.policy_names[policy_idx]
+        self.logger.info('Chose {} policy'.format(policy_name))
 
         dq_step = self.deep_q_policy.action(time_step, policy_state)
         if policy_idx == 0:  # first policy is deep q
@@ -83,10 +93,11 @@ class TfAgentPolicyFactory(object):
         return TfAgentHeuristicPolicy(self.env)
 
     # https://www.tensorflow.org/agents/api_docs/python/tf_agents/policies/q_policy/QPolicy
-    def get_deep_q_policy(self, deep_q_agent):
-        return deep_q_agent.policy
+    def get_deep_q_policy(self, deep_q_manager):
+        return deep_q_manager.agent.policy
 
     def get_blended_policy(self,
+                           deep_q_manager,
                            deep_q_policy,
                            deep_q_weight=0.5,
                            heuristic_weight=0.4,
@@ -94,8 +105,8 @@ class TfAgentPolicyFactory(object):
         dq_policy = (deep_q_policy, deep_q_weight)
 
         other_policies = [p for p in [
-            (self.get_heuristic_policy(), heuristic_weight),
-            (self.get_random_policy(), random_weight)
+            (self.get_heuristic_policy(), heuristic_weight, 'Heuristic'),
+            (self.get_random_policy(), random_weight, 'Random')
         ] if p[1] > 0]
 
-        return TfAgentBlendedPolicy(self.env, dq_policy, other_policies)
+        return TfAgentBlendedPolicy(self.env, deep_q_manager, dq_policy, other_policies)
