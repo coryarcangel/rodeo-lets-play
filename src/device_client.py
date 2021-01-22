@@ -25,12 +25,26 @@ class DeviceClient(AsyncchatKim):
         self.phone_game_rect = phone_game_rect
         self.img_rect = img_rect
 
-    def start(self):
+    def start(self, max_attempts=5):
         """ Connects the client to a server """
         self.logger.debug('Connecting to %s:%d', self.host, self.port)
 
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((self.host, self.port))
+
+        attempt_num = 0
+        while not self.connected and attempt_num < max_attempts:
+            if attempt_num > 1:
+                self.logger.debug('Re-connect attempt #{}/{}'.format(attempt_num, max_attempts - 1))
+                time.sleep(1)
+            try:
+                self.connect((self.host, self.port))
+            except ConnectionRefusedError:
+                self.logger.debug('Connection Refused')
+            attempt_num += 1
+
+        if not self.connected:
+            raise ConnectionRefusedError('Device Client Unable to connect')
 
         self.comm = threading.Thread(target=asyncore.loop)
         self.comm.daemon = True
