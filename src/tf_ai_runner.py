@@ -5,7 +5,7 @@ import traceback
 
 from tf_agents.environments import tf_py_environment
 
-from config import TF_AI_POLICY_WEIGHTS
+from config import TF_AI_POLICY_WEIGHTS, TF_DEEPQ_POLICY_SAVE_DIR
 from tf_ai_env import create_tf_ai_env
 from tf_deep_q import TfAgentDeepQManager
 from tf_policies import TfAgentPolicyFactory
@@ -40,7 +40,7 @@ def run_ai_with_heuristic_policy():
 
 
 def run_ai_with_saved_blended_policy(policy_name='policy',
-                                     save_dir='test_deep_q',
+                                     save_dir=TF_DEEPQ_POLICY_SAVE_DIR,
                                      weights=TF_AI_POLICY_WEIGHTS):
     env = create_tf_ai_env()
 
@@ -65,8 +65,6 @@ def run_ai_with_saved_blended_policy(policy_name='policy',
 
 if __name__ == '__main__':
     try:
-        # run_ai_with_random_policy()
-        # run_ai_with_heuristic_policy()
         run_ai_with_saved_blended_policy()
     except Exception as e:
         traceback.print_exc()

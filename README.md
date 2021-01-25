@@ -17,9 +17,16 @@ A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 4. Save.
 
 ## Monitor Config
-* Update the MONITORS variable in config.py with a list of up to 3 monitor names and their sizes (get names from xrandr)
+* Update the `MONITORS` variable in config.py with a list of up to 3 monitor names and their sizes (get names from xrandr)
 
-## Installing Python 3.7 / Conda for TF Agents
+## Tensorflow Agents Deep Q Config
+* `TF_DEEPQ_POLICY_SAVE_DIR` in config.py is the location of the saved policy to load
+* `TF_AI_POLICY_WEIGHTS` in config.py sets the probabilistic weights of each policy
+in the `TfAgentBlendedPolicy` used in `tf_ai_runner` / process hub. These weights
+should sum to 1.0. Set any of them to `0` to remove that policy (can do all random
+or heuristic for testing, etc)
+
+## Installing Python 3.8 / Conda for TF Agents
 * sudo apt update -y
 * sudo apt install python3.8
 * download miniconda python 3.8 installer https://docs.conda.io/en/latest/miniconda.html#linux-installers
@@ -29,6 +36,8 @@ A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 * Create environment with `conda create --name tf-ai-env python=3.8`
 * Run `conda activate tf-ai-env` to activate environment
 * Run `pip install -r tf_ai_env_pip_requirements.txt`
+
+## Various Software Versions
 
 Cuda Version 9.0.176
 OpenCV Version 2.4.9.1 (from `dpkg -l | grep libopencv`)
@@ -47,22 +56,27 @@ We start the process hub on boot by using Ubuntu's built-in "startup application
 panel and running the `bin/start_all_delay.sh` script.
 gnome-terminal -e /home/cory/watson-hollywood/bin/start_all_delay.sh --geometry="180x60+0+0"
 
-kim_current_app_monitor currently runs inside of the frontend client.
+`kim_current_app_monitor` currently runs inside of the frontend client.
 maybe that could be better separated but I think its fine.
 
 ## Directory Structure
 
-* `src/ai` - neural net code; template for some parts taken from [reinforcement-learning](https://github.com/dennybritz/reinforcement-learning/)
-* `src/monkeyrunner` - code to control the connected android emulator / device
+* `bin` - simple bash scripts to run the independent programs, used mainly in process hub
+* `src` - all python code (tensorflow, vysor control, monkeyrunner, etc)
 * `apks` - Android APK files for the game itself
+* `process-hub` - Node.js program to coordinate all of the moving parts and monitor crashes, etc
+* `logs` - Files written by process hub for each process
+* `frontend-static` - Web javascript for rendering the frontend
 
 ## Testing the Program
-1. ./process-hub/index.js (Uncomment AI Controller Line in `KimProcessManager` to run AI)
+1. ./process-hub/index.js
+2. Thereis a command line option for `--startAll false` to not run the ai controller.
 
 ### The Process Hub Runs the following programs
 1. ./process-hub/run_vysor.js — Starts Vysor and opens phone window
 2. ./bin/start_device_server.sh — Setup Device Server to receive commands from Device Client and send to phone (via Monkeyrunner)
 3. ./bin/start_frontend_server.sh — Sets up local webserver to serve image files and state updates to web renderer
-4. ./bin/start_phone_stream.sh — Start stream of images from phone to vysor for Screen Cap
-4.1 Currently the phone stream script also opens a chrome window to the web renderer, but I plan to make that an independent process.
-5. ./bin/start_ai.sh — Starts the actual loop that grabs image state from phone stream and runs actions from it
+4. ./bin/start_frontend_client.sh — Opens chrome window to web renderer, and runs
+process to communicate with device server and ensure app stays as KK:Hollywood.
+5. ./bin/start_phone_stream.sh — Start stream of images from phone to vysor for Screen Cap
+6. ./bin/start_tf_ai.sh — Starts the actual loop that grabs image state from phone stream and runs actions from it

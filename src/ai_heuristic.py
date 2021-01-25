@@ -55,7 +55,7 @@ class HeuristicConfig(object):
         self.action_sel_depress_exp = 1.0
 
         # How many frames do I need to wait on the same exact screen before resetting?
-        self.image_sig_stag_limit = 50
+        self.image_sig_stag_limit = 100
 
         # Probabalistic weights to assign to found blobs of given colors
         self.blob_dom_color_weights = {
@@ -222,12 +222,16 @@ class HeuristicRoom(object):
         return weight
 
     def _ingest_image_sig(self, image_sig):
+        reset_image_sig_info = True
         if image_sig == self.cur_image_sig:
             self.image_sig_stag_count += 1
             if self.image_sig_stag_count > self.config.image_sig_stag_limit:
                 # reset when we have been on the same screen for a long time
                 self.needs_reset = True
-        else:
+            else:
+                reset_image_sig_info = False
+
+        if reset_image_sig_info:
             self.cur_image_sig = image_sig
             self.image_sig_stag_count = 0
 

@@ -12,6 +12,7 @@ const { setWindowTitle, setupProcessHubScreen } = require('./util')
 /// Config
 
 const DUMMY = argv.dummy !== undefined ? argv.dummy : false
+const USE_TF_AGENTS = true
 const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
 const WIN_TITLE = 'AI Dashboard'
 
@@ -23,7 +24,9 @@ const processConfigs = [
   { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
   { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
   { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
-  { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_ai.sh', main: true, delayBefore: 10000 },
+  USE_TF_AGENTS
+    ? { abbrev: 'AI', name: 'AI Runner', script: 'bin/start_tf_ai.sh', main: true, delayBefore: 10000 }
+    : { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_old_ai.sh', main: true, delayBefore: 10000 },
 ]
 
 /// Current State

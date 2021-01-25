@@ -182,4 +182,4 @@ class AIState(object):
                 min_dist = dist
                 min_obj = obj
 
-        return min_obj if min_dist < 50 else None
+        return min_obj if min_dist < 2500 else None
