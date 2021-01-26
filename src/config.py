@@ -16,12 +16,58 @@ FRONTEND_WEB_URL = 'http://localhost:8888'
 FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
 ANN_TEST = False
 
+HEN_OPTIONS = {
+    'MONITORS': [
+        ('HDMI-1-1', (1920, 1080)),
+        ('DP-1', (1920, 1080)),
+        ('DP-3', (1920, 1080))
+    ],
+    'TFNET_CONFIG': {
+        'model': 'cfg/tiny-yolo.cfg',
+        'load': 'dfbin/tiny-yolo.weights',
+        'gpu': 0.5,
+        'threshold': 0.1
+    },
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'test_deep_q',
+    'TF_AI_POLICY_WEIGHTS': {
+        'deep_q': 0.5,
+        'heuristic': 0.4,
+        'random': 0.1
+    },
+    'VYSOR_RECT': Rect(10, 10, 1440, 720),
+    'PHONE_RECT': Rect(0, 0, 2220, 1080),
+    'PHONE_GAME_RECT':Rect(0, 0, 2280, 1080),
+    'PHONE_VYSOR_CAP_AREA': Rect(79, 71, 1372, 692)#Rect(79, 71, VYSOR_RECT[-2]-68, VYSOR_RECT[-1] - 28)
+}
+
+KEV_OPTIONS = {
+    'MONITORS': [
+        ('HDMI-1-1', (1920, 1080)),
+        ('DP-1', (1920, 1080)),
+        # ('DP-2', (1920, 1080))
+    ],
+    'TFNET_CONFIG': {
+        'model': 'cfg/tiny-yolo.cfg',
+        'load': 'dfbin/tiny-yolo.weights',
+        'gpu': 0.5,
+        'threshold': 0.1
+    },
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'test_deep_q',
+    'TF_AI_POLICY_WEIGHTS': {
+        'deep_q': 0.5,
+        'heuristic': 0.4,
+        'random': 0.1
+    },
+    'VYSOR_RECT': Rect(0, 0, 776, 466),
+    'PHONE_RECT': Rect(0, 0, 2280, 1080),
+    'PHONE_GAME_RECT': Rect(176, 25, 1968, 1060),
+    'PHONE_VYSOR_CAP_AREA': Rect(70, 71, 651, 370)#Rect(70, 71, VYSOR_RECT[-2] - 125, VYSOR_RECT[-1] - 96)
+}
+
+OPTIONS = HEN_OPTIONS
+
 # monitor config is system dependent
-MONITORS = [
-    ('HDMI-1-1', (1920, 1080)),
-    ('DP-1', (1920, 1080)),
-    # ('DP-2', (1920, 1080))
-]
+MONITORS = OPTIONS['MONITORS']
 
 NUM_MONITORS = len(MONITORS)
 MON_NAMES = [s[0] for s in MONITORS]
@@ -30,23 +76,14 @@ SCREEN_SIZES = {}
 for s in MONITORS:
     SCREEN_SIZES[s[0]] = s[1]
 
-TFNET_CONFIG = {
-    'model': 'cfg/tiny-yolo.cfg',
-    'load': 'dfbin/tiny-yolo.weights',
-    'gpu': 0.5,
-    'threshold': 0.1
-}
+TFNET_CONFIG = OPTIONS['TFNET_CONFIG']
 
-TF_DEEPQ_POLICY_SAVE_DIR = 'test_deep_q'
+TF_DEEPQ_POLICY_SAVE_DIR = OPTIONS['TF_DEEPQ_POLICY_SAVE_DIR']
 
-TF_AI_POLICY_WEIGHTS = {
-    'deep_q': 0.5,
-    'heuristic': 0.4,
-    'random': 0.1
-}
+TF_AI_POLICY_WEIGHTS = OPTIONS['TF_AI_POLICY_WEIGHTS']
 
 # Where the Vysor Window Is Moved To
-VYSOR_RECT = Rect(0, 0, 776, 466)
+VYSOR_RECT = OPTIONS['VYSOR_RECT']
 
 # Name of the phone in vysor (change in vysor settings)
 VYSOR_WINDOW_NAME = 'VysorKim'
@@ -71,8 +108,8 @@ Vysor cap area is area of the screen to capture for phone image stream
 (handles game aspect ratio).
 """
 
-CURRENT_PHONE_GAME_RECT = GALAXY8_GAME_RECT
-VYSOR_CAP_AREA = GALAXY8_VYSOR_CAP_AREA
+CURRENT_PHONE_GAME_RECT = OPTIONS['PHONE_GAME_RECT']
+VYSOR_CAP_AREA = OPTIONS['PHONE_VYSOR_CAP_AREA']
 
 # CURRENT_PHONE_GAME_RECT = GALAXY10_GAME_RECT
 # VYSOR_CAP_AREA = GALAXY10_VYSOR_CAP_AREA
