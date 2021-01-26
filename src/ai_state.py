@@ -61,14 +61,6 @@ class AIStateProcessor(object):
 
         return AIState(**self.ocr_processor.process_filename(filename))
 
-        # Decode image for tensorflow
-        # tf_image_file = tf.read_file(filename)
-        # tf_image = tf.image.decode_image(tf_image_file)
-        #
-        # # Process gameplay section with tensorflow
-        # gameplay_image_processor = AIGameplayImageProcessor(image_config=self.image_config)
-        # output_image, grayscale_image = gameplay_image_processor.process_image(sess, tf_image)
-
     def process_from_np_img(self, sess, np_img):
         """
         Args:

@@ -1,10 +1,5 @@
 """Selects actions based on predefined probabilities and according to a combination of known heuristics."""
 
-import itertools
-import numpy as np
-import tensorflow as tf
-import plotting
-from kim_logs import get_kim_logger
 from collections import deque
 from math import pow
 from ai_actions import ActionGetter, ActionWeighter, Action, get_action_type_str
@@ -321,8 +316,6 @@ class HeuristicActionSelector(object):
         # Select the action from the room
         a_tup = room.select_from_actions(actions)
 
-        a_probs = room.action_weighter.get_action_probs(actions, room.get_action_weight)
-
         # Complete state
         self.state_idx += 1
 
@@ -335,74 +328,3 @@ class HeuristicActionSelector(object):
         a_probs = room.action_weighter.get_action_probs(actions, room.get_action_weight)
 
         return {'actions': actions, 'action_probs': a_probs}
-
-
-def heuristic_learning(sess, env, num_episodes=1000, max_episode_length=100000):
-    """
-    Args:
-        sess: Tensorflow Session object
-        env: AiEnv environment
-        num_episodes: Number of episodes to run for
-    Returns:
-        An EpisodeStats object with two numpy arrays for episode_lengths and episode_rewards.
-    """
-
-    logger = get_kim_logger('heuristic_learning')
-
-    # Keeps track of useful statistics
-    stats = plotting.EpisodeStats(
-        episode_lengths=np.zeros(num_episodes),
-        episode_rewards=np.zeros(num_episodes))
-
-    total_t = sess.run(tf.train.get_global_step())
-
-    for i_episode in range(num_episodes):
-        # Reset the environment
-        state = env.reset()
-
-        selector = HeuristicActionSelector()
-
-        # One step in the environment
-        for step in itertools.count():
-            # Print out which step we're on, useful for debugging.
-            logger.info("Step %d (%d) @ Episode %d/%d, state: %s",
-                        step, total_t, i_episode + 1, num_episodes, state)
-
-            # Choose action
-            action, args = selector.select_state_action(state)
-            if action == Action.RESET:
-                break
-
-            # Get status
-            status = selector.get_state_status(state)
-
-            # Take a step
-            next_state, reward, done, _ = env.step(action, args)
-
-            # Update statistics
-            stats.episode_rewards[i_episode] = reward
-            stats.episode_lengths[i_episode] = step
-
-            # Publish status
-            env.action_state_manager.publish_data('ai-status-updates', status)
-
-            if done or (max_episode_length > 0 and step >= max_episode_length):
-                break
-
-            state = next_state
-            total_t += 1
-
-        # Add summaries to tensorboard
-        episode_summary = tf.Summary()
-        episode_summary.value.add(
-            simple_value=stats.episode_rewards[i_episode],
-            node_name="episode_reward",
-            tag="episode_reward")
-        episode_summary.value.add(
-            simple_value=stats.episode_lengths[i_episode],
-            node_name="episode_length",
-            tag="episode_length")
-
-        yield total_t, i_episode, plotting.EpisodeStats(
-            episode_lengths=stats.episode_lengths[:i_episode + 1],
-            episode_rewards=stats.episode_rewards[:i_episode + 1])

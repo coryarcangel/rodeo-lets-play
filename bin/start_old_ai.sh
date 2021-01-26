@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-python3 src/ai.py
+python3 src/old_ai.py

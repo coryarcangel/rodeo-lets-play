@@ -4,7 +4,7 @@ from tf_agents.policies import py_policy, random_py_policy
 from tf_agents.trajectories import policy_step
 
 from kim_logs import get_kim_logger
-from ai_heuristic import HeuristicActionSelector
+from heuristic_selector import HeuristicActionSelector
 
 
 class TfAgentHeuristicPolicy(py_policy.PyPolicy):
