@@ -25,8 +25,8 @@ HEN_OPTIONS = {
     'TFNET_CONFIG': {
         'model': 'cfg/tiny-yolo.cfg',
         'load': 'dfbin/tiny-yolo.weights',
-        'gpu': 0.5,
-        'threshold': 0.1
+        'gpu': 0.75,
+        'threshold': 0.07
     },
     'TF_DEEPQ_POLICY_SAVE_DIR': 'test_deep_q',
     'TF_AI_POLICY_WEIGHTS': {
@@ -34,10 +34,11 @@ HEN_OPTIONS = {
         'heuristic': 0.4,
         'random': 0.1
     },
-    'VYSOR_RECT': Rect(10, 10, 1440, 720),
+    'VYSOR_RECT': Rect(10, 10, 1665, 830),
     'PHONE_RECT': Rect(0, 0, 2220, 1080),
-    'PHONE_GAME_RECT':Rect(0, 0, 2280, 1080),
-    'PHONE_VYSOR_CAP_AREA': Rect(79, 71, 1372, 692)#Rect(79, 71, VYSOR_RECT[-2]-68, VYSOR_RECT[-1] - 28)
+    'PHONE_GAME_RECT':Rect(115, 0, 2165, 1080),
+    # 'PHONE_VYSOR_CAP_AREA': Rect(79, 71, 1518, 752)#Rect(79, 71, VYSOR_RECT[-2]-68, VYSOR_RECT[-1] - 28)
+    'PHONE_VYSOR_CAP_AREA': Rect(88, 71, 1584, 792)
 }
 
 KEV_OPTIONS = {
