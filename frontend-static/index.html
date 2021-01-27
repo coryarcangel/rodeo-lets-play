@@ -1,27 +1,118 @@
 <html>
  <head>
   <title>KIM_FRONTEND</title>
+  <style>
+    body {
+      padding: 0; 
+      margin: 0;
+    }
+    #screen {
+      width: 1584px;
+      height: 880px;
+      background: #ccc;
+      position: relative;
+    }
+    #liveImg {
+      position: fixed;
+      top: 0%;
+      left: 0%;
+      /*transform: translate(-50%, -50%);*/
+      width: 1584px;
+      height: 792px;
+    }
+    #action-history {
+      position: fixed; 
+      top: 2px; 
+      right: 2px; 
+      color: #fff; 
+      background-color: rgba(0, 0, 0, 0.5); 
+      max-height: 200px; 
+      overflow-y: auto;
+    }
+    #state-actions {
+      position: fixed; 
+      top: 2px; 
+      left: 2px; 
+      color: #fff; 
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    #object-annotations {
+      position: fixed; 
+      z-index: 10; 
+      top: 0%; 
+      left: 0%; 
+      /*transform: translate(-50%, -50%);*/
+    }
+    #fps {
+      position: fixed; 
+      bottom: 2px; 
+      right: 2px; 
+      color: #fff; 
+      background-color: rgba(0, 0, 0, 0.9);
+    }
+    #stats {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 88px;
+      overflow: hidden;
+    }
+    #graphs_left {
+      position: absolute;
+      bottom: 50px;
+      z-index: 20;
+    }
+    .gpu-monitor {
+      width: 150px;
+      height: 75px;
+      border: solid 1px black;
+    }
+    .gpu-monitor label {
+      position: absolute;
+      z-index: 10;
+    }
+   .gauge {
+     width: calc(50% - 6px);
+     height: calc(100% - 6px);
+     background: lime;
+     display: inline-block;
+     border-radius: 50%;
+     position: relative;
+   }
+   .gauge .needle {
+     bottom:0;
+     left: calc(50% - 2px);
+     position: absolute;
+     width: 4px;
+     height: 60%;
+     background-color: black;
+     transform-origin: bottom;
+   }
+
+</style>
  </head>
  <body>
+  <div id="screen">
     <img id="liveImg" />
-
-    <div style="position: fixed; bottom: 2px; right: 2px; color: #fff; background-color: rgba(0, 0, 0, 0.9);">
+    <div id="fps">
       FPS: <span id="fps">0</span>
       | Frame: <span id="frameNum">0</span>
     </div>
-
-    <div id="action-history" style="position: fixed; top: 2px; right: 2px; color: #fff; background-color: rgba(0, 0, 0, 0.5); max-height: 200px; overflow-y: auto;">
-
+    <div id="action-history"></div>
+    <div id="state-actions"></div>
+    <canvas id="object-annotations" width="1584" height="792"></canvas>
+    <div id="stats">
+      <div id="marquee"></div>
     </div>
-
-    <div id="state-actions" style="position: fixed; top: 2px; left: 2px; color: #fff; background-color: rgba(0, 0, 0, 0.5);">
-
+    <div id="graphs_left">
+      <div id="gpus"></div>
+      <div id="radial_graph"></div>  
     </div>
-
-    <canvas id="object-annotations" width="960" height="540" style="position: fixed; z-index: 10; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-
-    </canvas>
-
+  
+  </div>
+    <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3-scale-radial.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/dynamic-marquee@1"></script>
     <script type="text/javascript" src="client.js"></script>
  </body>
 </html>

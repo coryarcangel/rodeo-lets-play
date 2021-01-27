@@ -4,6 +4,7 @@ var frameNumText = document.getElementById('frameNum');
 var actionHistoryEl = document.getElementById('action-history');
 var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
+var stats = document.getElementById('stats');
 
 var target_fps = 10 // 24;
 
@@ -14,6 +15,19 @@ var request_time = 0;
 var time_smoothing = 0.9; // larger=more smoothing
 var request_time_smoothing = 0.2; // larger=more smoothing
 var target_time = 1000 / target_fps;
+
+var radialGraph;
+const radialOpt = {
+  margin: {top: 0, right: 0, bottom: 0, left: 0},
+    width: 300,
+    height: 300,
+    innerRadius: 20,
+    outerRadius: Math.min(300, 300) / 6
+}
+
+var gaugeNeedles = {}
+
+const Marquee = dynamicMarquee.Marquee;
 
 var wsProtocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
 
@@ -40,18 +54,7 @@ var renderState = {
 };
 
 function setupLayout() {
-  Object.assign(document.body.style, {
-    padding: 0, margin: 0,
-    backgroundColor: '#ccc'
-  });
 
-  Object.assign(img.style, {
-    position: 'fixed',
-    top: '50%', left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: objectAnnCanvas.width, height: objectAnnCanvas.height,
-    // objectFit: 'cover'
-  });
 }
 
 function updateRender() {
@@ -60,7 +63,7 @@ function updateRender() {
   frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
-  renderStateActions(stateActions);
+  renderActionsRadialGraph(stateActions);
   renderActionHistory(actionHistory);
   renderSystemInfo(systemInfo);
 }
@@ -127,7 +130,7 @@ function renderImageState(imageState, recentTouch) {
     return;
   }
 
-  console.log(renderState.frameNum, imageState, recentTouch)
+  // console.log(renderState.frameNum, imageState, recentTouch)
 
   const canvas = objectAnnCanvas;
   const ctx = canvas.getContext('2d');
@@ -230,6 +233,103 @@ function renderStateActions(stateActions) {
   stateActionsEl.append(...actionEls)
 }
 
+function renderActionsRadialGraph(stateActions) {
+    const actionEls = (stateActions || [])
+    .filter(a => a.length > 1 && !!a[1].object_type) // only render tap object actions :)
+    .map( (d,i) =>  {
+      return {
+        label: i+": "+d[1].img_obj.label,
+        confidence: d[1].img_obj.confidence*100000
+      } 
+    });
+    drawRadialGraph(actionEls);
+}
+
+function initRadialGraph(){
+  if(radialGraph){
+    radialGraph.remove()
+    d3.selectAll("#radial_graph > svg").remove();
+  }
+  radialGraph = d3.select("#radial_graph")
+  .append("svg")
+    .attr("width", radialOpt.width + radialOpt.margin.left + radialOpt.margin.right)
+    .attr("height", radialOpt.height + radialOpt.margin.top +radialOpt.margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + (radialOpt.width / 2 + radialOpt.margin.left) + "," + (radialOpt.height / 2 + radialOpt.margin.top) + ")");
+}
+
+function drawRadialGraph(data) {
+  // from https://www.d3-graph-gallery.com/graph/circular_barplot_label.html
+  // Scales
+  initRadialGraph();
+  var x = d3.scaleBand()
+      .range([0, 2 * Math.PI])    // X axis goes from 0 to 2pi = all around the circle. If I stop at 1Pi, it will be around a half circle
+      .align(0)                  // This does nothing
+      .domain(data.map(function(d) { return d.label; })); // The domain of the X axis is the list of states.
+  var y = d3.scaleRadial()
+      .range([radialOpt.innerRadius, radialOpt.outerRadius])   // Domain will be define later.
+      .domain([0, 14000]); // Domain of Y is from 0 to the max seen in the data
+
+  // Add the bars
+  radialGraph.append("g")
+    .selectAll("path")
+    .data(data)
+    .enter()
+    .append("path")
+      .attr("fill", "lime")
+      .attr("d", d3.arc()     // imagine your doing a part of a donut plot
+          .innerRadius(radialOpt.innerRadius)
+          .outerRadius(function(d) { return y(d['confidence']); })
+          .startAngle(function(d) { return x(d.label); })
+          .endAngle(function(d) { return x(d.label) + x.bandwidth(); })
+          .padAngle(0.01)
+          .padRadius(radialOpt.innerRadius))
+
+  // Add the labels
+  radialGraph.append("g")
+      .selectAll("g")
+      .data(data)
+      .enter()
+      .append("g")
+        .attr("text-anchor", function(d) { return (x(d.label) + x.bandwidth() / 2 + Math.PI) % (2 * Math.PI) < Math.PI ? "end" : "start"; })
+        .attr("transform", function(d) { return "rotate(" + ((x(d.label) + x.bandwidth() / 2) * 180 / Math.PI - 90) + ")"+"translate(" + (y(d['confidence'])+10) + ",0)"; })
+      .append("text")
+        .text(function(d){return(d.label)})
+        .attr("transform", function(d) { return (x(d.label) + x.bandwidth() / 2 + Math.PI) % (2 * Math.PI) < Math.PI ? "rotate(180)" : "rotate(0)"; })
+        .style("font-size", "11px")
+        .style("fill", "black")
+        .attr("alignment-baseline", "middle")
+
+
+};
+
+function initGpuMonitors(gpuData){
+  for(gpu in gpuData){
+    var html = ""
+    var container = document.getElementById("gpus");
+    html+= `<div id="${gpu}" class="gpu-monitor">
+        <label>${gpu}</label>
+        <div class="power gauge"><div class="needle"></div></div>
+        <div class="temp gauge"><div class="needle"></div></div>
+      </div>`;
+    container.innerHTML += html;
+  }
+  //need all gaugeNeedles to render before we save them
+  for(gpu in gpuData){
+    gaugeNeedles[gpu] = {
+      'temp': document.querySelector("#"+gpu+" .temp .needle"),
+      'power': document.querySelector("#"+gpu+" .power .needle")
+    }
+  }
+}
+
+function renderGpuMonitors(gpuData){
+  for(gpu in gpuData){
+    gaugeNeedles[gpu]["power"]['style']['transform'] = 'rotate('+(gpuData[gpu]["pwrDraw"]-25)+'deg)'
+    gaugeNeedles[gpu]["temp"]['style']['transform'] = 'rotate('+(gpuData[gpu]["temp"]-25)+'deg)'
+  }
+}
+
 function renderActionHistory(actionHistory) {
   // reverse order because of the way we store the history ;p
   const actionEls = []
@@ -256,6 +356,11 @@ function renderSystemInfo(systemInfo) {
   if (!systemInfo) {
     return
   }
+  const gpuData = systemInfo.gpuStats;
+  if(!gaugeNeedles['gpu0'])
+      initGpuMonitors(gpuData)
+  renderGpuMonitors(gpuData)
+  // stats.innerHTML = JSON.stringify(systemInfo)
 
   // TODO: henry here will be a json object with various keys you can log and play with.
   // some docs: https://github.com/sebhildebrandt/systeminformation
