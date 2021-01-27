@@ -16,6 +16,16 @@ FRONTEND_WEB_URL = 'http://localhost:8888'
 FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
 ANN_TEST = False
 
+# Areas of the device that are not clickable if device_client.safeguard_menu_clicks
+# is set to True (useful in training).
+SAFEGUARD_MENU_RECTS = [
+    Rect(0, 0, 3000, 100),  # the entire top bar is bad news
+    Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
+]
+
+# Galaxy 10
+GALAXY10_RECT = Rect(0, 0, 2280, 1080)
+
 HEN_OPTIONS = {
     'MONITORS': [
         ('HDMI-1-1', (1920, 1080)),
@@ -35,16 +45,20 @@ HEN_OPTIONS = {
         'random': 0.1
     },
     'VYSOR_RECT': Rect(10, 10, 1440, 720),
-    'PHONE_RECT': Rect(0, 0, 2220, 1080),
-    'PHONE_GAME_RECT':Rect(0, 0, 2280, 1080),
+    'PHONE_RECT': GALAXY10_RECT,
+    'PHONE_GAME_RECT': Rect(0, 0, 2280, 1080),
     'PHONE_VYSOR_CAP_AREA': Rect(79, 71, 1372, 692)#Rect(79, 71, VYSOR_RECT[-2]-68, VYSOR_RECT[-1] - 28)
 }
 
+# Galaxy 8
+GALAXY8_RECT = Rect(0, 0, 2220, 1080)  # Raw Phone Size
+GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)  # Account for black space
+
+KEV_VYSOR_RECT = Rect(0, 0, 776, 466)
 KEV_OPTIONS = {
     'MONITORS': [
         ('HDMI-1-1', (1920, 1080)),
         ('DP-1', (1920, 1080)),
-        # ('DP-2', (1920, 1080))
     ],
     'TFNET_CONFIG': {
         'model': 'cfg/tiny-yolo.cfg',
@@ -58,13 +72,13 @@ KEV_OPTIONS = {
         'heuristic': 0.4,
         'random': 0.1
     },
-    'VYSOR_RECT': Rect(0, 0, 776, 466),
-    'PHONE_RECT': Rect(0, 0, 2280, 1080),
-    'PHONE_GAME_RECT': Rect(176, 25, 1968, 1060),
-    'PHONE_VYSOR_CAP_AREA': Rect(70, 71, 651, 370)#Rect(70, 71, VYSOR_RECT[-2] - 125, VYSOR_RECT[-1] - 96)
+    'VYSOR_RECT': KEV_VYSOR_RECT,
+    'PHONE_RECT': GALAXY8_RECT,
+    'PHONE_GAME_RECT': GALAXY8_GAME_RECT,
+    'PHONE_VYSOR_CAP_AREA': Rect(52, 68, KEV_VYSOR_RECT[-2] - 105, KEV_VYSOR_RECT[-1] - 82)
 }
 
-OPTIONS = HEN_OPTIONS
+OPTIONS = KEV_OPTIONS
 
 # monitor config is system dependent
 MONITORS = OPTIONS['MONITORS']
@@ -88,18 +102,6 @@ VYSOR_RECT = OPTIONS['VYSOR_RECT']
 # Name of the phone in vysor (change in vysor settings)
 VYSOR_WINDOW_NAME = 'VysorKim'
 
-# Raw Phone Size
-GALAXY8_RECT = Rect(0, 0, 2220, 1080)
-# The game doesn't use all phone real estate
-GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)
-# Hard coded to galaxy 8
-GALAXY8_VYSOR_CAP_AREA = Rect(52, 68, VYSOR_RECT[-2] - 105, VYSOR_RECT[-1] - 82)
-
-GALAXY10_RECT = Rect(0, 0, 2280, 1080)
-GALAXY10_GAME_RECT = Rect(176, 25, 1968, 1060)
-# Hard coded to galaxy 10
-GALAXY10_VYSOR_CAP_AREA = Rect(70, 71, VYSOR_RECT[-2] - 125, VYSOR_RECT[-1] - 96)
-
 """
 Phone Rect / Game Rect is about the raw phone size.
 These two things are related...
@@ -110,9 +112,6 @@ Vysor cap area is area of the screen to capture for phone image stream
 
 CURRENT_PHONE_GAME_RECT = OPTIONS['PHONE_GAME_RECT']
 VYSOR_CAP_AREA = OPTIONS['PHONE_VYSOR_CAP_AREA']
-
-# CURRENT_PHONE_GAME_RECT = GALAXY10_GAME_RECT
-# VYSOR_CAP_AREA = GALAXY10_VYSOR_CAP_AREA
 
 # Image Configs
 ImageConfig = collections.namedtuple("ImageConfig", [
