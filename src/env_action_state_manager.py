@@ -49,6 +49,10 @@ class DeviceClientEnvActionStateManager(object):
             self.cur_screen_index = data['index']
             self.cur_screen_state = AIState.deserialize(data['state'])
 
+    def get_cur_screen_state(self):
+        state = self.cur_screen_state
+        return state if state is not None else AIState()
+
     def publish_data(self, channel, data):
         self.r.publish(channel, json.dumps(data))
 

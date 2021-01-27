@@ -24,6 +24,7 @@ class AsyncchatKim(asynchat.async_chat):
     def __init__(self, host=DEVICE_HOST, port=DEVICE_PORT,
                  logger_name='async_chat', py2=False, sock=None):
         asynchat.async_chat.__init__(self, sock)
+        self.sock = sock
         self.host = host
         self.port = port
         self.logger = get_kim_logger(logger_name)

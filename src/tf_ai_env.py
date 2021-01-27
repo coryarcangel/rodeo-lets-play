@@ -13,7 +13,6 @@ from ai_actions import Action, get_object_action_data, get_action_type_str
 from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from object_name_values import get_object_name_int_values
-from device_client import DeviceClient
 from config import REDIS_HOST, REDIS_PORT
 
 
@@ -150,7 +149,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         pass
 
     def get_cur_ai_state(self):
-        return self.action_state_manager.cur_screen_state
+        return self.action_state_manager.get_cur_screen_state()
 
     def _get_current_tf_obs(self):
         ai_state = self.get_cur_ai_state()
@@ -264,12 +263,3 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
     def _take_ai_action(self, action, args):
         self.action_state_manager.attempt_action(action, args)
-
-
-def create_tf_ai_env():
-    device_client = DeviceClient()
-    device_client.start()
-
-    env = DeviceClientTfEnv(device_client)
-
-    return env

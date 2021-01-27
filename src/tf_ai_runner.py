@@ -6,9 +6,23 @@ import traceback
 from tf_agents.environments import tf_py_environment
 
 from config import TF_AI_POLICY_WEIGHTS, TF_DEEPQ_POLICY_SAVE_DIR
-from tf_ai_env import create_tf_ai_env
+from device_client import DeviceClient
+from tf_ai_env import DeviceClientTfEnv
 from tf_deep_q import TfAgentDeepQManager
 from tf_policies import TfAgentPolicyFactory
+
+
+def kill_process():
+    os.kill(os.getpid(), signal.SIGKILL)
+
+
+def create_tf_ai_env():
+    device_client = DeviceClient(
+        on_connection_fail=kill_process,
+        on_superlong_timeout=kill_process)
+    device_client.start()
+
+    return DeviceClientTfEnv(device_client)
 
 
 def run_ai_with_policy(env, policy):
@@ -68,6 +82,6 @@ if __name__ == '__main__':
         run_ai_with_saved_blended_policy()
     except Exception as e:
         traceback.print_exc()
-        os.kill(os.getpid(), signal.SIGKILL)
+        kill_process()
 
     sys.exit(0)

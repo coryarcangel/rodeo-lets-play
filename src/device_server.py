@@ -105,28 +105,35 @@ class DeviceServer(asyncore.dispatcher):
     def __init__(self, device_manager, host=DEVICE_HOST, port=DEVICE_PORT):
         asyncore.dispatcher.__init__(self)
         self.device_manager = device_manager
+        self.host = host
+        self.port = port
         self.logger = get_kim_logger('DeviceServer')
+        self.message_handlers = []
 
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.bind((DEVICE_HOST, port))
+        self.set_reuse_addr()
+        self.bind((host, port))
         self.address = self.socket.getsockname()
         self.listen(1)
 
     def start(self):
         """ Starts the server for listening to commands """
-        self.logger.debug('Starting Device Server...')
+        self.logger.debug('Starting Device Server at %s:%d ...', self.host, self.port)
         asyncore.loop()
 
     def handle_accept(self):
         '''Called when a client (like DeviceClient) connects to our socket'''
 
         self.logger.debug('Connected to a new client...')
-        client_info = self.accept()
-        DeviceMessageHandler(
-            device_manager=self.device_manager,
-            sock=client_info[0])
+        sock, _ = self.accept()
+        handler = DeviceMessageHandler(device_manager=self.device_manager, sock=sock)
+        self.message_handlers.append(handler)
 
     def handle_close(self):
+        self.close()
+
+    def graceful_exit(self):
+        self.logger.info('Gracefully exiting...')
         self.close()
 
 
@@ -139,7 +146,16 @@ def get_default_device_server():
 
 def main():
     """ Starts the default server if file is run as a script """
+
     server = get_default_device_server()
+
+    def signal_handler(sig, frame):
+        server.graceful_exit()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     server.start()
 
 
