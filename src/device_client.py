@@ -6,6 +6,8 @@ import socket
 import threading
 from asyncchat_kim import AsyncchatKim, KimCommand
 from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
+from config import SAFEGUARD_MENU_RECTS
+from util import is_in_rect
 from window import setup_vysor_window
 
 
@@ -20,10 +22,12 @@ class DeviceClient(AsyncchatKim):
 
     def __init__(self,
                  phone_game_rect=CURRENT_PHONE_GAME_RECT,
-                 img_rect=VYSOR_CAP_AREA):
+                 img_rect=VYSOR_CAP_AREA,
+                 safeguard_menu_clicks=False):
         AsyncchatKim.__init__(self, py2=False, logger_name='DeviceClient')
         self.phone_game_rect = phone_game_rect
         self.img_rect = img_rect
+        self.safeguard_menu_clicks = safeguard_menu_clicks
 
     def start(self, max_attempts=5):
         """ Connects the client to a server """
@@ -94,6 +98,17 @@ class DeviceClient(AsyncchatKim):
         ny = (h2 / float(h1)) * y + y2
         return (int(nx), int(ny))
 
+    def _can_tap_device_point(self, x, y):
+        if not self.safeguard_menu_clicks:
+            return True
+
+        for rect in SAFEGUARD_MENU_RECTS:
+            if is_in_rect((x, y), rect):
+                self.logger.info('Safeguarded point ({}, {})'.format(x, y))
+                return False
+
+        return True
+
     def send_drag_x_command(self, distance=100, duration=1):
         """ Sends a command to swipe left for given duration / distance """
         self._send_command(KimCommand.DRAG_X, distance, duration)
@@ -101,9 +116,11 @@ class DeviceClient(AsyncchatKim):
     def send_tap_command(self, x, y, type):
         ''' Sends command to tap device at given location '''
         nx, ny = self._img_point_to_device_point((x, y))
-        self._send_command(KimCommand.TAP, nx, ny, type)
+        if self._can_tap_device_point(nx, ny):
+            self._send_command(KimCommand.TAP, nx, ny, type)
 
     def send_double_tap_command(self, x, y, type):
         ''' Sends command to tap device at given location '''
         nx, ny = self._img_point_to_device_point((x, y))
-        self._send_command(KimCommand.DOUBLE_TAP, nx, ny, type)
+        if self._can_tap_device_point(nx, ny):
+            self._send_command(KimCommand.DOUBLE_TAP, nx, ny, type)

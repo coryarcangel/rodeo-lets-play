@@ -11,8 +11,22 @@ const { setWindowTitle, setupProcessHubScreen } = require('./util')
 
 /// Config
 
-const DUMMY = argv.dummy !== undefined ? argv.dummy : false
-const USE_TF_AGENTS = true
+const modes = {
+  DUMMY: 0,
+  TF_AGENTS: 1,
+  TF_AGENTS_TRAIN: 2,
+  OLD_AI: 3,
+}
+
+let mode = modes.TF_AGENTS
+if (argv.dummy !== undefined) {
+  mode = mode.DUMMY
+} else if (argv.train !== undefined) {
+  mode = modes.TF_AGENTS_TRAIN
+} else if (argv.old !== undefined) {
+  mode = modes.OLD_AI
+}
+
 const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
 const WIN_TITLE = 'AI Dashboard'
 
@@ -20,18 +34,23 @@ const startTime = moment()
 
 const processConfigs = [
   { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
-  { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh', maxTimeBetweenLogs: 30000 },
+  { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh', maxTimeBetweenLogs: 60000 },
   { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
   { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
   { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
-  USE_TF_AGENTS
-    ? { abbrev: 'AI', name: 'AI Runner', script: 'bin/start_tf_ai.sh', main: true, delayBefore: 10000 }
-    : { abbrev: 'AI', name: 'AI Controller', script: 'bin/start_old_ai.sh', main: true, delayBefore: 10000 },
 ]
+
+if (mode == modes.TF_AGENTS) {
+  processConfigs.push({ abbrev: 'AI', name: 'AI Runner', script: 'bin/start_tf_ai.sh', main: true, delayBefore: 10000 })
+} else if (mode == modes.TF_AGENTS_TRAIN) {
+  processConfigs.push({ abbrev: 'AI', name: 'AI Trainer', script: 'bin/train_tf_ai.sh', main: true, delayBefore: 10000 })
+} else {
+  processConfigs.push({ abbrev: 'AI', name: 'AI Controller', script: 'bin/start_old_ai.sh', main: true, delayBefore: 10000 })
+}
 
 /// Current State
 
-const kpManager = new KimProcessManager({ processConfigs, dummy: DUMMY })
+const kpManager = new KimProcessManager({ processConfigs, dummy: mode === modes.DUMMY })
 
 let commands = []
 let phoneImageStateLines = []

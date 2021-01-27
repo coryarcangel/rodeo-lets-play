@@ -3,15 +3,19 @@ import signal
 import sys
 import traceback
 
-from tf_ai_env import create_tf_ai_env
+from device_client import DeviceClient
+from tf_ai_env import DeviceClientTfEnv
 from tf_deep_q import TfAgentDeepQManager
 
 
-def run_and_train_deep_q_policy(num_iterations=100,
+def run_and_train_deep_q_policy(num_iterations=10,
                                 save_dir='test_deep_q',
                                 load_from_checkpoint=True,
                                 collect_steps_per_iteration=100):
-    env = create_tf_ai_env()
+    device_client = DeviceClient(safeguard_menu_clicks=True)
+    device_client.start()
+
+    env = DeviceClientTfEnv(device_client)
 
     deep_q_manager = TfAgentDeepQManager(env, {
         'save_dir': save_dir,

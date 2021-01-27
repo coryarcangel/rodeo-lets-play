@@ -30,6 +30,12 @@ def get_rect_center(rect):
     return Point(x + w / 2, y + h / 2)
 
 
+def is_in_rect(point, rect):
+    px, py = point
+    rx, ry, w, h = rect
+    return px >= rx and px <= (rx + w) and py >= ry and py <= (ry + h)
+
+
 def floatarr(arr):
     ''' convert array of any to array of floats '''
     return [float(n) for n in arr]
