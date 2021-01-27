@@ -12,7 +12,7 @@ import tornado.websocket
 
 from PIL import Image
 
-from config import REDIS_HOST, REDIS_PORT
+from config import REDIS_HOST, REDIS_PORT, VYSOR_CAP_AREA
 from kim_logs import get_kim_logger
 from ai_actions import ActionGetter
 from ai_state_data import AIState
@@ -22,9 +22,9 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 parser = argparse.ArgumentParser(description='Start the PyImageStream server.')
 
 parser.add_argument('--port', default=8888, type=int, help='Web server port (default: 8888)')
-parser.add_argument('--width', default=640, type=int, help='Width (default: 640)')
-parser.add_argument('--height', default=480, type=int, help='Height (default: 480)')
-parser.add_argument('--quality', default=70, type=int, help='JPEG Quality 1 (worst) to 100 (best) (default: 70)')
+parser.add_argument('--width', default=VYSOR_CAP_AREA.w, type=int, help='Width (default to VYSOR_CAP_AREA.width)')
+parser.add_argument('--height', default=VYSOR_CAP_AREA.h, type=int, help='Height (default to VYSOR_CAP_AREA.height)')
+parser.add_argument('--quality', default=90, type=int, help='JPEG Quality 1 (worst) to 100 (best) (default: 90)')
 parser.add_argument('--stopdelay', default=7, type=int, help='Delay in seconds before the camera will be stopped after '
                                                              'all clients have disconnected (default: 7)')
 args = parser.parse_args()
