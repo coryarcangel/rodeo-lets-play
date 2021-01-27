@@ -218,7 +218,7 @@ function renderImageState(imageState, recentTouch) {
 
   if (recentTouch && recentTouch.p) {
     console.log('recentTouch',recentTouch)
-    playSound("touch");
+    
     const { p, color = '#ed3732' } = recentTouch
 
     // draw crosshairs
