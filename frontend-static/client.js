@@ -27,6 +27,13 @@ const radialOpt = {
 
 var gaugeNeedles = {}
 
+var sounds = {
+  'tap': {src:'tap.mp3'},
+  'doubleTap':{src:'tap.mp3'} ,
+  'reset': {src:'windows_startup.mp3'}
+};
+
+
 const Marquee = dynamicMarquee.Marquee;
 
 var wsProtocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -63,6 +70,7 @@ function updateRender() {
   frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
+  renderStateActions(stateActions);
   renderActionsRadialGraph(stateActions);
   renderActionHistory(actionHistory);
   renderSystemInfo(systemInfo);
@@ -77,6 +85,25 @@ const labelColorsMap = {
   'laptop': colors['black'],
   'traffic light': colors['chartreuse'],
 }
+
+function initSound(){
+  for(i in sounds){
+    sounds[i].clip = new Howl({
+      src: sounds[i].src
+    });
+  }
+  console.log(sounds)
+}
+
+function playSound(sound){
+  console.log("playing ",sound)
+  sounds[sound].clip.play();
+}
+
+initSound();
+//to play a sound
+//playSound("tap");
+
 
 function getImageObjectColor(label, confidence) {
   if (labelColorsMap[label])    return labelColorsMap[label]
@@ -190,6 +217,8 @@ function renderImageState(imageState, recentTouch) {
   })
 
   if (recentTouch && recentTouch.p) {
+    console.log('recentTouch',recentTouch)
+    playSound("touch");
     const { p, color = '#ed3732' } = recentTouch
 
     // draw crosshairs
