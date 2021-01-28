@@ -1,5 +1,6 @@
 from time import sleep
 from random import randint
+from java.lang import Runtime
 
 from util import measure_task
 from device_manager import get_default_device_manager
@@ -104,12 +105,21 @@ def hollywood_drag_and_tap():
             sleep(1)
 
 
+def memory_test():
+    print('Testing Memory...')
+    size = Runtime.getRuntime().totalMemory()
+    max_size = Runtime.getRuntime().maxMemory()
+    free_size = Runtime.getRuntime().freeMemory()
+    print("size", size, "max", max_size, "free", free_size)
+
+
 def test():
     # measure_screenshot_performance()
     # browser_launch_and_restart()
     # hollywood_launch_and_restart()
     # hollywood_screenshot_loop_test()
-    hollywood_drag_and_tap()
+    # hollywood_drag_and_tap()
+    memory_test()
 
 
 if __name__ == "__main__":

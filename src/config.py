@@ -18,6 +18,7 @@ ANN_TEST = False
 
 # Areas of the device that are not clickable if device_client.safeguard_menu_clicks
 # is set to True (useful in training).
+SAFEGUARD_MENU_CLICKS_DEFAULT = False
 SAFEGUARD_MENU_RECTS = [
     Rect(0, 0, 3000, 100),  # the entire top bar is bad news
     Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark

@@ -1,16 +1,17 @@
 """ DeviceServer class to communicate with DeviceManager by commands over network """
 
 import asyncore
-import os
 import socket
 import signal
 import sys
 import traceback
+from java.lang import Runtime
+
 from kim_logs import get_kim_logger
 from config import DEVICE_HOST, DEVICE_PORT
 from device_manager import get_default_device_manager
 from asyncchat_kim import AsyncchatKim, KimCommand
-from util import floatarr, intarr
+from util import floatarr, intarr, kill_process
 
 
 class DeviceMessageHandler(AsyncchatKim):
@@ -18,13 +19,20 @@ class DeviceMessageHandler(AsyncchatKim):
     Allows socket-based commands to control a DeviceManager
     '''
 
-    def __init__(self, device_manager, sock):
+    def __init__(self,
+                 device_manager,
+                 sock,
+                 gc_memory_kill_limit=10000000,
+                 gc_command_interval=20):
         AsyncchatKim.__init__(
             self,
             logger_name='DSMsgHandler',
             py2=True,
             sock=sock)
         self.device_manager = device_manager
+        self.gc_memory_kill_limit = gc_memory_kill_limit
+        self.gc_command_interval = gc_command_interval
+        self.cmd_count = 0
 
         self.command_handlers = {
             KimCommand.SCREENSHOT: self._handle_screenshot,
@@ -35,7 +43,24 @@ class DeviceMessageHandler(AsyncchatKim):
             KimCommand.DOUBLE_TAP: self._handle_double_tap,
         }
 
+    def _clean_memory(self):
+        """ in an attempt to make everything run better, we pre-emptively
+        kill the device server whenever memory gets too low, and allow the
+        process hub to restart it """
+        runtime = Runtime.getRuntime()
+        mem_pre = runtime.freeMemory()
+        runtime.gc()
+        mem_post = runtime.freeMemory()
+        self.logger.debug("free memory PRE GC: %d || POST GC: %d" % (mem_pre, mem_post))
+        if mem_post < self.gc_memory_kill_limit:
+            self.logger.info("Killing device server due to low memory.")
+            kill_process()
+
     def _handle_command(self, command_id, command, data):
+        self.cmd_count += 1
+        if self.cmd_count % self.gc_command_interval == 0:
+            self._clean_memory()
+
         if command in self.command_handlers:
             res_data = None
             try:
@@ -164,6 +189,6 @@ if __name__ == "__main__":
         main()
     except Exception:
         traceback.print_exc()
-        os.kill(os.getpid(), signal.SIGKILL)
+        kill_process()
 
     sys.exit(0)

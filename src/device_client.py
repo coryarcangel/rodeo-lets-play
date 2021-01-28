@@ -6,7 +6,7 @@ import socket
 import threading
 from asyncchat_kim import AsyncchatKim, KimCommand
 from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
-from config import SAFEGUARD_MENU_RECTS
+from config import SAFEGUARD_MENU_RECTS, SAFEGUARD_MENU_CLICKS_DEFAULT
 from util import is_in_rect
 from window import setup_vysor_window
 
@@ -23,7 +23,7 @@ class DeviceClient(AsyncchatKim):
     def __init__(self,
                  phone_game_rect=CURRENT_PHONE_GAME_RECT,
                  img_rect=VYSOR_CAP_AREA,
-                 safeguard_menu_clicks=False,
+                 safeguard_menu_clicks=SAFEGUARD_MENU_CLICKS_DEFAULT,
                  on_connection_fail=None,
                  superlong_timeout_seconds=60,
                  on_superlong_timeout=None):

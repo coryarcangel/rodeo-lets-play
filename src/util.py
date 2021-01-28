@@ -1,10 +1,16 @@
 ''' Generic Utility Functions '''
 
 import collections
+import os
+import signal
 from datetime import datetime
 
 Point = collections.namedtuple("Point", ['x', 'y'])
 Rect = collections.namedtuple("Rect", ['x', 'y', 'w', 'h'])
+
+
+def kill_process():
+    os.kill(os.getpid(), signal.SIGKILL)
 
 
 def measure_task(task, label, count=10, print_every_time=False):

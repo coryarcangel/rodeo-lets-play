@@ -1,19 +1,14 @@
-import os
-import signal
 import sys
 import traceback
 
 from tf_agents.environments import tf_py_environment
 
 from config import TF_AI_POLICY_WEIGHTS, TF_DEEPQ_POLICY_SAVE_DIR
+from util import kill_process
 from device_client import DeviceClient
 from tf_ai_env import DeviceClientTfEnv
 from tf_deep_q import TfAgentDeepQManager
 from tf_policies import TfAgentPolicyFactory
-
-
-def kill_process():
-    os.kill(os.getpid(), signal.SIGKILL)
 
 
 def create_tf_ai_env():
