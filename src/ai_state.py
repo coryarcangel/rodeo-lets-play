@@ -110,21 +110,26 @@ class AIStateProcessor(object):
 
         state_data = {}
         with futures.ThreadPoolExecutor() as executor:
-            state_futures = [
-                executor.submit(get_pil_state),
-                executor.submit(get_yolo_state),
-                executor.submit(get_circles_state),
-                # executor.submit(get_blobs),
-                executor.submit(get_shapes),
-                executor.submit(get_color_features)
+            state_components = [
+                ('pil_state', get_pil_state),
+                ('yolo_state', get_yolo_state),
+                ('circles_state', get_circles_state),
+                # ('blobs_state', get_blobs),
+                ('shapes_state', get_shapes),
+                ('color_state', get_color_features)
             ]
 
-            for future in futures.as_completed(state_futures):
+            state_futures = [executor.submit(c[1]) for c in state_components]
+
+            futures.wait(state_futures)
+            for i in range(len(state_futures)):
                 try:
+                    future = state_futures[i]
                     data = future.result()
                     state_data.update(data)
                 except Exception as e:
-                    print('Exception getting state: %s' % e)
+                    name = state_components[i][0]
+                    print('Exception getting %s: %s' % (name, e))
 
         return AIState(**state_data)
 

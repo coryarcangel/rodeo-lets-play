@@ -79,8 +79,9 @@ def get_image_colored_shapes(image, color_ranges):
         res = cv2.threshold(res, 100, 255, cv2.THRESH_BINARY)[1]
         # cv2.imshow('Threshold', res); cv2.waitKey(0)
 
-        # Find contours
-        _, contours, _ = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Find contours (cv2 version independent)
+        contour_res = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = contour_res[1] if len(contour_res) == 3 else contour_res[0]
 
         # Get colored shapes
         color_shapes = [get_contour_shape_data(c, ratio) for c in contours]
