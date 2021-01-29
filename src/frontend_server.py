@@ -123,8 +123,9 @@ class ServerWebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def __init__(self, *args, **kwargs):
         super(ServerWebSocketHandler, self).__init__(*args, **kwargs)
-        redis_stream.on_ai_log_line = self.write_ai_log_line
-        redis_stream.on_ai_action = self.write_ai_action
+        redis_stream.on_ai_log_line = self.queue_ai_log_line
+        redis_stream.on_ai_action = self.queue_ai_action
+        self.message_queue = []
 
     def check_origin(self, origin):
         # Allow access from every origin
@@ -134,11 +135,14 @@ class ServerWebSocketHandler(tornado.websocket.WebSocketHandler):
         ServerWebSocketHandler.clients.add(self)
         log("WebSocket opened from: " + self.request.remote_ip)
 
-    def write_ai_log_line(self, line):
-        self.write_message({'type': 'aiLogLine', 'data': line})
+    def queue_message(self, message):
+        self.message_queue.append(message)
 
-    def write_ai_action(self, data):
-        self.write_message({'type': 'aiAction', 'data': data})
+    def queue_ai_log_line(self, line):
+        self.queue_message({'type': 'aiLogLine', 'data': line})
+
+    def queue_ai_action(self, data):
+        self.queue_message({'type': 'aiAction', 'data': data})
 
     def write_cur_state(self):
         data = {
@@ -155,6 +159,10 @@ class ServerWebSocketHandler(tornado.websocket.WebSocketHandler):
             self.write_message(jpeg_bytes, binary=True)
 
         self.write_cur_state()
+
+        for q_message in self.message_queue:
+            self.write_message(q_message)
+        self.message_queue = []
 
     def on_close(self):
         ServerWebSocketHandler.clients.remove(self)

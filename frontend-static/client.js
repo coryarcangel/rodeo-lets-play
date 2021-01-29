@@ -2,6 +2,7 @@ var img = document.getElementById('liveImg');
 var fpsText = document.getElementById('fps');
 var frameNumText = document.getElementById('frameNum');
 var actionHistoryEl = document.getElementById('action-history');
+var aiLogEl = document.getElementById('ai-log');
 var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 var stats = document.getElementById('stats');
@@ -57,7 +58,8 @@ var renderState = {
   recentTouch: null,
   stateActions: [],
   systemInfo: {},
-  actionHistory: []
+  actionHistory: [],
+  aiLogs: [],
 };
 
 function setupLayout() {
@@ -216,8 +218,6 @@ function renderImageState(imageState, recentTouch) {
   })
 
   if (recentTouch && recentTouch.p) {
-    console.log('recentTouch', recentTouch)
-
     const { p, type } = recentTouch
     const color = type === 'double_tap_location' ? '#328eed' : '#ed3732'
 
@@ -381,8 +381,20 @@ function renderActionHistory(actionHistory) {
   actionHistoryEl.append(...actionEls)
 }
 
+function renderAiLogs(aiLogs) {
+  const logEls = []
+  for (let i = (aiLogs || []).length - 1; i >= 0; i--) {
+    const el = document.createElement('div')
+    el.textContent = aiLogs[i]
+    logEls.push(el)
+  }
+
+  aiLogEl.innerHTML = ``
+  aiLogEl.append(...logEls)
+}
+
 function renderSystemInfo(systemInfo) {
-  console.log('system info', systemInfo)
+  // console.log('system info', systemInfo)
   if (!systemInfo) {
     return
   }
@@ -445,12 +457,17 @@ function handleCurStateUpdate(data) {
   updateCurStateRender()
 }
 
+function pushToMaxLengthArray(arr, item, maxLength) {
+  arr.push(item)
+  if (arr.length > maxLength) {
+    arr.shift() // remove first element of array to keep length at maxLength
+  }
+}
+
 function handleAIActionUpdate(data) {
   if (!playing) {
     return
   }
-
-  console.log(data)
 
   if (data.type === 'tap_location' || data.type === 'double_tap_location') {
     renderState.recentTouch = data
@@ -458,17 +475,17 @@ function handleAIActionUpdate(data) {
     renderState.recentTouch = null
   }
 
-  renderState.actionHistory.push(data)
-  if (renderState.actionHistory.length > 100) {
-    renderState.actionHistory.shift() // remove first element of array to keep length at 100
-  }
-
+  pushToMaxLengthArray(renderState.actionHistory, data, 100)
   renderActionHistory(renderState.actionHistory)
 }
 
 function handleAILogLineUpdate(line) {
-  // TODO for Henry
-  console.log(line)
+  if (!playing) {
+    return
+  }
+
+  pushToMaxLengthArray(renderState.aiLogs, line, 100)
+  renderAiLogs(renderState.aiLogs)
 }
 
 /// Websocket Events
@@ -494,13 +511,13 @@ ws.onmessage = function(evt) {
       const message = JSON.parse(evt.data)
       switch (message.type) {
         case 'curState':
-          handleCurStateUpdate(message)
+          handleCurStateUpdate(message.data)
           break
         case 'aiAction':
-          handleAIActionUpdate(message)
+          handleAIActionUpdate(message.data)
           break
         case 'aiLogLine':
-          handleAILogLineUpdate(message)
+          handleAILogLineUpdate(message.data)
           break
       }
     } catch (err) {

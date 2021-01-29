@@ -115,7 +115,7 @@ class DeviceClient(AsyncchatKim):
 
     def reset_game(self):
         """ Sends a command to restart the game """
-        self.ai_info_publisher.publish_action(Action.Reset, {})
+        self.ai_info_publisher.publish_action(Action.RESET, {})
         self._send_command(KimCommand.RESET)
         setup_vysor_window()
         time.sleep(1)

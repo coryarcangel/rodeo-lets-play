@@ -74,7 +74,7 @@ const getCurrentCommands = () => [
 
 const redisChannels = [
   { name: 'phone-image-states', handler: handlePhoneImageStates },
-  { name: 'ai-action-stream', handleer: handleAIActionStream },
+  { name: 'ai-action-stream', handler: handleAIActionStream },
   { name: 'ai-status-updates', handler: handleAIStatusUpdates },
 ]
 
