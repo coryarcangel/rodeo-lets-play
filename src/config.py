@@ -37,7 +37,7 @@ HEN_OPTIONS = {
         'gpu': 0.75,
         'threshold': 0.07
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'test_deep_q',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.5,
         'heuristic': 0.4,
@@ -66,7 +66,7 @@ KEV_OPTIONS = {
         'gpu': 0.5,
         'threshold': 0.1
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'test_deep_q',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.5,
         'heuristic': 0.4,

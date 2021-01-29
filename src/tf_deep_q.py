@@ -30,7 +30,7 @@ class TfAgentDeepQManager(object):
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
 
         # Agent Params
-        fc_layer_params = p_val('fc_layer_params', (75,40))
+        fc_layer_params = p_val('fc_layer_params', (75, 40))
         learning_rate = p_val('learning_rate', 1e-3)
         errors_loss_fn = p_val('errors_loss_fn', common.element_wise_squared_loss)
 
