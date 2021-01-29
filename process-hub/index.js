@@ -9,6 +9,9 @@ const { KimProcessManager } = require('./kim-process-manager')
 const { getSystemInfoObject } = require('./system-info')
 const { setWindowTitle, setupProcessHubScreen } = require('./util')
 
+const rSubscriber = redis.createClient()
+const rPublisher = redis.createClient()
+
 /// Config
 
 const modes = {
@@ -32,29 +35,34 @@ const WIN_TITLE = 'AI Dashboard'
 
 const startTime = moment()
 
+const getMainProcessConfig = () => {
+  if (mode == modes.TF_AGENTS) return { name: 'AI Runner', script: 'bin/start_tf_ai.sh' }
+  else if (mode == modes.TF_AGENTS_TRAIN) return { name: 'AI Trainer', script: 'bin/train_tf_ai.sh' }
+  else return { name: 'AI Controller', script: 'bin/start_old_ai.sh' }
+}
+
 const processConfigs = [
   { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
   { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh', maxTimeBetweenLogs: 30000 },
   { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
   { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
   { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
+  {
+    ...getMainProcessConfig(),
+    abbrev: 'AI',
+    main: true,
+    delayBefore: 10000,
+    onLog: (logLines) => {
+      logLines.forEach(line => rPublisher.publish('ai-log-lines', line))
+    }
+  },
 ]
-
-if (mode == modes.TF_AGENTS) {
-  processConfigs.push({ abbrev: 'AI', name: 'AI Runner', script: 'bin/start_tf_ai.sh', main: true, delayBefore: 10000 })
-} else if (mode == modes.TF_AGENTS_TRAIN) {
-  processConfigs.push({ abbrev: 'AI', name: 'AI Trainer', script: 'bin/train_tf_ai.sh', main: true, delayBefore: 10000 })
-} else {
-  processConfigs.push({ abbrev: 'AI', name: 'AI Controller', script: 'bin/start_old_ai.sh', main: true, delayBefore: 10000 })
-}
 
 /// Current State
 
-const kpManager = new KimProcessManager({ processConfigs, dummy: mode === modes.DUMMY })
+const kpManager = new KimProcessManager({ processConfigs, dummy: mode === modes.DUMMY, redisPublisher: rPublisher })
 
 let commands = []
-let phoneImageStateLines = []
-let aiStatusUpdateLines = []
 
 const getCurrentCommands = () => [
   { label: 'Rest', fn: () => { } },
@@ -66,11 +74,9 @@ const getCurrentCommands = () => [
 
 const redisChannels = [
   { name: 'phone-image-states', handler: handlePhoneImageStates },
+  { name: 'ai-action-stream', handleer: handleAIActionStream },
   { name: 'ai-status-updates', handler: handleAIStatusUpdates },
 ]
-
-const rSubscriber = redis.createClient()
-const rPublisher = redis.createClient()
 
 rSubscriber.on('message', (channel, message) => {
   const item = redisChannels.find(rc => rc.name === channel)
@@ -86,13 +92,23 @@ rSubscriber.on('message', (channel, message) => {
 
 redisChannels.forEach(rc => rSubscriber.subscribe(rc.name))
 
+const aiStatusState = {
+  screenIndex: 0,
+  mostRecentAction: null,
+  imageObjects: null,
+  statusLines: []
+}
+
 function handlePhoneImageStates(data) {
-  const { index, recent_touch, state } = data
-  phoneImageStateLines = [
-    `Screen Index: ${index}`.red,
-    `Recent Touch: ${recent_touch ? recent_touch.label : 'None'}`,
-    `# Image Objects: ${state && state.image_objects ? state.image_objects.length : '?'}`,
-  ]
+  const { index, state } = data
+  aiStatusState.screenIndex = index
+  aiStatusState.imageObjects = state && state.image_objects || []
+}
+
+function handleAIActionStream(data) {
+  if (data.type) {
+    aiStatusState.mostRecentAction = data
+  }
 }
 
 function handleAIStatusUpdates(data) {
@@ -131,7 +147,7 @@ function handleAIStatusUpdates(data) {
       return parts.join(' - ')
     })
 
-  aiStatusUpdateLines = [
+  aiStatusState.statusLines = [
     `Actions:`,
     ...chunk(actionTextList, 2).map(items => items.join('\t')),
   ]
@@ -146,6 +162,30 @@ async function systemInfoPublishLoop() {
 
 /// Dashboard Drawing
 
+function getAiStatusStateLines() {
+  const { screenIndex, mostRecentAction, imageObjects, statusLines } = aiStatusState
+
+  let recentActionLabel = 'None'
+  if (mostRecentAction) {
+    recentActionLabel = mostRecentAction.label || '?'
+    if (mostRecentAction.p) {
+      recentActionLabel += `: (${mostRecentAction.p[0]}, ${mostRecentAction.p[1]})`
+    }
+    if (mostRecentAction.prob !== undefined) {
+      recentActionLabel += ` | ${(mostRecentAction.prob * 100).toFixed(1)}%`
+    }
+  }
+
+  return [
+    '',
+    `Screen Index: ${screenIndex}`.red,
+    `Most Recent Action: ${recentActionLabel}`,
+    `# Image Objects: ${imageObjects ? imageObjects.length : '?'}`,
+    '',
+    ...statusLines,
+  ]
+}
+
 function drawDashboard() {
   commands = getCurrentCommands()
   dashboardParts.commandList.setItems(commands.map(c => c.label))
@@ -156,12 +196,7 @@ function drawDashboard() {
   const startDiff = moment.utc(moment().diff(startTime)).format('HH:mm:ss')
   dashboardParts.timerLcd.setDisplay(startDiff)
 
-  dashboardParts.aiStatusBox.content = [
-    '',
-    ...phoneImageStateLines,
-    '',
-    ...aiStatusUpdateLines,
-  ].map(l => '  ' + l).join('\n')
+  dashboardParts.aiStatusBox.content = getAiStatusStateLines().map(l => '  ' + l).join('\n')
 
   screen.render()
 }

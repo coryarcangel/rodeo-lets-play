@@ -17,18 +17,10 @@ def get_random_object_type():
     return random.choice(types)
 
 
-def get_random_recent_touch():
-    object_type = get_random_object_type()
-    x = random.randrange(0, 300)
-    y = random.randrange(0, 300)
-    return {'label': object_type, 'p': (x, y), 'prob': random.random()}
-
-
 def get_random_phone_image_state(index):
     return {
         'index': index,
-        'state': AIState.get_random_state(),
-        'recent_touch': get_random_recent_touch()
+        'state': AIState.get_random_state()
     }
 
 

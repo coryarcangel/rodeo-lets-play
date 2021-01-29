@@ -9,6 +9,8 @@ from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
 from config import SAFEGUARD_MENU_RECTS, SAFEGUARD_MENU_CLICKS_DEFAULT
 from util import is_in_rect
 from window import setup_vysor_window
+from ai_actions import Action
+from ai_info_publisher import get_ai_info_publisher
 
 
 class DeviceClient(AsyncchatKim):
@@ -34,6 +36,7 @@ class DeviceClient(AsyncchatKim):
         self.on_connection_fail = on_connection_fail
         self.superlong_timeout_seconds = superlong_timeout_seconds
         self.on_superlong_timeout = on_superlong_timeout
+        self.ai_info_publisher = get_ai_info_publisher()
         self.is_closed = False
 
     def start(self, max_attempts=5):
@@ -112,6 +115,7 @@ class DeviceClient(AsyncchatKim):
 
     def reset_game(self):
         """ Sends a command to restart the game """
+        self.ai_info_publisher.publish_action(Action.Reset, {})
         self._send_command(KimCommand.RESET)
         setup_vysor_window()
         time.sleep(1)
