@@ -14,6 +14,7 @@ from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from object_name_values import get_object_name_int_values
 from config import REDIS_HOST, REDIS_PORT
+from util import Rect
 
 
 class DeviceClientTfEnv(py_environment.PyEnvironment):
@@ -32,19 +33,21 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.std_discount = 0.5
 
         self.num_observation_objects = 100
-        self.obj_name_int_vals, self.obj_name_int_max_val = get_object_name_int_values()
+        self.obj_name_int_vals, self.obj_int_val_names, self.obj_name_int_max_val = get_object_name_int_values()
 
-        max_width = client.img_rect[2]
-        max_height = client.img_rect[3]
+        grid_width = self.grid_width = 30
+        grid_height = self.grid_height = 20
+        grid_area = self.grid_area = grid_width * grid_height
 
-        bf = self.grid_blur_factor = 10
-        blur_width = self.blur_width = int(max_width / bf)
-        blur_height = self.blur_height = int(max_height / bf)
-        blur_area = self.blur_area = blur_width * blur_height
-        self.max_action_vals_1 = [5, blur_width, blur_height]
-        self.max_action_vals_2 = 3 + (blur_area * 2)
+        client_width = self.client_width = client.img_rect[2]
+        client_height = self.client_height = client.img_rect[3]
+        self.client_width_factor = float(client_width) / float(grid_width)
+        self.client_height_factor = float(client_height) / float(grid_height)
 
-        # Type 1 - (action, x, y) (blurred)
+        self.max_action_vals_1 = [5, grid_width - 1, grid_height - 1]
+        self.max_action_vals_2 = 3 + (grid_area * 2)
+
+        # Type 1 - (action, x, y)
         self._action_spec_1 = array_spec.BoundedArraySpec(
             shape=(3,), dtype=np.int32,
             minimum=[0, 0, 0], maximum=self.max_action_vals_1, name='action')
@@ -59,7 +62,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             shape=(self.num_observation_objects, 4),
             dtype=np.int32,
             minimum=[(0, 0, 0, 0)],
-            maximum=[(self.obj_name_int_max_val, 100, max_width, max_height)],
+            maximum=[(self.obj_name_int_max_val, 100, grid_width, grid_height)],
             name='observation')
 
     """ Implementing TF-Agent PyEnvironment Abstract Methods """
@@ -124,12 +127,13 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             label_val = self.obj_name_int_vals['unknown']
 
         rect = obj['rect']
-        x = int(rect[0] + rect[2] * 0.5)
-        y = int(rect[1] + rect[3] * 0.5)
+        client_x_center = int(rect[0] + rect[2] * 0.5)
+        client_y_center = int(rect[1] + rect[3] * 0.5)
+        x_grid, y_grid = self._client_point_to_grid_point(client_x_center, client_y_center)
 
         confidence = int(obj['confidence'] * 100) if obj['confidence'] is not None else 10
 
-        return np.array((label_val, confidence, x, y), dtype=np.int32)
+        return np.array((label_val, confidence, x_grid, y_grid), dtype=np.int32)
 
     def ai_state_to_observation(self, state):
         """Transform AIState to numpy array following observation_spec"""
@@ -145,8 +149,23 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         return np.array(obj_vectors, dtype=np.int32)
 
     def observation_to_ai_state(self, observation):
-        # TODO: do I need the reverse transformation?
-        pass
+        # TODO: this is imperfect (money, stars, anything but image objects)
+        # but do I need the reverse transformation?
+
+        image_objects = []
+        for vec in observation:
+            label_val, confidence_int, x_grid, y_grid = vec
+            label = self.obj_int_val_names[label_val] if label_val in self.obj_int_val_names else 'none'
+            confidence = float(confidence_int) / 100
+            x, y = self._grid_point_to_client_point(x_grid, y_grid)
+            w, h = (80, 80)
+            obj = {'label': label, 'confidence': confidence, 'rect': Rect(x - w / 2, y - h / 2, w, h)}
+            image_objects.append(obj)
+
+        return AIState(
+            image_shape=(self.client_width, self.client_height, 3),
+            image_objects=image_objects,
+        )
 
     def get_cur_ai_state(self):
         return self.action_state_manager.get_cur_screen_state()
@@ -191,15 +210,18 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         else:
             return self._ai_action_to_tf_action2(action, args)
 
-    def _get_tap_action(self, action_name, x_blur, y_blur):
-        x, y = (x_blur * self.grid_blur_factor, y_blur * self.grid_blur_factor)
+    def _grid_point_to_client_point(self, x_grid, y_grid):
+        x, y = (x_grid * self.client_width_factor, y_grid * self.client_height_factor)
+        return int(x), int(y)
 
+    def _get_tap_action(self, action_name, x_grid, y_grid):
+        x, y = self._grid_point_to_client_point(x_grid, y_grid)
         ai_state = self.get_cur_ai_state()
         img_obj = ai_state.find_object_from_point(x, y) if ai_state else None
 
         action_data = get_object_action_data(img_obj) if img_obj else {
-            'x': int(x),
-            'y': int(y),
+            'x': x,
+            'y': y,
             'type': 'object',
             'object_type': 'deep_q',
             'img_obj': {'confidence': 0.1}
@@ -210,15 +232,15 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         return (action_name, {'distance': 400})
 
     def _tf_action1_to_ai_action(self, tf_action1):
-        action_name, x_blur, y_blur = tf_action1[0:3]
+        action_name, x_grid, y_grid = tf_action1[0:3]
         if action_name in [Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]:
-            return self._get_tap_action(action_name, x_blur, y_blur)
+            return self._get_tap_action(action_name, x_grid, y_grid)
         elif action_name in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
             return self._get_swipe_action(action_name)
         elif action_name in [Action.PASS, Action.RESET]:
             # reset only is reset if x and y are also zero :)
             # prevents random policy / untrained deep q from too many resets
-            return (action_name, {}) if x_blur == 0 and y_blur == 0 else (Action.PASS, {})
+            return (action_name, {}) if x_grid == 0 and y_grid == 0 else (Action.PASS, {})
         else:
             return (Action.PASS, {})
 
@@ -232,33 +254,37 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         else:
             # convert single digit to coded action, x, y value (see above docs)
             val = tf_action2 - Action.TAP_LOCATION
-            bw, midpoint = (self.blur_width, self.blur_area)
+            gw, midpoint = (self.grid_width, self.grid_area)
             action_name = Action.TAP_LOCATION \
                 if val <= midpoint else Action.DOUBLE_TAP_LOCATION
             grid_val = val if val <= midpoint else val - midpoint
-            y_blur = int(grid_val / bw)
-            x_blur = grid_val % bw
-            return self._get_tap_action(action_name, x_blur, y_blur)
+            y_grid = int(grid_val / gw)
+            x_grid = grid_val % gw
+            return self._get_tap_action(action_name, x_grid, y_grid)
 
-    def _get_ai_action_blur_grid_point(self, action_val, args):
+    def _client_point_to_grid_point(self, x, y):
+        x_grid = int(x / self.client_width_factor)
+        y_grid = int(y / self.client_height_factor)
+        return x_grid, y_grid
+
+    def _get_ai_action_grid_point(self, action_val, args):
         hasxy = action_val in [Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]
         x, y = [args[k] for k in ('x', 'y')] if hasxy else (0, 0)
-        x_blur, y_blur = [int(v / self.grid_blur_factor) for v in (x, y)]
-        return x_blur, y_blur
+        return self._client_point_to_grid_point(x, y)
 
     def _ai_action_to_tf_action1(self, action_val, args):
-        x_blur, y_blur = self._get_ai_action_blur_grid_point(action_val, args)
-        return np.array((action_val, x_blur, y_blur), dtype=np.int32)
+        x_grid, y_grid = self._get_ai_action_grid_point(action_val, args)
+        return np.array((action_val, x_grid, y_grid), dtype=np.int32)
 
     def _ai_action_to_tf_action2(self, action_val, args):
         if action_val not in[Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]:
             return action_val
 
-        x_blur, y_blur = self._get_ai_action_blur_grid_point(action_val, args)
-        grid_val = (y_blur * self.blur_width) + x_blur
+        x_grid, y_grid = self._get_ai_action_grid_point(action_val, args)
+        grid_val = (y_grid * self.grid_width) + x_grid
         val = Action.TAP_LOCATION + grid_val
         if action_val == Action.DOUBLE_TAP_LOCATION:
-            val += self.blur_area
+            val += self.grid_area
         return val
 
     def _take_ai_action(self, action, args):
