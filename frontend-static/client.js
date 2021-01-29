@@ -2,6 +2,7 @@ var img = document.getElementById('liveImg');
 var fpsText = document.getElementById('fps');
 var frameNumText = document.getElementById('frameNum');
 var actionHistoryEl = document.getElementById('action-history');
+var aiLogEl = document.getElementById('ai-log');
 var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 var stats = document.getElementById('stats');
@@ -57,22 +58,22 @@ var renderState = {
   recentTouch: null,
   stateActions: [],
   systemInfo: {},
-  actionHistory: []
+  actionHistory: [],
+  aiLogs: [],
 };
 
 function setupLayout() {
 
 }
 
-function updateRender() {
-  const { frameNum, fps, imageState, stateActions = [], actionHistory = [], systemInfo, recentTouch } = renderState;
+function updateCurStateRender() {
+  const { frameNum, fps, imageState, recentTouch, stateActions = [], systemInfo } = renderState;
   fpsText.textContent = fps;
   frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
   renderStateActions(stateActions);
   renderActionsRadialGraph(stateActions);
-  renderActionHistory(actionHistory);
   renderSystemInfo(systemInfo);
 }
 
@@ -217,9 +218,8 @@ function renderImageState(imageState, recentTouch) {
   })
 
   if (recentTouch && recentTouch.p) {
-    console.log('recentTouch',recentTouch)
-    
-    const { p, color = '#ed3732' } = recentTouch
+    const { p, type } = recentTouch
+    const color = type === 'double_tap_location' ? '#328eed' : '#ed3732'
 
     // draw crosshairs
     // const [x, y] = p
@@ -269,7 +269,7 @@ function renderActionsRadialGraph(stateActions) {
       return {
         label: i+": "+d[1].img_obj.label,
         confidence: d[1].img_obj.confidence*100000
-      } 
+      }
     });
     drawRadialGraph(actionEls);
 }
@@ -364,14 +364,15 @@ function renderActionHistory(actionHistory) {
   const actionEls = []
   for (let i = (actionHistory || []).length - 1; i >= 0; i--) {
     const a = actionHistory[i]
-    const { label, p, prob } = a
+    const { type, label, p, prob } = a
     const el = document.createElement('div')
-    const text = `
-      History #${i + 1}:
-      ${label}
-      (${p[0]}, ${p[1]})
-      - ${((prob || 0) * 100).toFixed(1)}% chance
-    `
+    const text = [
+      `History #${i + 1}:`,
+      type,
+      label !== type ? label : '',
+      p ? `(${p[0]}, ${p[1]})` : '',
+      prob !== undefined ? `- ${((prob || 0) * 100).toFixed(1)}% chance` : '',
+    ].join(' ')
     el.textContent = text
     actionEls.push(el)
   }
@@ -380,8 +381,20 @@ function renderActionHistory(actionHistory) {
   actionHistoryEl.append(...actionEls)
 }
 
+function renderAiLogs(aiLogs) {
+  const logEls = []
+  for (let i = (aiLogs || []).length - 1; i >= 0; i--) {
+    const el = document.createElement('div')
+    el.textContent = aiLogs[i]
+    logEls.push(el)
+  }
+
+  aiLogEl.innerHTML = ``
+  aiLogEl.append(...logEls)
+}
+
 function renderSystemInfo(systemInfo) {
-  console.log('system info', systemInfo)
+  // console.log('system info', systemInfo)
   if (!systemInfo) {
     return
   }
@@ -427,42 +440,52 @@ function handleImageMessage(arrayBuffer) {
   setTimeout(requestImage, timeout);
 }
 
-/// Metadata
+/// Data Updates
 
 const parseMessageKey = (data, key) => typeof data[key] === 'string' ? JSON.parse(data[key]) : data[key]
 
-function handleMetadataMessage(data) {
+function handleCurStateUpdate(data) {
   if (!playing) {
     return
   }
 
   renderState.frameNum = data.frameNum;
-  renderState.imageState = typeof data.imageState === 'string' ? JSON.parse(data.imageState) : data.imageState;
-  renderState.stateActions = typeof data.stateActions === 'string' ? JSON.parse(data.stateActions) : data.stateActions;
-  renderState.recentTouch = typeof data.recentTouch === 'string' ? JSON.parse(data.recentTouch) : data.recentTouch;
-  renderState.systemInfo = typeof data.systemInfo === 'string' ? JSON.parse(data.systemInfo) : data.systemInfo;
+  renderState.imageState = parseMessageKey(data, 'imageState')
+  renderState.stateActions = parseMessageKey(data, 'stateActions')
+  renderState.systemInfo = parseMessageKey(data, 'systemInfo')
 
-  updateRender();
+  updateCurStateRender()
+}
 
-  // keep 100 item limited list of touch history in the render state :p
-  // we do this after render so that a current action is not shown in both history and current list
-  if (renderState.recentTouch) {
-    renderState.actionHistory.push(renderState.recentTouch)
-    if (renderState.actionHistory.length > 100) {
-      renderState.actionHistory.shift()
-    }
+function pushToMaxLengthArray(arr, item, maxLength) {
+  arr.push(item)
+  if (arr.length > maxLength) {
+    arr.shift() // remove first element of array to keep length at maxLength
   }
 }
 
-/// User Interaction
+function handleAIActionUpdate(data) {
+  if (!playing) {
+    return
+  }
 
-function setupUserInteraction() {
-  console.log('setting up user interaction...')
-  window.addEventListener('keydown', e => {
-    if (e.keyCode === 32) { // spacebar
-      playing = !playing
-    }
-  })
+  if (data.type === 'tap_location' || data.type === 'double_tap_location') {
+    renderState.recentTouch = data
+  } else {
+    renderState.recentTouch = null
+  }
+
+  pushToMaxLengthArray(renderState.actionHistory, data, 100)
+  renderActionHistory(renderState.actionHistory)
+}
+
+function handleAILogLineUpdate(line) {
+  if (!playing) {
+    return
+  }
+
+  pushToMaxLengthArray(renderState.aiLogs, line, 100)
+  renderAiLogs(renderState.aiLogs)
 }
 
 /// Websocket Events
@@ -485,7 +508,18 @@ ws.onopen = function() {
 ws.onmessage = function(evt) {
   if (typeof evt.data === 'string') {
     try {
-      handleMetadataMessage(JSON.parse(evt.data));
+      const message = JSON.parse(evt.data)
+      switch (message.type) {
+        case 'curState':
+          handleCurStateUpdate(message.data)
+          break
+        case 'aiAction':
+          handleAIActionUpdate(message.data)
+          break
+        case 'aiLogLine':
+          handleAILogLineUpdate(message.data)
+          break
+      }
     } catch (err) {
       console.log('JSON DECODE ERROR!', err);
     }
@@ -493,3 +527,14 @@ ws.onmessage = function(evt) {
     handleImageMessage(evt.data);
   }
 };
+
+/// User Interaction
+
+function setupUserInteraction() {
+  console.log('setting up user interaction...')
+  window.addEventListener('keydown', e => {
+    if (e.keyCode === 32) { // spacebar
+      playing = !playing
+    }
+  })
+}

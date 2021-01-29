@@ -6,7 +6,7 @@ from kim_logs import get_kim_logger
 from ai_actions import Action
 from ai_state import AIStateProcessor
 from env_action_state_manager import DeviceClientEnvActionStateManager
-from config import REDIS_HOST, REDIS_PORT, IMG_CONFIG_STUDIOBLU
+from config import IMG_CONFIG_STUDIOBLU
 
 
 class KimEnv(object):
@@ -76,9 +76,9 @@ class KimEnv(object):
 class DeviceClientKimEnv(KimEnv):
     """Implements KimEnv with a DeviceClient"""
 
-    def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
+    def __init__(self, client):
         KimEnv.__init__(self)
-        self.action_state_manager = DeviceClientEnvActionStateManager(client, host, port)
+        self.action_state_manager = DeviceClientEnvActionStateManager(client)
         self.client = client
 
     def _do_reset(self):

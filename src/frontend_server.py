@@ -37,16 +37,17 @@ def log(text):
     logger.info(text)
 
 
-class RedisImageStream:
-
+class FrontendRedisStream:
     def __init__(self, width, height, quality):
-        log("Initializing RedisImageStream...")
+        log("Initializing FrontendRedisStream...")
 
         self.phone_image_state_data = None
         self.phone_image_state_obj = None
         self.phone_image_index = 0
-        self.phone_recent_touch = None
+        self.on_ai_log_line = None
+        self.on_ai_action = None
         self.system_info_data = {}
+        self.ai_status_data = {}
         self.size = (width, height)
         self.quality = quality
 
@@ -60,27 +61,45 @@ class RedisImageStream:
         self.pubsub.subscribe(**{
             'phone-image-states': self._handle_phone_image_state,
             'system-info-updates': self._handle_system_info_update,
+            'ai-status-updates': self._handle_ai_status_updates,
+            'ai-log-lines': self._handle_ai_log_line,
+            'ai-action-stream': self._handle_ai_action_stream,
         })
         self.pubsub.run_in_thread(sleep_time=0.001)
 
-    def _handle_phone_image_state(self, message):
+    def _get_message_data(self, message, isjson=True):
         if message['type'] != 'message':
-            return
+            return None
 
-        data = json.loads(message['data'].decode('utf-8'))
+        text = message['data'].decode('utf-8')
+        return json.loads(text) if isjson else text
+
+    def _handle_phone_image_state(self, message):
+        data = self._get_message_data(message)
         if data:
             self.phone_image_state_data = data['state']
             self.phone_image_state_obj = AIState.deserialize(self.phone_image_state_data)
-            self.phone_recent_touch = data['recent_touch']
             self.phone_image_index = data['index']
 
     def _handle_system_info_update(self, message):
-        if message['type'] != 'message':
-            return
-
-        data = json.loads(message['data'].decode('utf-8'))
+        data = self._get_message_data(message)
         if data:
             self.system_info_data = data
+
+    def _handle_ai_status_updates(self, message):
+        data = self._get_message_data(message)
+        if data:
+            self.ai_status_data = data
+
+    def _handle_ai_log_line(self, message):
+        line = self._get_message_data(message, isjson=False)
+        if line and self.on_ai_log_line:
+            self.on_ai_log_line(line)
+
+    def _handle_ai_action_stream(self, message):
+        data = self._get_message_data(message)
+        if data and self.on_ai_action:
+            self.on_ai_action(data)
 
     def get_jpeg_image_bytes(self):
         image_data = self.r.get('phone-image-data')
@@ -95,48 +114,58 @@ class RedisImageStream:
             pimg.save(bytesIO, "JPEG", quality=self.quality, optimize=True)
             return bytesIO.getvalue()
 
-    def get_jpeg_image_with_state(self):
-        data = self.get_jpeg_image_bytes()
-        return (
-            self.phone_image_index, self.phone_image_state_data,
-            self.phone_image_state_obj, self.phone_recent_touch,
-            self.system_info_data, data
-        )
+
+redis_stream = FrontendRedisStream(args.width, args.height, args.quality)
 
 
-image_stream = RedisImageStream(args.width, args.height, args.quality)
-
-
-class ImageWebSocket(tornado.websocket.WebSocketHandler):
+class ServerWebSocketHandler(tornado.websocket.WebSocketHandler):
     clients = set()
+
+    def __init__(self, *args, **kwargs):
+        super(ServerWebSocketHandler, self).__init__(*args, **kwargs)
+        redis_stream.on_ai_log_line = self.queue_ai_log_line
+        redis_stream.on_ai_action = self.queue_ai_action
+        self.message_queue = []
 
     def check_origin(self, origin):
         # Allow access from every origin
         return True
 
     def open(self):
-        ImageWebSocket.clients.add(self)
+        ServerWebSocketHandler.clients.add(self)
         log("WebSocket opened from: " + self.request.remote_ip)
 
-    def on_message(self, message):
-        data = image_stream.get_jpeg_image_with_state()
-        (frame_num, image_state, state_obj,
-        recent_touch, system_info, jpeg_bytes) = data
+    def queue_message(self, message):
+        self.message_queue.append(message)
 
+    def queue_ai_log_line(self, line):
+        self.queue_message({'type': 'aiLogLine', 'data': line})
+
+    def queue_ai_action(self, data):
+        self.queue_message({'type': 'aiAction', 'data': data})
+
+    def write_cur_state(self):
+        data = {
+            'frameNum': redis_stream.phone_image_index,
+            'imageState': redis_stream.phone_image_state_data,
+            'systemInfo': redis_stream.system_info_data,
+            'stateActions': ActionGetter.get_actions_from_state(redis_stream.phone_image_state_obj),
+        }
+        self.write_message({'type': 'curState', 'data': data})
+
+    def on_message(self, message):
+        jpeg_bytes = redis_stream.get_jpeg_image_bytes()
         if jpeg_bytes:
             self.write_message(jpeg_bytes, binary=True)
 
-        actions = ActionGetter.get_actions_from_state(state_obj)
-        self.write_message({
-            'frameNum': frame_num,
-            'imageState': image_state,
-            'systemInfo': system_info,
-            'stateActions': actions,
-            'recentTouch': recent_touch
-        })
+        self.write_cur_state()
+
+        for q_message in self.message_queue:
+            self.write_message(q_message)
+        self.message_queue = []
 
     def on_close(self):
-        ImageWebSocket.clients.remove(self)
+        ServerWebSocketHandler.clients.remove(self)
         log("WebSocket closed from: " + self.request.remote_ip)
 
 
@@ -146,7 +175,7 @@ server_url = "http://localhost:" + str(args.port)
 log("Starting server: " + server_url)
 
 app = tornado.web.Application([
-        (r"/websocket", ImageWebSocket),
+        (r"/websocket", ServerWebSocketHandler),
         (r"/(.*)", tornado.web.StaticFileHandler, {'path': static_path, 'default_filename': 'index.html'}),
     ])
 app.listen(args.port)

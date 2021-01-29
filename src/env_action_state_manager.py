@@ -1,11 +1,10 @@
 """ Shared manager between old ai_env and tf_ai_env """
 
 import json
-import redis
-from time import time
 from kim_logs import get_kim_logger
 from ai_actions import Action
 from ai_state_data import AIState
+from ai_info_publisher import get_ai_info_publisher
 from config import REDIS_HOST, REDIS_PORT
 
 
@@ -16,12 +15,13 @@ class DeviceClientEnvActionStateManager(object):
     def __init__(self, client, host=REDIS_HOST, port=REDIS_PORT):
         self.client = client
         self.logger = get_kim_logger('DeviceClientEnvActionStateManager')
-
+        self.ai_info_publisher = get_ai_info_publisher(host, port)
         self.cur_screen_index = 0
         self.cur_screen_state = None
 
         # Setup Actions Map
         self.actions_map = {
+            Action.RESET: self.perform_reset_action,
             Action.PASS: self.perform_pass_action,
             Action.SWIPE_LEFT: self.perform_swipe_left_action,
             Action.SWIPE_RIGHT: self.perform_swipe_right_action,
@@ -30,11 +30,7 @@ class DeviceClientEnvActionStateManager(object):
         }
 
         # Redis to grab the screen state from the phone_image_stream process
-        self.logger.debug('Connecting to %s:%d', host, port)
-        self.r = redis.StrictRedis(
-            host=host, port=port, db=0, decode_responses=True)
-        self.p = self.r.pubsub(ignore_subscribe_messages=True)
-
+        self.p = self.ai_info_publisher.r.pubsub(ignore_subscribe_messages=True)
         self.p.subscribe(**{
             'phone-image-states': self._handle_phone_image_states
         })
@@ -53,24 +49,11 @@ class DeviceClientEnvActionStateManager(object):
         state = self.cur_screen_state
         return state if state is not None else AIState()
 
-    def publish_data(self, channel, data):
-        self.r.publish(channel, json.dumps(data))
-
-    def publish_action(self, action, args):
-        ad = None
-        if action == Action.TAP_LOCATION:
-            ad = {'type': 'tap', 'time': time(), 'args': args}
-        elif action == Action.DOUBLE_TAP_LOCATION:
-            ad = {'type': 'double_tap', 'time': time(), 'args': args}
-        elif action == Action.SWIPE_LEFT or action == Action.SWIPE_RIGHT:
-            ad = {'type': 'swipe', 'time': time(), 'args': args}
-        elif action == Action.PASS:
-            ad = {'type': 'pass', 'time': time(), 'args': args}
-        if ad:
-            self.publish_data('ai-phone-touches', ad)
-
     def perform_pass_action(self, args):
         pass
+
+    def perform_reset_action(self, args):
+        self.client.reset_game()
 
     def perform_swipe_left_action(self, args):
         distance = args['distance'] if 'distance' in args else 200
@@ -92,7 +75,7 @@ class DeviceClientEnvActionStateManager(object):
 
     def attempt_action(self, action, args):
         if action in self.actions_map:
-            self.publish_action(action, args)
+            self.ai_info_publisher.publish_action(action, args)
             self.actions_map[action](args)
         else:
             self.logger.debug('unrecognized action %s' % action)

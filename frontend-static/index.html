@@ -3,7 +3,7 @@
   <title>KIM_FRONTEND</title>
   <style>
     body {
-      padding: 0; 
+      padding: 0;
       margin: 0;
     }
     #screen {
@@ -21,33 +21,44 @@
       height: 792px;
     }
     #action-history {
-      position: fixed; 
-      top: 2px; 
-      right: 2px; 
-      color: #fff; 
-      background-color: rgba(0, 0, 0, 0.5); 
-      max-height: 200px; 
-      overflow-y: auto;
+      position: fixed;
+      top: 2px;
+      right: 2px;
+      color: #fff;
+      background-color: rgba(0, 0, 0, 0.5);
+      height: 200px;
+      width: 400px;
+      overflow: auto;
+    }
+    #ai-log {
+      position: fixed;
+      top: 212px;
+      right: 2px;
+      color: #fff;
+      background-color: rgba(0, 0, 0, 0.5);
+      height: 200px;
+      width: 400px;
+      overflow: auto;
     }
     #state-actions {
-      position: fixed; 
-      top: 2px; 
-      left: 2px; 
-      color: #fff; 
+      position: fixed;
+      top: 2px;
+      left: 2px;
+      color: #fff;
       background-color: rgba(0, 0, 0, 0.5);
     }
     #object-annotations {
-      position: fixed; 
-      z-index: 10; 
-      top: 0%; 
-      left: 0%; 
+      position: fixed;
+      z-index: 10;
+      top: 0%;
+      left: 0%;
       /*transform: translate(-50%, -50%);*/
     }
     #fps {
-      position: fixed; 
-      bottom: 2px; 
-      right: 2px; 
-      color: #fff; 
+      position: fixed;
+      bottom: 2px;
+      right: 2px;
+      color: #fff;
       background-color: rgba(0, 0, 0, 0.9);
     }
     #stats {
@@ -99,6 +110,7 @@
       | Frame: <span id="frameNum">0</span>
     </div>
     <div id="action-history"></div>
+    <div id="ai-log"></div>
     <div id="state-actions"></div>
     <canvas id="object-annotations" width="1584" height="792"></canvas>
     <div id="stats">
@@ -106,9 +118,9 @@
     </div>
     <div id="graphs_left">
       <div id="gpus"></div>
-      <div id="radial_graph"></div>  
+      <div id="radial_graph"></div>
     </div>
-  
+
   </div>
   <script src="https://d3js.org/d3.v4.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3-scale-radial.js"></script>
