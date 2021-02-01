@@ -5,7 +5,6 @@ const { delay } = require('./util')
 
 class KimProcessManager {
   constructor({ processConfigs, dummy }) {
-
     // normalize process config script locations
     processConfigs.forEach(c => {
       c.script = `${__dirname}/../${c.script}`

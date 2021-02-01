@@ -6,12 +6,13 @@ const { delay } = require('./util')
 
 class KimProcess {
   constructor(ops) {
-    const { name, abbrev, script, index } = ops
+    const { name, abbrev, script, index, onLog } = ops
     this.ops = ops
     this.name = name
     this.abbrev = abbrev
     this.script = script
     this.index = index
+    this.onLog = onLog
 
     const colors = ['blue', 'yellow', 'magenta', 'cyan', 'white', 'red']
     const logColors = ['#8282ff', 'yellow', 'magenta', 'cyan', '#ff8a00', '#ff8aff']
@@ -40,6 +41,10 @@ class KimProcess {
 
     const logLines = isErr ? lines.map(l => l.red) : lines
     logToDashboard(this.logger, ...logLines)
+
+    if (this.onLog) {
+      this.onLog(logLines)
+    }
 
     const arr = isErr ? this.errs : this.logs
     const limit = isErr ? this.errLimit : this.logLimit

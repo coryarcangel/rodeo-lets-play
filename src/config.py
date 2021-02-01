@@ -11,10 +11,8 @@ REDIS_PORT = 6379
 DEVICE_HOST = '127.0.0.1'
 DEVICE_PORT = 5005
 
-WEB_BASED_IMAGE = True
 FRONTEND_WEB_URL = 'http://localhost:8888'
 FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
-ANN_TEST = False
 
 # Areas of the device that are not clickable if device_client.safeguard_menu_clicks
 # is set to True (useful in training).
