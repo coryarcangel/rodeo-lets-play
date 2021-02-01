@@ -5,11 +5,13 @@
     body {
       padding: 0; 
       margin: 0;
+      font-size: 14px;
+      overflow: hidden;
     }
     #screen {
       width: 1584px;
       height: 880px;
-      background: #ccc;
+      background: black;
       position: relative;
     }
     #liveImg {
@@ -20,14 +22,15 @@
       width: 1584px;
       height: 792px;
     }
-    #action-history {
+    #action-history, .terminal {
       position: fixed; 
       top: 2px; 
-      right: 2px; 
+      right: calc(100vw - 1584px); 
       color: #fff; 
       background-color: rgba(0, 0, 0, 0.5); 
-      max-height: 200px; 
-      overflow-y: auto;
+      max-height: 710px; 
+      text-align: right;
+      overflow-y: hidden;
     }
     #state-actions {
       position: fixed; 
@@ -59,34 +62,54 @@
     }
     #graphs_left {
       position: absolute;
-      bottom: 50px;
+      bottom: 190px;
       z-index: 20;
+      /*transform: rotate(90deg);*/
+      /*transform-origin: top left;*/
+    }
+    #gpus {
+      position: fixed;
+      top: 715px;
+      left: 261px;
     }
     .gpu-monitor {
-      width: 150px;
+      margin: 0 1em;
       height: 75px;
-      border: solid 1px black;
+      /*border: solid 1px black;*/
+      display: inline-block;
     }
     .gpu-monitor label {
       position: absolute;
       z-index: 10;
+      color: white;
     }
    .gauge {
-     width: calc(50% - 6px);
-     height: calc(100% - 6px);
-     background: lime;
+     width: 70px;
+     height: 70px;
+     background: rgba(255,255,255,0.1);
      display: inline-block;
      border-radius: 50%;
      position: relative;
+     border: solid 1px white;
+     /*margin: 0 1em;*/
    }
    .gauge .needle {
+    transition: .3s transform;
      bottom:0;
      left: calc(50% - 2px);
      position: absolute;
      width: 4px;
      height: 60%;
-     background-color: black;
+     background-color: white;
      transform-origin: bottom;
+     z-index: 0;
+   }
+   .gauge .reading {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    color: white;
+    z-index: 1;
    }
 
 </style>
@@ -98,16 +121,16 @@
       FPS: <span id="fps">0</span>
       | Frame: <span id="frameNum">0</span>
     </div>
-    <div id="action-history"></div>
+    <div id="action-history" class="terminal"></div>
     <div id="state-actions"></div>
     <canvas id="object-annotations" width="1584" height="792"></canvas>
     <div id="stats">
       <div id="marquee"></div>
     </div>
     <div id="graphs_left">
-      <div id="gpus"></div>
-      <div id="radial_graph"></div>  
+      <div id="radial_graph"></div>
     </div>
+    <div id="gpus"></div>  
   
   </div>
   <script src="https://d3js.org/d3.v4.js"></script>

@@ -6,7 +6,7 @@ var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 var stats = document.getElementById('stats');
 
-var target_fps = 10 // 24;
+var target_fps = 12;
 
 var request_start_time = performance.now();
 var start_time = performance.now();
@@ -19,8 +19,8 @@ var target_time = 1000 / target_fps;
 var radialGraph;
 const radialOpt = {
   margin: {top: 0, right: 0, bottom: 0, left: 0},
-    width: 300,
-    height: 300,
+    width: 100,
+    height: 500,
     innerRadius: 20,
     outerRadius: Math.min(300, 300) / 6
 }
@@ -70,7 +70,7 @@ function updateRender() {
   frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
-  renderStateActions(stateActions);
+  //renderStateActions(stateActions);
   renderActionsRadialGraph(stateActions);
   renderActionHistory(actionHistory);
   renderSystemInfo(systemInfo);
@@ -217,7 +217,6 @@ function renderImageState(imageState, recentTouch) {
   })
 
   if (recentTouch && recentTouch.p) {
-    console.log('recentTouch',recentTouch)
     
     const { p, color = '#ed3732' } = recentTouch
 
@@ -270,8 +269,9 @@ function renderActionsRadialGraph(stateActions) {
         label: i+": "+d[1].img_obj.label,
         confidence: d[1].img_obj.confidence*100000
       } 
-    });
-    drawRadialGraph(actionEls);
+    }).filter(a => !!a.confidence);
+    // console.log("graoh data",JSON.stringify(actionEls))
+    drawBarGraph(actionEls);
 }
 
 function initRadialGraph(){
@@ -285,6 +285,21 @@ function initRadialGraph(){
     .attr("height", radialOpt.height + radialOpt.margin.top +radialOpt.margin.bottom)
   .append("g")
     .attr("transform", "translate(" + (radialOpt.width / 2 + radialOpt.margin.left) + "," + (radialOpt.height / 2 + radialOpt.margin.top) + ")");
+}
+
+function initBarGraph(){
+  if(radialGraph){
+    radialGraph.remove()
+    d3.selectAll("#radial_graph > svg").remove();
+  }
+  
+  radialGraph = d3.select("#radial_graph")
+  .append("svg")
+    .attr("width", radialOpt.width + radialOpt.margin.left + radialOpt.margin.right)
+    .attr("height", radialOpt.height + radialOpt.margin.top + radialOpt.margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + radialOpt.margin.left + "," + radialOpt.margin.top + ")");
 }
 
 function drawRadialGraph(data) {
@@ -305,7 +320,7 @@ function drawRadialGraph(data) {
     .data(data)
     .enter()
     .append("path")
-      .attr("fill", "lime")
+      .attr("fill", "rgba(0,0,0,.4)")
       .attr("d", d3.arc()     // imagine your doing a part of a donut plot
           .innerRadius(radialOpt.innerRadius)
           .outerRadius(function(d) { return y(d['confidence']); })
@@ -332,30 +347,78 @@ function drawRadialGraph(data) {
 
 };
 
+function drawBarGraph(data){
+  initBarGraph()
+
+  var x = d3.scaleBand()
+  .range([ 0, radialOpt.width ])
+  .domain(data.map(function(d) { return d.label; }))
+  .padding(0.2);
+
+  radialGraph.append("g")
+    .attr("transform", "translate(0," + radialOpt.height + ")")
+    .call(d3.axisBottom(x))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain([0, 13000])
+    .range([ radialOpt.height, 0]);
+  radialGraph.append("g")
+    .call(d3.axisLeft(y));
+
+  // Bars
+  radialGraph.selectAll("mybar")
+    .data(data)
+    .enter()
+    .append("rect")
+      .attr("x", function(d) { return x(d.label); })
+      .attr("y", function(d) { return y(d['confidence']); })
+      .attr("width", x.bandwidth())
+      .attr("height", function(d) { return radialOpt.height - y(d['confidence']); })
+      // .attr("stroke", "lime")
+      .attr("fill", "rgba(255,255,255,.25)")
+
+
+}
+
 function initGpuMonitors(gpuData){
   for(gpu in gpuData){
     var html = ""
     var container = document.getElementById("gpus");
     html+= `<div id="${gpu}" class="gpu-monitor">
         <label>${gpu}</label>
-        <div class="power gauge"><div class="needle"></div></div>
-        <div class="temp gauge"><div class="needle"></div></div>
+        <div class="power gauge"><div class="reading"></div><div class="needle"></div></div>
+        <div class="temp gauge"><div class="reading"></div><div class="needle"></div></div>
       </div>`;
     container.innerHTML += html;
   }
   //need all gaugeNeedles to render before we save them
   for(gpu in gpuData){
     gaugeNeedles[gpu] = {
-      'temp': document.querySelector("#"+gpu+" .temp .needle"),
-      'power': document.querySelector("#"+gpu+" .power .needle")
+      'temp': { 
+        'needle': document.querySelector("#"+gpu+" .temp .needle"),
+        'reading': document.querySelector("#"+gpu+" .temp .reading") 
+      },
+      'power': { 
+        'needle': document.querySelector("#"+gpu+" .power .needle"),
+        'reading': document.querySelector("#"+gpu+" .power .reading") 
+      }
     }
   }
 }
-
+var wattRange = [15,85]// [min, diffBtwMinMax]
+var tempRange = [20,70]
 function renderGpuMonitors(gpuData){
   for(gpu in gpuData){
-    gaugeNeedles[gpu]["power"]['style']['transform'] = 'rotate('+(gpuData[gpu]["pwrDraw"]-25)+'deg)'
-    gaugeNeedles[gpu]["temp"]['style']['transform'] = 'rotate('+(gpuData[gpu]["temp"]-25)+'deg)'
+    var needleAngle = ((gpuData[gpu]["pwrDraw"] - wattRange[0] )/(wattRange[1]))*90 - 45
+    gaugeNeedles[gpu]["power"]['needle']['style']['transform'] = 'rotate('+needleAngle+'deg)'//'rotate('+(gpuData[gpu]["pwrDraw"]-25)+'deg)'
+    gaugeNeedles[gpu]["power"]['reading']['innerHTML'] = "pwr: "+gpuData[gpu]["pwrDraw"] +"W";
+    needleAngle = ((gpuData[gpu]["temp"] - wattRange[0] )/(wattRange[1]))*90 - 45
+    gaugeNeedles[gpu]["temp"]['needle']['style']['transform'] = 'rotate('+needleAngle+'deg)'//'rotate('+(gpuData[gpu]["temp"]-25)+'deg)'
+    gaugeNeedles[gpu]["temp"]['reading']['innerHTML'] = "temp: "+gpuData[gpu]["temp"] + "C";
   }
 }
 
@@ -381,7 +444,7 @@ function renderActionHistory(actionHistory) {
 }
 
 function renderSystemInfo(systemInfo) {
-  console.log('system info', systemInfo)
+  // console.log('system info', systemInfo)
   if (!systemInfo) {
     return
   }
