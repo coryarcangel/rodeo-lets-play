@@ -64,18 +64,18 @@ class ActionGetter(object):
         (Action.SWIPE_LEFT, {'distance': 400}),
         (Action.SWIPE_RIGHT, {'distance': 400}),
     ]
-    # BottomMenuTaps = [(Action.TAP_LOCATION,
-    #                    {'type': 'menu',
-    #                     'x': img_rect.w - 80 - 51 * i,
-    #                     'y': img_rect.h - 28}) for i in range(4)]
-    BottomMenuTaps = []
+    BottomMenuTaps = [(Action.TAP_LOCATION,
+                       {'type': 'menu',
+                        'x': img_rect.w - 80 - 51 * i,
+                        'y': img_rect.h - 28}) for i in range(4)]
     MenuTaps = [
         # For pressing the "OK"
         (Action.TAP_LOCATION,
          {'type': 'menu',
           'x': img_rect_center.x,
           'y': img_rect_center.y + 35}),
-    ] + BottomMenuTaps
+    ]
+    # MenuTaps += BottomMenuTaps
 
     Base = [Pass] + Swipes + MenuTaps
     # Base = MenuTaps
