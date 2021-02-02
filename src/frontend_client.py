@@ -27,7 +27,7 @@ def run_frontend_client():
     chrome_p = None
     try:
         log('Opening Chrome to Frontend at {}'.format(FRONTEND_WEB_URL))
-        chrome_p = window.open_chrome_url(FRONTEND_WEB_URL, bg=True)
+        chrome_p = window.open_chrome_url(FRONTEND_WEB_URL, fullscreen=True, bg=True)
 
         # ** wait for the chrome to open
         time.sleep(2)
@@ -44,7 +44,7 @@ def run_frontend_client():
         win_id = window.get_window_id(FRONTEND_NAME)
         if win_id:
             size = window.get_window_size(win_id)
-            window.click_in_window(win_id, size[0] - 20, 80)
+            window.click_in_window(win_id, size[0] - 50, 95)
 
         kim_monitor = KimCurrentAppMonitor()
 
