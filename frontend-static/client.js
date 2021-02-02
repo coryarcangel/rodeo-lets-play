@@ -351,22 +351,14 @@ function drawRadialGraph(data) {
 function drawBarGraph(data){
   initBarGraph()
 
-  var x = d3.scaleBand()
-  .range([ 0, radialOpt.width ])
+  var y = d3.scaleBand()
+  .range([ 0, radialOpt.height ])
   .domain(data.map(function(d) { return d.label; }))
   .padding(0.2);
 
-  radialGraph.append("g")
-    .attr("transform", "translate(0," + radialOpt.height + ")")
-    .call(d3.axisBottom(x))
-    .selectAll("text")
-      .attr("transform", "translate(-10,0)rotate(-45)")
-      .style("text-anchor", "end");
-
-  // Add Y axis
-  var y = d3.scaleLinear()
+  var x = d3.scaleLinear()
     .domain([0, 13000])
-    .range([ radialOpt.height, 0]);
+    .range([ radialOpt.width, 0]);
   radialGraph.append("g")
     .call(d3.axisLeft(y));
 
@@ -375,14 +367,19 @@ function drawBarGraph(data){
     .data(data)
     .enter()
     .append("rect")
-      .attr("x", function(d) { return x(d.label); })
-      .attr("y", function(d) { return y(d['confidence']); })
-      .attr("width", x.bandwidth())
-      .attr("height", function(d) { return radialOpt.height - y(d['confidence']); })
+      .attr("x", 10)
+      .attr("y", function(d) { return y(d.label);})
+      .attr("width", function(d) { return Math.abs(x(d['confidence'])); })
+      .attr("height", y.bandwidth())
       // .attr("stroke", "lime")
-      .attr("fill", "rgba(255,255,255,.25)")
+      .attr("fill", "rgba(255,255,255,.95)")
 
-
+    radialGraph.selectAll("mybar")
+    .attr("transform", "translate("+radialOpt.width + ",0)")
+    .call(d3.axisTop(y))
+    .selectAll("text")
+      // .attr("transform", "translate(-10,0)")
+      .style("text-anchor", "end");
 }
 
 function initGpuMonitors(gpuData){
