@@ -51,7 +51,7 @@ dict_value {
                     size: 4
                   }
                 }
-                tensor_content: "Y\000\000\000d\000\000\000\237\002\000\000\200\001\000\000"
+                tensor_content: "Y\000\000\000d\000\000\000\036\000\000\000\024\000\000\000"
               }
             }
           }
@@ -74,7 +74,7 @@ dict_value {
                 dtype: DT_INT32
                 tensor_shape {
                 }
-                int_val: 5095
+                int_val: 1231
               }
             }
           }

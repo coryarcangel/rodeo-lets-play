@@ -3,13 +3,14 @@ import signal
 import sys
 import traceback
 
+from config import TF_DEEPQ_POLICY_SAVE_DIR
 from device_client import DeviceClient
 from tf_ai_env import DeviceClientTfEnv
 from tf_deep_q import TfAgentDeepQManager
 
 
 def run_and_train_deep_q_policy(num_iterations=10,
-                                save_dir='test_deep_q',
+                                save_dir=TF_DEEPQ_POLICY_SAVE_DIR,
                                 load_from_checkpoint=True,
                                 collect_steps_per_iteration=100):
     device_client = DeviceClient(safeguard_menu_clicks=True)
