@@ -295,31 +295,43 @@ class HeuristicActionSelector(object):
         )
         return room
 
-    def ingest_state_into_room(self, state):
-        ''' incorporates state into state_room_seq, deciding its a new room if color_sig is different...'''
+    def _ingest_state_into_room(self, state):
+        '''
+        Ingests state into current room, creating one if necessary
+        incorporates state into state_room_seq, deciding its a new room if color_sig is different...
+        '''
+
         did_change = self.state_idx == 0 or state.color_sig != self.state_room_seq[-1].color_sig
         if did_change:
             # Create room and append to seq
             room = self._create_room(state)
             self.state_room_seq.append(room)
 
-        return self.state_room_seq[-1]
+        room = self.state_room_seq[-1]
+        room.ingest_state(state)
+        return room
+
+    def ingest_state(self, state):
+        room = self._ingest_state_into_room(state)
+        self.state_idx += 1
+        return room
 
     def select_state_action(self, state):
-        # Ingest state and get heuristic room
-        room = self.ingest_state_into_room(state)
-        room.ingest_state(state)
+        if len(self.state_room_seq) == 0:
+            return None
+
+        # Get current room
+        room = self.state_room_seq[-1]
 
         # Get possible actions
         actions = ActionGetter.get_actions_from_state(state)
 
         # Select the action from the room
-        a_tup = room.select_from_actions(actions)
+        return room.select_from_actions(actions)
 
-        # Complete state
-        self.state_idx += 1
-
-        return a_tup
+    def ingest_state_and_select_action(self, state):
+        self.ingest_state(state)
+        return self.select_state_action(state)
 
     def get_state_status(self, state):
         actions = ActionGetter.get_actions_from_state(state)

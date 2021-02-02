@@ -57,6 +57,10 @@ var renderState = {
   imageState: null,
   recentTouch: null,
   stateActions: [],
+  aiStepNum: 0,
+  aiReward: 0,
+  aiPolicyChoice: null,
+  aiRecentActionStepNums: {},
   systemInfo: {},
   actionHistory: [],
   aiLogs: [],
@@ -269,7 +273,7 @@ function renderActionsRadialGraph(stateActions) {
       return {
         label: i+": "+d[1].img_obj.label,
         confidence: d[1].img_obj.confidence*100000
-      } 
+      }
     }).filter(a => !!a.confidence);
     // console.log("graoh data",JSON.stringify(actionEls))
     drawBarGraph(actionEls);
@@ -293,7 +297,7 @@ function initBarGraph(){
     radialGraph.remove()
     d3.selectAll("#radial_graph > svg").remove();
   }
-  
+
   radialGraph = d3.select("#radial_graph")
   .append("svg")
     .attr("width", radialOpt.width + radialOpt.margin.left + radialOpt.margin.right)
@@ -399,13 +403,13 @@ function initGpuMonitors(gpuData){
   //need all gaugeNeedles to render before we save them
   for(gpu in gpuData){
     gaugeNeedles[gpu] = {
-      'temp': { 
+      'temp': {
         'needle': document.querySelector("#"+gpu+" .temp .needle"),
-        'reading': document.querySelector("#"+gpu+" .temp .reading") 
+        'reading': document.querySelector("#"+gpu+" .temp .reading")
       },
-      'power': { 
+      'power': {
         'needle': document.querySelector("#"+gpu+" .power .needle"),
-        'reading': document.querySelector("#"+gpu+" .power .reading") 
+        'reading': document.querySelector("#"+gpu+" .power .reading")
       }
     }
   }
@@ -515,8 +519,14 @@ function handleCurStateUpdate(data) {
 
   renderState.frameNum = data.frameNum;
   renderState.imageState = parseMessageKey(data, 'imageState')
-  renderState.stateActions = parseMessageKey(data, 'stateActions')
   renderState.systemInfo = parseMessageKey(data, 'systemInfo')
+
+  const aiStatus = parseMessageKey(data, 'aiStatus') || {}
+  renderState.stateActions = aiStatus.actions || []
+  renderState.aiReward = aiStatus.reward || 0
+  renderState.aiStepNum = aiStatus.step_num || 0
+  renderState.aiPolicyChoice = aiStatus.policy_choice
+  renderState.aiRecentActionStepNums = aiStatus.recent_action_step_nums
 
   updateCurStateRender()
 }

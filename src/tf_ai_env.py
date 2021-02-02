@@ -76,6 +76,10 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             maximum=[(self.obj_name_int_max_val, 100, grid_width, grid_height)],
             name='observation')
 
+        self.total_step_num = 0
+        self.step_num = 0
+        self.most_recent_reward = 0
+
     """ Implementing TF-Agent PyEnvironment Abstract Methods """
 
     def action_spec(self):
@@ -88,6 +92,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.logger.debug('Reset AI Environment')
         self._cleanup_current_step()
         self.client.reset_game()
+        self.reward_calculator.mark_reset()
         self.step_num = 0
         return time_step.restart(self._get_empty_tf_obs())
 
@@ -98,12 +103,14 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         self._cleanup_current_step()
 
+        self.total_step_num += 1
         self.step_num += 1
 
         action_name, args = self.tf_action_to_ai_action(tf_action)
 
-        self.logger.debug('Step %d - Taking Action (%s, %s)',
-            self.step_num, get_action_type_str(action_name), json.dumps(args))
+        self.logger.debug('Step %d (%d) - Action (%s, %s),
+            self.step_num, self.total_step_num,
+            get_action_type_str(action_name), json.dumps(args))
 
         if action_name == Action.RESET:
             return self.reset()
@@ -114,8 +121,10 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         reward = self.reward_calculator.get_step_reward(
             self.step_num, self.get_cur_ai_state(), action_name, args)
+        self.most_recent_reward = reward
 
-        self.logger.debug('Step %d - Reward %d', self.step_num, reward)
+        self.logger.debug('Step %d (%d) - Reward %d',
+            self.step_num, self.total_step_num, reward)
 
         return time_step.transition(
             observation, reward=reward, discount=self.std_discount)

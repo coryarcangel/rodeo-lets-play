@@ -149,7 +149,7 @@ class ServerWebSocketHandler(tornado.websocket.WebSocketHandler):
             'frameNum': redis_stream.phone_image_index,
             'imageState': redis_stream.phone_image_state_data,
             'systemInfo': redis_stream.system_info_data,
-            'stateActions': ActionGetter.get_actions_from_state(redis_stream.phone_image_state_obj),
+            'aiStatus': redis_stream.ai_status_data,
         }
         self.write_message({'type': 'curState', 'data': data})
 

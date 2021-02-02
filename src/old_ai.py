@@ -137,7 +137,7 @@ def heuristic_learning(sess, env, num_episodes=1000, max_episode_length=100000):
                         step, total_t, i_episode + 1, num_episodes, state)
 
             # Choose action
-            action, args = selector.select_state_action(state)
+            action, args = selector.ingest_state_and_select_action(state)
             if action == Action.RESET:
                 break
 

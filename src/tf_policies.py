@@ -18,9 +18,15 @@ class TfAgentHeuristicPolicy(py_policy.PyPolicy):
             action_spec=env.action_spec(),
             policy_state_spec=policy_state_spec)
 
+    def ingest_cur_state(self):
+        ai_state = self.env.get_cur_ai_state()
+        self.selector.ingest_state(ai_state)
+
     def _action(self, time_step, policy_state):
         # NOTE: I don't actually use the time_step because I can't yet reverse
         # transform observation to AIState... I grab cur state from env...
+        self.ingest_cur_state()
+
         ai_state = self.env.get_cur_ai_state()
         ai_action_tup = self.selector.select_state_action(ai_state)
         tf_action = self.env.ai_action_to_tf_action(ai_action_tup)
@@ -30,6 +36,10 @@ class TfAgentHeuristicPolicy(py_policy.PyPolicy):
         # NOTE: should I pass info here? probably not necessary?
         info = ()
         return policy_step.PolicyStep(tf_action, policy_state, info)
+
+    def get_status(self, env, tf_action):
+        ai_state = env.get_cur_ai_state()
+        return self.selector.get_state_status(ai_state)
 
 
 class TfAgentBlendedPolicy(py_policy.PyPolicy):
@@ -54,6 +64,11 @@ class TfAgentBlendedPolicy(py_policy.PyPolicy):
         weights_str = ' - '.join([names[i] + ': ' + str(weights[i]) for i in range(len(weights))])
         self.logger.info('Policy weights: {}'.format(weights_str))
 
+        h_pols = [p[0] for p in other_weighted_policies if p[2] == 'Heuristic']
+        self.heuristic_policy = h_pols[0] if len(h_pols) > 0 else None
+
+        self.most_recent_policy_choice = None
+
         super(TfAgentBlendedPolicy, self).__init__(
             time_step_spec=env.time_step_spec(),
             action_spec=env.action_spec(),
@@ -64,19 +79,43 @@ class TfAgentBlendedPolicy(py_policy.PyPolicy):
         return self.deep_q_policy.get_initial_state(batch_size)
 
     def _action(self, time_step, policy_state):
+        # Choose policy for this action
         probs = self.policy_probs
         policy_idx = np.random.choice(len(self.policies), p=probs)
         policy_name = self.policy_names[policy_idx]
         self.logger.info('Chose {} policy'.format(policy_name))
+        self.most_recent_policy_choice = policy_name
 
+        # If we didn't choose heuristic policy, allow selector to ingest state
+        if policy_name != 'Heuristic' and self.heuristic_policy is not None:
+            self.heuristic_policy.ingest_cur_state()
+
+        # Get what the deep q would have done always, to pass state / info
         dq_step = self.deep_q_policy.action(time_step, policy_state)
         if policy_idx == 0:  # first policy is deep q
             return dq_step
 
+        # Get non-deep-q action
         policy = self.policies[policy_idx]
         step = policy.action(time_step, policy_state)
 
         return policy_step.PolicyStep(step.action, dq_step.state, dq_step.info)
+
+    def get_status(self, env, tf_action):
+        status = {
+            'reward': env.most_recent_reward,
+            'step_num': env.step_num,
+            'total_step_num': env.total_step_num,
+            'recent_action_step_nums': env.reward_calculator.get_recent_action_step_nums()
+        }
+
+        if self.heuristic_policy:
+            status.update(self.heuristic_policy.get_status(env, tf_action))
+
+        if self.most_recent_policy_choice is not None:
+            status['policy_choice'] = self.most_recent_policy_choice
+
+        return status
 
 
 class TfAgentPolicyFactory(object):
