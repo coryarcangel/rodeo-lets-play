@@ -8,10 +8,11 @@ import traceback
 from java.lang import Runtime
 
 from kim_logs import get_kim_logger
-from config import DEVICE_HOST, DEVICE_PORT
+from config import DEVICE_HOST, DEVICE_PORT, KILL_ADB_ON_DEVICE_SERVER_EXIT
 from device_manager import get_default_device_manager
 from asyncchat_kim import AsyncchatKim, KimCommand
 from util import floatarr, intarr, kill_process
+from window import run_cmd
 
 
 class DeviceMessageHandler(AsyncchatKim):
@@ -160,6 +161,7 @@ class DeviceServer(asyncore.dispatcher):
     def graceful_exit(self):
         self.logger.info('Gracefully exiting...')
         self.close()
+        self.device_manager.exit_gracefully()
 
 
 def get_default_device_server():
@@ -176,6 +178,8 @@ def main():
 
     def signal_handler(sig, frame):
         server.graceful_exit()
+        if KILL_ADB_ON_DEVICE_SERVER_EXIT:
+            run_cmd('pkill adb')
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
