@@ -59,9 +59,12 @@ def click_in_window(win_id, x, y):
         run_cmd('xdotool click 1')
 
 
-def open_chrome_url(url, bg=True):
-    ''' opens chrome window / tab to given url '''
-    cmd = 'google-chrome --new-window {}'.format(url)
+def open_chrome_url(url, fullscreen=True, bg=True):
+    ''' opens chrome window / tab to given url
+    https://kapeli.com/cheat_sheets/Chromium_Command_Line_Switches.docset/Contents/Resources/Documents/index
+    '''
+    cmd = 'google-chrome {} --new-window {}'.format(
+        '--start-fullscreen' if fullscreen else '', url)
     return run_cmd_bg(cmd) if bg else run_cmd(cmd)
 
 
