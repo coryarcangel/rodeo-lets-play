@@ -108,7 +108,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         action_name, args = self.tf_action_to_ai_action(tf_action)
 
-        self.logger.debug('Step %d (%d) - Action (%s, %s),
+        self.logger.debug('Step %d (%d) - Action (%s, %s)',
             self.step_num, self.total_step_num,
             get_action_type_str(action_name), json.dumps(args))
 

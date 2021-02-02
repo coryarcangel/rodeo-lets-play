@@ -146,6 +146,10 @@ class DeviceManager(object):
         except Exception:
             return ''
 
+    def exit_gracefully(self):
+        self.logger.info('Gracefully exiting...')
+        self.device.shell('killall com.android.commands.monkey')
+
 
 def get_default_device():
     ''' Connects to default android device (either emulator or physical phone) and returns monkeyrunner device'''

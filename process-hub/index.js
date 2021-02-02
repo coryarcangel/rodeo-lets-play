@@ -4,6 +4,7 @@ const moment = require('moment')
 const redis = require('redis')
 const { argv } = require('yargs')
 const { chunk } = require('lodash')
+const stripAnsi = require('strip-ansi')
 const { screen, dashboardParts, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 const { getSystemInfoObject } = require('./system-info')
@@ -32,6 +33,7 @@ if (argv.dummy !== undefined) {
 
 const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
 const WIN_TITLE = 'AI Dashboard'
+const KILL_ADB_ON_DEVICE_SERVER_EXIT = false
 
 const startTime = moment()
 
@@ -43,8 +45,19 @@ const getMainProcessConfig = () => {
 
 const processConfigs = [
   { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
-  { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh', maxTimeBetweenLogs: 30000 },
-  { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
+  {
+    abbrev: 'DS',
+    name: 'Device Server',
+    script: 'bin/start_device_server.sh',
+    maxTimeBetweenLogs: 30000,
+    chainedRestarts: KILL_ADB_ON_DEVICE_SERVER_EXIT ? ['Vysor'] : []
+  },
+  {
+    abbrev: 'FS',
+    name: 'Frontend Server',
+    script: 'bin/start_frontend_server.sh',
+    chainedRestarts: ['Frontend Client']
+  },
   { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
   { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
   {
@@ -53,7 +66,7 @@ const processConfigs = [
     main: true,
     delayBefore: 10000,
     onLog: (logLines) => {
-      logLines.forEach(line => rPublisher.publish('ai-log-lines', line))
+      logLines.forEach(line => rPublisher.publish('ai-log-lines', stripAnsi(line)))
     }
   },
 ]
