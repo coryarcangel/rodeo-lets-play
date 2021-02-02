@@ -12,6 +12,7 @@ from kim_logs import get_kim_logger
 from ai_actions import Action, get_object_action_data, get_action_type_str
 from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
+from reward_calc import RewardCalculator
 from object_name_values import get_object_name_int_values
 from config import REDIS_HOST, REDIS_PORT
 from util import Rect
@@ -31,6 +32,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         # [0,1] domain, lower makes next step reward less important
         self.std_discount = 0.5
+        self.reward_calculator = RewardCalculator()
 
         self.num_observation_objects = 100
         self.obj_name_int_vals, self.obj_int_val_names, self.obj_name_int_max_val = get_object_name_int_values()
@@ -44,8 +46,17 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.client_width_factor = float(client_width) / float(grid_width)
         self.client_height_factor = float(client_height) / float(grid_height)
 
+        # 5 actions
         self.max_action_vals_1 = [5, grid_width - 1, grid_height - 1]
-        self.max_action_vals_2 = 3 + (grid_area * 2)
+
+        # allow more than just two swipe actions so the algo can easily
+        # discover value of swiping
+        self.num_as2_actions_per_swipe = 15
+        self.total_as2_swipe_actions = self.num_as2_actions_per_swipe * 2
+
+        # 1 is for reset and pass, then count swipes, then grid_area * 2
+        # is for tap and double_tap in each space
+        self.max_action_vals_2 = 1 + self.total_as2_swipe_actions + (grid_area * 2)
 
         # Type 1 - (action, x, y)
         self._action_spec_1 = array_spec.BoundedArraySpec(
@@ -100,7 +111,9 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self._take_ai_action(action_name, args)
 
         observation = self._get_current_tf_obs()
-        reward = self._get_ai_state_reward()
+
+        reward = self.reward_calculator.get_step_reward(
+            self.step_num, self.get_cur_ai_state(), action_name, args)
 
         self.logger.debug('Step %d - Reward %d', self.step_num, reward)
 
@@ -181,20 +194,6 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     def _cleanup_current_step(self):
         pass
 
-    """ Getting Reward from State """
-
-    def _get_ai_state_reward(self, ai_state=None):
-        if ai_state is None:
-            ai_state = self.get_cur_ai_state()
-        return ai_state.get_reward()
-
-    # Implement this if my reward spec is unusual (it doesnt have to be)
-    # self._reward_spec = array_spec.BoundedArraySpec(
-    #     shape=(2,),  # money, stars
-    #     dtype=np.int64, minimum=0, name='reward')
-    # def reward_spec(self):
-    #     return self._reward_spec
-
     """ Transforming Actions to and from TF-Agent matrices """
 
     def tf_action_to_ai_action(self, tf_action):
@@ -245,22 +244,26 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             return (Action.PASS, {})
 
     def _tf_action2_to_ai_action(self, tf_action2):
-        if tf_action2 < Action.TAP_LOCATION:
-            action_name = int(tf_action2)
-            if action_name in [Action.SWIPE_LEFT, Action.SWIPE_RIGHT]:
-                return self._get_swipe_action(action_name)
-            else:
-                return (action_name, {})
-        else:
-            # convert single digit to coded action, x, y value (see above docs)
-            val = tf_action2 - Action.TAP_LOCATION
-            gw, midpoint = (self.grid_width, self.grid_area)
-            action_name = Action.TAP_LOCATION \
-                if val <= midpoint else Action.DOUBLE_TAP_LOCATION
-            grid_val = val if val <= midpoint else val - midpoint
-            y_grid = int(grid_val / gw)
-            x_grid = grid_val % gw
-            return self._get_tap_action(action_name, x_grid, y_grid)
+        action_int = int(tf_action2)
+
+        # pass, reset
+        if action_int <= Action.RESET:
+            return (action_int, {})
+
+        val = action_int - 2
+        if val < self.total_as2_swipe_actions:
+            name = Action.SWIPE_LEFT if val % 2 == 0 else Action.SWIPE_RIGHT
+            return self._get_swipe_action(name)
+
+        # convert single digit to coded action, x, y value (see above docs)
+        val = action_int - 2 - self.total_as2_swipe_actions
+        gw, midpoint = (self.grid_width, self.grid_area)
+        action_name = Action.TAP_LOCATION \
+            if val <= midpoint else Action.DOUBLE_TAP_LOCATION
+        grid_val = val if val <= midpoint else val - midpoint
+        y_grid = int(grid_val / gw)
+        x_grid = grid_val % gw
+        return self._get_tap_action(action_name, x_grid, y_grid)
 
     def _client_point_to_grid_point(self, x, y):
         x_grid = int(x / self.client_width_factor)
@@ -282,7 +285,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         x_grid, y_grid = self._get_ai_action_grid_point(action_val, args)
         grid_val = (y_grid * self.grid_width) + x_grid
-        val = Action.TAP_LOCATION + grid_val
+        val = (2 + self.total_as2_swipe_actions) + grid_val
         if action_val == Action.DOUBLE_TAP_LOCATION:
             val += self.grid_area
         return val

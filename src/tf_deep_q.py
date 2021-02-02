@@ -19,8 +19,13 @@ def load_saved_policy(save_dir, policy_dir_name):
     return saved_policy
 
 
-# https://www.tensorflow.org/agents/tutorials/10_checkpointer_policysaver_tutorial
 class TfAgentDeepQManager(object):
+    """
+    https://www.tensorflow.org/agents/tutorials/10_checkpointer_policysaver_tutorial
+    https://www.tensorflow.org/agents/api_docs/python/tf_agents/agents/DqnAgent
+    https://towardsdatascience.com/understanding-and-calculating-the-number-of-parameters-in-convolution-neural-networks-cnns-fc88790d530d
+    """
+
     def __init__(self, env, params={}):
         def p_val(key, defaultVal):
             return params[key] if key in params else defaultVal
@@ -30,8 +35,10 @@ class TfAgentDeepQManager(object):
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
 
         # Agent Params
-        fc_layer_params = p_val('fc_layer_params', (75, 40))
+        fc_layer_params = p_val('fc_layer_params', (1000, 50))
         learning_rate = p_val('learning_rate', 1e-3)
+        epsilon_greedy = p_val('epsilon_greedy', 0.9)
+        gamma = p_val('gamma', 1.0)
         errors_loss_fn = p_val('errors_loss_fn', common.element_wise_squared_loss)
 
         # Training Params
@@ -62,6 +69,8 @@ class TfAgentDeepQManager(object):
             self.tf_env.action_spec(),
             q_network=self.q_net,
             optimizer=self.optimizer,
+            epsilon_greedy=epsilon_greedy,
+            gamma=gamma,
             td_errors_loss_fn=errors_loss_fn,
             train_step_counter=self.train_step_counter)
         self.agent.initialize()

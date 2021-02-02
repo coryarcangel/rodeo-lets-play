@@ -74,7 +74,7 @@ dict_value {
                 dtype: DT_INT32
                 tensor_shape {
                 }
-                int_val: 1203
+                int_val: 1231
               }
             }
           }
