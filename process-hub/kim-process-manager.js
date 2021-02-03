@@ -4,7 +4,9 @@ const { KimProcess } = require('./kim-process')
 const { delay } = require('./util')
 
 class KimProcessManager {
-  constructor({ processConfigs, dummy }) {
+  constructor({ processConfigs, dummy, delayBeforeChainRestart = 2000 }) {
+    this.delayBeforeChainRestart = delayBeforeChainRestart
+
     // normalize process config script locations
     processConfigs.forEach(c => {
       c.script = `${__dirname}/../${c.script}`
@@ -15,7 +17,12 @@ class KimProcessManager {
     })
 
     this.processes = processConfigs.map((o, i) => {
-      return new KimProcess({ ...o, index: i })
+      return new KimProcess({
+        ...o,
+        index: i,
+        onStart: d => this.onKimProcessStart(d),
+        onExit: d => this.onKimProcessExit(d),
+      })
     })
   }
 
@@ -28,6 +35,36 @@ class KimProcessManager {
         kp.startLoop()
       }
     }
+  }
+
+  onKimProcessStart({ kimProcess }) {
+    // if any processes need to be restarted with this one, do so
+    const chained = this.getProcessChainedRestarts(kimProcess)
+    chained.forEach(async chainedProcess => {
+      await delay(this.delayBeforeChainRestart)
+      if (chainedProcess.started && chainedProcess.cancelled) {
+        chainedProcess.startLoop()
+      }
+    })
+  }
+
+  onKimProcessExit({ kimProcess, cancelled, err }) {
+    // if any processes need to be killed / cancelled with this one, do so
+    const chained = this.getProcessChainedRestarts(kimProcess)
+    chained.forEach(async chainedProcess => {
+      if (cancelled) {
+        chainedProcess.cancelProcess()
+      } else {
+        await delay(this.delayBeforeChainRestart)
+        chainedProcess.killChild()
+      }
+    })
+  }
+
+  getProcessChainedRestarts(kimProcess) {
+    return (kimProcess.ops.chainedRestarts || [])
+      .map(name => this.processes.find(p => p.name == name))
+      .filter(p => !!p)
   }
 
   getProcessCommands() {

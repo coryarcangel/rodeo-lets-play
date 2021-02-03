@@ -14,6 +14,8 @@ DEVICE_PORT = 5005
 FRONTEND_WEB_URL = 'http://localhost:8888'
 FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
 
+KILL_ADB_ON_DEVICE_SERVER_EXIT = False
+
 # Areas of the device that are not clickable if device_client.safeguard_menu_clicks
 # is set to True (useful in training).
 SAFEGUARD_MENU_CLICKS_DEFAULT = False

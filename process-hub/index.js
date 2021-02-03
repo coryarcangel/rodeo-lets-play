@@ -4,6 +4,7 @@ const moment = require('moment')
 const redis = require('redis')
 const { argv } = require('yargs')
 const { chunk } = require('lodash')
+const stripAnsi = require('strip-ansi')
 const { screen, dashboardParts, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 const { getSystemInfoObject } = require('./system-info')
@@ -32,6 +33,7 @@ if (argv.dummy !== undefined) {
 
 const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
 const WIN_TITLE = 'AI Dashboard'
+const KILL_ADB_ON_DEVICE_SERVER_EXIT = false
 
 const startTime = moment()
 
@@ -43,8 +45,19 @@ const getMainProcessConfig = () => {
 
 const processConfigs = [
   { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
-  { abbrev: 'DS', name: 'Device Server', script: 'bin/start_device_server.sh', maxTimeBetweenLogs: 30000 },
-  { abbrev: 'FS', name: 'Frontend Server', script: 'bin/start_frontend_server.sh' },
+  {
+    abbrev: 'DS',
+    name: 'Device Server',
+    script: 'bin/start_device_server.sh',
+    maxTimeBetweenLogs: 30000,
+    chainedRestarts: KILL_ADB_ON_DEVICE_SERVER_EXIT ? ['Vysor'] : []
+  },
+  {
+    abbrev: 'FS',
+    name: 'Frontend Server',
+    script: 'bin/start_frontend_server.sh',
+    chainedRestarts: ['Frontend Client']
+  },
   { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
   { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
   {
@@ -53,7 +66,7 @@ const processConfigs = [
     main: true,
     delayBefore: 10000,
     onLog: (logLines) => {
-      logLines.forEach(line => rPublisher.publish('ai-log-lines', line))
+      logLines.forEach(line => rPublisher.publish('ai-log-lines', stripAnsi(line)))
     }
   },
 ]
@@ -96,11 +109,16 @@ const aiStatusState = {
   screenIndex: 0,
   mostRecentAction: null,
   imageObjects: null,
+  reward: 0,
+  stepNum: 0,
+  recentPolicyChoice: null,
+  recentActionStepNums: {},
   statusLines: []
 }
 
 function handlePhoneImageStates(data) {
-  const { index, state } = data
+  const { index, state: stateJSON } = data
+  const state = JSON.parse(stateJSON || "")
   aiStatusState.screenIndex = index
   aiStatusState.imageObjects = state && state.image_objects || []
 }
@@ -112,6 +130,11 @@ function handleAIActionStream(data) {
 }
 
 function handleAIStatusUpdates(data) {
+  aiStatusState.reward = Number(data.reward) || 0
+  aiStatusState.stepNum = data.step_num
+  aiStatusState.recentPolicyChoice = data.policy_choice
+  aiStatusState.recentActionStepNums = data.recent_action_step_nums
+
   const actionTypeNames = {
     0: 'PASS',
     1: 'RESET',
@@ -130,6 +153,7 @@ function handleAIStatusUpdates(data) {
       return { type, data, prob: p }
     })
     .sort((a, b) => b.prob - a.prob)
+    .slice(0, 10)
     .map(({ type, data, prob }, i) => {
       const name = actionTypeNames[type] || 'Unknown'
       const parts = [
@@ -163,7 +187,10 @@ async function systemInfoPublishLoop() {
 /// Dashboard Drawing
 
 function getAiStatusStateLines() {
-  const { screenIndex, mostRecentAction, imageObjects, statusLines } = aiStatusState
+  const {
+    screenIndex, mostRecentAction, imageObjects, statusLines,
+    stepNum, reward, recentPolicyChoice, recentActionStepNums,
+  } = aiStatusState
 
   let recentActionLabel = 'None'
   if (mostRecentAction) {
@@ -176,10 +203,17 @@ function getAiStatusStateLines() {
     }
   }
 
+  const recentActionStepKeys = Object.keys(recentActionStepNums)
+  const recentActionStepText = recentActionStepKeys.length === 0
+    ? '?' : recentActionStepKeys.map(k => `${k} - ${stepNum - recentActionStepNums[k]}`).join(' | ')
+
   return [
     '',
     `Screen Index: ${screenIndex}`.red,
-    `Most Recent Action: ${recentActionLabel}`,
+    `Step: ${stepNum}\tReward: ${reward}`,
+    `Recent Policy - ${recentPolicyChoice}`,
+    `Recent Action - ${recentActionLabel}`,
+    `# Steps Since: ${recentActionStepText}`,
     `# Image Objects: ${imageObjects ? imageObjects.length : '?'}`,
     '',
     ...statusLines,

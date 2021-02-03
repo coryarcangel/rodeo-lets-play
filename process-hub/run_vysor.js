@@ -7,6 +7,29 @@ const VYSOR_APP_PATH = __dirname + '/../bin/Vysor-linux-3.1.4.AppImage' //  '/ho
 
 const delay = (ms) => new Promise(resolve => setTimeout(() => resolve(), ms))
 
+const getWindowId = (name) =>
+  Number(childProcess.execSync(`xdotool search --limit 1 --onlyvisible --name ${name}`).toString('utf-8'))
+
+const activateWinId = (windowId) => childProcess.execSync(`xdotool windowactivate ${windowId}`)
+
+function clickPosInWindow(name, x, y) {
+  const windowId = getWindowId(name)
+  activateWinId(windowId)
+  childProcess.execSync(`xdotool mousemove --window ${windowId} ${x} ${y}`)
+  childProcess.execSync('xdotool click 1')
+}
+
+function clickPosInMainVysor(x, y) {
+  clickPosInWindow('VYSOR', x, y)
+}
+
+function activateFrontend() {
+  const windowId = getWindowId('KIM_FRONTEND')
+  if (windowId) {
+    activateWinId(windowId)
+  }
+}
+
 let vysor
 
 async function main() {
@@ -21,15 +44,13 @@ async function main() {
   vysor = childProcess.spawn(VYSOR_APP_PATH, {
     stdio: 'inherit'
   })
-  await delay(3000)
+  await delay(3500)
 
   // set up phone window
   try {
     console.log('setting up phone window')
-    const windowId = Number(childProcess.execSync('xdotool search --limit 1 --onlyvisible --name VYSOR').toString('utf-8'))
-    childProcess.execSync(`xdotool windowactivate ${windowId}`)
-    childProcess.execSync(`xdotool mousemove --window ${windowId} 750 135`)
-    childProcess.execSync('xdotool click 1')
+    clickPosInMainVysor(750, 135)
+    activateFrontend()
   } catch (err) {
     console.log('error controlling vysor window', err)
   }
@@ -41,19 +62,21 @@ async function main() {
   })
 }
 
-main()
-  .catch(err => console.log('vysor error', err))
-  .then(() => {
-    console.log('exiting vysor')
+if (!module.parent) {
+  main()
+    .catch(err => console.log('vysor error', err))
+    .then(() => {
+      console.log('exiting vysor')
 
-    if (vysor) {
-      treeKill(vysor.pid, 'SIGTERM', err => {
-        if (err) {
-          console.log('error killing vysor', err)
-        }
-      })
-    }
-  })
+      if (vysor) {
+        treeKill(vysor.pid, 'SIGTERM', err => {
+          if (err) {
+            console.log('error killing vysor', err)
+          }
+        })
+      }
+    })
+}
 
   /**
     COPIED HERE IS THE OLD start_vysor.sh script for posterity

@@ -74,7 +74,8 @@ class ActionGetter(object):
          {'type': 'menu',
           'x': img_rect_center.x,
           'y': img_rect_center.y + 35}),
-    ] + BottomMenuTaps
+    ]
+    # MenuTaps += BottomMenuTaps
 
     Base = [Pass] + Swipes + MenuTaps
     # Base = MenuTaps

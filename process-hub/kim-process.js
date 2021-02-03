@@ -6,13 +6,15 @@ const { delay } = require('./util')
 
 class KimProcess {
   constructor(ops) {
-    const { name, abbrev, script, index, onLog } = ops
+    const { name, abbrev, script, index, onLog, onStart, onExit } = ops
     this.ops = ops
     this.name = name
     this.abbrev = abbrev
     this.script = script
     this.index = index
     this.onLog = onLog
+    this.onStart = onStart
+    this.onExit = onExit
 
     const colors = ['blue', 'yellow', 'magenta', 'cyan', 'white', 'red']
     const logColors = ['#8282ff', 'yellow', 'magenta', 'cyan', '#ff8a00', '#ff8aff']
@@ -121,6 +123,10 @@ class KimProcess {
     this.started = true
     this.cancelled = false
 
+    if (this.onStart) {
+      this.onStart({ kimProcess: this })
+    }
+
     while (!this.cancelled) {
       await this.runScript()
         .then(() => {
@@ -131,6 +137,10 @@ class KimProcess {
           this.stopTimes.push({ err, when: moment() })
           genlog(`${this.getLabel()} - Crash #${this.stopTimes.length} Error:`.red, err)
         })
+
+      if (this.onExit) {
+        this.onExit({ kimProcess: this, cancelled: this.cancelled, err: this.stopTimes[this.stopTimes.length - 1].err })
+      }
 
       await delay(this.timeBetweenScriptRuns)
     }

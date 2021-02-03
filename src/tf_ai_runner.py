@@ -20,7 +20,7 @@ def create_tf_ai_env():
     return DeviceClientTfEnv(device_client)
 
 
-def run_ai_with_policy(env, policy):
+def run_ai_with_policy(env, policy, get_status):
     tf_env = tf_py_environment.TFPyEnvironment(env)
 
     while True:
@@ -29,6 +29,12 @@ def run_ai_with_policy(env, policy):
             action_step = policy.action(time_step)
             time_step = tf_env.step(action_step.action)
 
+            if get_status is not None:
+                status = get_status(env, action_step.action)
+                if status is not None:
+                    publisher = env.action_state_manager.ai_info_publisher
+                    publisher.publish_status(status)
+
 
 def run_ai_with_random_policy():
     env = create_tf_ai_env()
@@ -36,7 +42,7 @@ def run_ai_with_random_policy():
     factory = TfAgentPolicyFactory(env)
     policy = factory.get_random_policy()
 
-    run_ai_with_policy(env, policy)
+    run_ai_with_policy(env, policy, None)
 
 
 def run_ai_with_heuristic_policy():
@@ -45,7 +51,7 @@ def run_ai_with_heuristic_policy():
     factory = TfAgentPolicyFactory(env)
     policy = factory.get_heuristic_policy()
 
-    run_ai_with_policy(env, policy)
+    run_ai_with_policy(env, policy, get_status=policy.get_status)
 
 
 def run_ai_with_saved_blended_policy(policy_name='policy',
@@ -69,7 +75,7 @@ def run_ai_with_saved_blended_policy(policy_name='policy',
                                                 heuristic_weight=get_weight('heuristic'),
                                                 random_weight=get_weight('random'))
 
-    run_ai_with_policy(env, blended_policy)
+    run_ai_with_policy(env, blended_policy, get_status=blended_policy.get_status)
 
 
 if __name__ == '__main__':
