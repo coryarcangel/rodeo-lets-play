@@ -1,21 +1,20 @@
 """ Code to transform images from KK:Hollywood into numerical state """
 
 import tensorflow as tf
+import cv2
 from concurrent import futures
 from darkflow.net.build import TFNet
-from config import TFNET_CONFIG, CURRENT_IMG_CONFIG
-from image_circles import get_image_circles, GALAXY8_VYSOR_HOUGH_CONFIG
+from config import TFNET_CONFIG, CURRENT_IMG_CONFIG, HOUGH_CIRCLES_CONFIG
+from image_circles import get_image_circles
 from image_blob import BlobDetector
 from image_contours import get_kim_action_color_shapes
 from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
 from ai_state_data import AIState
-
-# Constants
-STATE_INPUT_SHAPE = [4]
+from util import Rect, convert_rect_between_rects
 
 
-def _process_image_objects(image_objects):
+def _process_image_objects(image_objects, image_size, scale=1):
     '''
     Expects output from darkflow like {
         'label',
@@ -32,10 +31,15 @@ def _process_image_objects(image_objects):
         y = obj['topleft']['y']
         w = obj['bottomright']['x'] - x
         h = obj['bottomright']['y'] - y
+        rect = (x, y, w, h)
+        if scale != 1:
+            scaled_image_rect = (0, 0, image_size[0] / scale, image_size[1] / scale)
+            rect = convert_rect_between_rects(rect, (0, 0, image_size[0], image_size[1]), scaled_image_rect)
+
         return {
             'label': obj['label'],
             'confidence': float(obj['confidence']),
-            'rect': (x, y, w, h)
+            'rect': rect
         }
 
     return [process_obj(i) for i in image_objects]
@@ -61,7 +65,7 @@ class AIStateProcessor(object):
 
         return AIState(**self.ocr_processor.process_filename(filename))
 
-    def process_from_np_img(self, sess, np_img):
+    def process_from_np_img(self, sess, np_img, scale=1):
         """
         Args:
             sess: A Tensorflow session object
@@ -73,7 +77,15 @@ class AIStateProcessor(object):
         FPS with threaded pil and yolo: ~6.8
         """
 
+        scaled_np_img = np_img
+        if scale != 1:
+            height, width, _ = np_img.shape
+            new_size = (int(width * scale), int(height * scale))
+            scaled_np_img = cv2.resize(np_img, dsize=(new_size))
+
         np_img_3chan = np_img[:, :, :3]
+        scaled_np_img_3chan = scaled_np_img[:, :, :3]
+        scaled_height, scaled_width, _ = scaled_np_img_3chan.shape
 
         # Reads text via OCR, etc
         def get_pil_state():
@@ -81,15 +93,16 @@ class AIStateProcessor(object):
 
         # Gets the very valuable yolo objects
         def get_yolo_state():
-            yolo_result = self.tfnet.return_predict(np_img_3chan)
-            return {'image_objects': _process_image_objects(yolo_result)}
+            yolo_result = self.tfnet.return_predict(scaled_np_img_3chan)
+            return {'image_objects': _process_image_objects(yolo_result, image_size=(scaled_width, scaled_height), scale=scale)}
 
         # Gets Tappable circles!!
         def get_circles_state():
-            circles = get_image_circles(np_img, GALAXY8_VYSOR_HOUGH_CONFIG)
+            circles = get_image_circles(np_img, HOUGH_CIRCLES_CONFIG)
 
             # Try to Filter out the menu circles
-            tap_circles = [c for c in circles if c[1] < 350]
+            # tap_circles = [c for c in circles if c[1] < 350]
+            tap_circles = circles
 
             return {'tap_circles': tap_circles}
 

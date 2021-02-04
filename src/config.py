@@ -26,7 +26,9 @@ SAFEGUARD_MENU_RECTS = [
 
 # Galaxy 10
 GALAXY10_RECT = Rect(0, 0, 2280, 1080)
+GALAXY10_GAME_RECT = Rect(112, 0, 2168, 1080)
 
+HEN_VYSOR_RECT = Rect(10, 10, 1665, 827)
 HEN_OPTIONS = {
     'MONITORS': [
         ('HDMI-1-1', (1920, 1080)),
@@ -45,11 +47,19 @@ HEN_OPTIONS = {
         'heuristic': 0.4,
         'random': 0.1
     },
-    'VYSOR_RECT': Rect(10, 10, 1665, 830),
-    'PHONE_RECT': Rect(0, 0, 2220, 1080),
-    'PHONE_GAME_RECT': Rect(115, 0, 2165, 1080),
-    # 'PHONE_VYSOR_CAP_AREA': Rect(79, 71, 1518, 752)#Rect(79, 71, VYSOR_RECT[-2]-68, VYSOR_RECT[-1] - 28)
-    'PHONE_VYSOR_CAP_AREA': Rect(88, 71, 1584, 792)
+    'VYSOR_RECT': HEN_VYSOR_RECT,
+    'PHONE_RECT': GALAXY10_RECT,
+    'PHONE_GAME_RECT': GALAXY10_GAME_RECT,
+    'PHONE_VYSOR_CAP_AREA': Rect(92, 71, HEN_VYSOR_RECT[-2] - 83, HEN_VYSOR_RECT[-1] - 37),
+    'IMAGE_PROCESS_SCALE': 0.75,
+    'HOUGH_CIRCLES_CONFIG': {
+        'dp': 0.25,  # (inverse ratio of accumulator resolution)
+        'minDist': 30,  # min distance between circles
+        'param1': 500,  # (confusing)
+        'param2': 50,  # (smaller means more false circles)
+        'minRadius': 5,
+        'maxRadius': 100
+    }
 }
 
 # Galaxy 8
@@ -77,7 +87,16 @@ KEV_OPTIONS = {
     'VYSOR_RECT': KEV_VYSOR_RECT,
     'PHONE_RECT': GALAXY8_RECT,
     'PHONE_GAME_RECT': GALAXY8_GAME_RECT,
-    'PHONE_VYSOR_CAP_AREA': Rect(52, 68, KEV_VYSOR_RECT[-2] - 105, KEV_VYSOR_RECT[-1] - 82)
+    'PHONE_VYSOR_CAP_AREA': Rect(52, 68, KEV_VYSOR_RECT[-2] - 105, KEV_VYSOR_RECT[-1] - 82),
+    'IMAGE_PROCESS_SCALE': 1,
+    'HOUGH_CIRCLES_CONFIG': {
+        'dp': 0.25,  # (inverse ratio of accumulator resolution)
+        'minDist': 30,  # min distance between circles
+        'param1': 500,  # (confusing)
+        'param2': 50,  # (smaller means more false circles)
+        'minRadius': 5,
+        'maxRadius': 20
+    }
 }
 
 OPTIONS = HEN_OPTIONS
@@ -100,9 +119,12 @@ TF_AI_POLICY_WEIGHTS = OPTIONS['TF_AI_POLICY_WEIGHTS']
 
 # Where the Vysor Window Is Moved To
 VYSOR_RECT = OPTIONS['VYSOR_RECT']
+IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
 
 # Name of the phone in vysor (change in vysor settings)
 VYSOR_WINDOW_NAME = 'VysorKim'
+
+HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
 
 """
 Phone Rect / Game Rect is about the raw phone size.
@@ -160,6 +182,17 @@ IMG_CONFIG_GALAXY8 = ImageConfig(
     top_menu_item_width=55
 )
 
+IMG_CONFIG_GALAXY10 = ImageConfig(
+    width=VYSOR_CAP_AREA[2],
+    height=VYSOR_CAP_AREA[3],
+    money_item_left=VYSOR_CAP_AREA[2] - 752,
+    stars_item_left=VYSOR_CAP_AREA[2] - 542,
+    bolts_item_left=VYSOR_CAP_AREA[2] - 407,
+    top_menu_height=64,
+    top_menu_padding=20,
+    top_menu_item_width=120
+)
+
 # TODO: IMG_CONFIG_GALAXY10
 
-CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY8
+CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY10
