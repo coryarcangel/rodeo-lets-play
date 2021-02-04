@@ -20,9 +20,11 @@ var target_time = 1000 / target_fps;
 var radialGraph;
 const radialOpt = {
   margin: {top: 0, right: 100, bottom: 0, left: 0},
-    width: 150,
-    height: 500
+    width: 320,
+    height: 400
 }
+
+var barSize = 20;
 
 var gaugeNeedles = {}
 
@@ -31,6 +33,17 @@ var sounds = {
   'doubleTap':{src:'tap.mp3'} ,
   'reset': {src:'windows_startup.mp3'}
 };
+
+var ridgelineData = [
+  {
+    power : [],
+    temp: []
+  },
+    {
+    power : [],
+    temp: []
+  }
+]
 
 
 const Marquee = dynamicMarquee.Marquee;
@@ -75,6 +88,7 @@ function updateCurStateRender() {
 
   renderImageState(imageState, recentTouch);
   //renderStateActions(stateActions);
+  renderRidgelineGraph();
   renderBarGraph(stateActions);
   renderSystemInfo(systemInfo);
 }
@@ -296,19 +310,24 @@ function drawBarGraph(data){
   initBarGraph()
 
   var x = d3.scaleLinear()
-    .domain([0, 100000])
-    .range([ 0,80]);
+    .domain([0, 90000])
+    .range([ 0,300]);
 
   var y = d3.scaleBand()
-    .range([ 0, radialOpt.height ])
+    .range([ 0, (data.length)*barSize ])
     .domain(data.map(function(d) { return d.label; }))
-    .padding(0.2);
+    // .padding(0.2);
 
   radialGraph.append("g")
+    // .call(d3.axisLeft(y))
+    .data(data)
     .call(d3.axisLeft(y))
     .selectAll("text")
-      .attr("transform", function(d){ return "translate("+ 150 +",0)" })
-      .attr("fill","black")
+    .attr("y", function(d,i) { y(d) })
+    .attr("x", function(d,i) { return x(data[i]['confidence']); }) 
+    .attr("transform", function(d){ return "translate("+ 15 +",0)" })
+    .attr("text-anchor","start")
+    .attr("fill","lime")
 
   // Bars
   radialGraph.selectAll("mybar")
@@ -316,10 +335,11 @@ function drawBarGraph(data){
     .enter()
     .append("rect")
       .attr("x", 10)
-      .attr("y", function(d) { return y(d.label);})
+      .attr("y", function(d,i) { return i*barSize; //y(d.label);
+      })
       .attr("width", function(d) { return x(d['confidence']); })
-      .attr("height", y.bandwidth())
-      .attr("stroke", "lime")
+      .attr("height", barSize)
+      .attr("stroke", function(d,i){ console.log(d); return labelColorsMap[d['label'].split(": ")[1]] ? labelColorsMap[d['label'].split(": ")[1]] : "lime" })
       .attr("fill", "rgba(255,255,255,.25)");//")
 }
 
@@ -393,6 +413,10 @@ function renderAiLogs(aiLogs) {
 
   aiLogEl.innerHTML = ``
   aiLogEl.append(...logEls)
+}
+
+function renderRidgelineGraph(systemInfo) {
+  
 }
 
 function renderSystemInfo(systemInfo) {
