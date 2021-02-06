@@ -7,7 +7,7 @@ import threading
 from asyncchat_kim import AsyncchatKim, KimCommand
 from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
 from config import SAFEGUARD_MENU_RECTS, SAFEGUARD_MENU_CLICKS_DEFAULT
-from util import is_in_rect
+from util import is_in_rect, convert_point_between_rects
 from window import setup_vysor_window
 from ai_actions import Action
 from ai_info_publisher import get_ai_info_publisher
@@ -121,12 +121,7 @@ class DeviceClient(AsyncchatKim):
         time.sleep(1)
 
     def _img_point_to_device_point(self, img_point):
-        x, y = img_point
-        _, _, w1, h1 = self.img_rect
-        x2, y2, w2, h2 = self.phone_game_rect
-        nx = (w2 / float(w1)) * x + x2
-        ny = (h2 / float(h1)) * y + y2
-        return (int(nx), int(ny))
+        return convert_point_between_rects(img_point, self.img_rect, self.phone_game_rect)
 
     def _can_tap_device_point(self, x, y):
         if not self.safeguard_menu_clicks:

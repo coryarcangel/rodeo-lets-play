@@ -16,7 +16,7 @@ import redis
 from darkflow.net.build import TFNet
 from PIL import Image
 
-from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG
+from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, IMAGE_PROCESS_SCALE
 from config import VYSOR_CAP_AREA, NUM_MONITORS, MONITORS
 from kim_logs import get_kim_logger
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
@@ -104,10 +104,10 @@ class VysorDataStream(object):
                 last_time = time.time()
 
                 # Get raw pixels from the screen, save it to a Numpy array
-                img = np.array(sct.grab(mon))
+                captured_np_img = np.array(sct.grab(mon))
 
                 # Get State!
-                ai_state = processor.process_from_np_img(sess, img)
+                ai_state = processor.process_from_np_img(sess, captured_np_img, scale=IMAGE_PROCESS_SCALE)
 
                 # Publish to redis (:
                 message = {
@@ -117,9 +117,9 @@ class VysorDataStream(object):
                 self.r.publish('phone-image-states', json.dumps(message))
 
                 # Display
-                rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                pimg = Image.fromarray(rgb)
-                self.r.set('phone-image-data', pimg.tobytes())
+                captured_rgb_image = cv2.cvtColor(captured_np_img, cv2.COLOR_BGR2RGB)
+                phone_image = Image.fromarray(captured_rgb_image)
+                self.r.set('phone-image-data', phone_image.tobytes())
 
                 self.logger.info('fps: {0}'.format(1 / (time.time() - last_time)))
 

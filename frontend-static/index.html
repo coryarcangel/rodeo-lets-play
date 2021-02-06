@@ -22,25 +22,19 @@
       width: 1584px;
       height: 792px;
     }
-    #action-history, .terminal {
+    #action-history, .terminal, #ai-log {
       position: fixed; 
       top: 2px; 
       right: calc(100vw - 1584px); 
       color: #fff; 
       background-color: rgba(0, 0, 0, 0.5); 
-      max-height: 710px; 
+      max-height: 310px; 
       text-align: right;
       overflow-y: hidden;
+      width: 400px;
     }
     #ai-log {
-      position: fixed;
-      top: 212px;
-      right: 2px;
-      color: #fff;
-      background-color: rgba(0, 0, 0, 0.5);
-      height: 200px;
-      width: 400px;
-      overflow: auto;
+      top: 312px;
     }
     #state-actions {
       position: fixed;
@@ -79,8 +73,8 @@
     }
     #gpus {
       position: fixed;
-      top: 715px;
-      left: 261px;
+      top: 635px;
+      left: -5px;
     }
     .gpu-monitor {
       margin: 0 1em;

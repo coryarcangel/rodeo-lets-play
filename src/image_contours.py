@@ -3,6 +3,7 @@ import cv2
 import imutils
 from image_blob import get_center_color
 from action_shape import action_shape_color_ranges
+from util import convert_point_between_rects
 
 def get_contour_shape(c):
     # approximate the contour
@@ -27,20 +28,29 @@ def get_contour_shape(c):
     return shape_name, verts
 
 
-def get_contour_shape_data(c, ratio):
+def get_contour_shape_data(c, image, resized_image):
     try:
         # Compute center and area
         M = cv2.moments(c)
         area = M["m00"] if M["m00"] > 0 else 1
 
-        cX = int((M["m10"] / area) * ratio)
-        cY = int((M["m01"] / area) * ratio)
+        x = int((M["m10"] / area))
+        y = int((M["m01"] / area))
+
+        image_rect = (0, 0, image.shape[0], image.shape[1])
+        resized_rect = (0, 0, resized_image.shape[0], resized_image.shape[1])
+        ratio = image.shape[0] / float(resized_image.shape[0])
+
+        point = convert_point_between_rects((x, y), resized_rect, image_rect)
+
+        # cX = int((M["m10"] / area) * ratio)
+        # cY = int((M["m01"] / area) * ratio)
 
         shape, verts = get_contour_shape(c)
         return {
             'shape': shape,
             'verts': verts,
-            'point': (cX, cY),
+            'point': point,
             'area': area * ratio,
             'contour': (c.astype('float') * ratio).astype('int') # mult by ratio
         }
@@ -56,8 +66,7 @@ def get_image_colored_shapes(image, color_ranges):
     '''
 
     # Resize for performance
-    img = imutils.resize(image, width=300)
-    ratio = image.shape[0] / float(img.shape[0])
+    img = image # imutils.resize(image, width=300)
 
     # Blur to handle dumb pixel stuff
     img = cv2.GaussianBlur(img, (5, 5), 0)
@@ -84,7 +93,7 @@ def get_image_colored_shapes(image, color_ranges):
         contours = contour_res[1] if len(contour_res) == 3 else contour_res[0]
 
         # Get colored shapes
-        color_shapes = [get_contour_shape_data(c, ratio) for c in contours]
+        color_shapes = [get_contour_shape_data(c, image, img) for c in contours]
         color_shapes = [cs for cs in color_shapes if cs and cs['area'] >= min_area]
         for cs in color_shapes:
             cs['color_label'] = label
@@ -102,7 +111,6 @@ def get_kim_action_color_shapes(image):
 def get_grayscale_image_shapes(image):
     # Resize for performance
     img = imutils.resize(image, width=300)
-    ratio = image.shape[0] / float(img.shape[0])
 
     # Convert to grayscale, blur, threshold
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -116,7 +124,7 @@ def get_grayscale_image_shapes(image):
     _, contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     def get_shape(c):
-        s = get_contour_shape_data(c, ratio)
+        s = get_contour_shape_data(c, image, img)
         if s is not None:
             color, dom_color = get_center_color(image, s['point'])
             s['color'] = color

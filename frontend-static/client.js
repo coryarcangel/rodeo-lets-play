@@ -19,12 +19,12 @@ var target_time = 1000 / target_fps;
 
 var radialGraph;
 const radialOpt = {
-  margin: {top: 0, right: 0, bottom: 0, left: 0},
-    width: 100,
-    height: 500,
-    innerRadius: 20,
-    outerRadius: Math.min(300, 300) / 6
+  margin: {top: 0, right: 100, bottom: 0, left: 0},
+    width: 320,
+    height: 400
 }
+
+var barSize = 20;
 
 var gaugeNeedles = {}
 
@@ -33,6 +33,17 @@ var sounds = {
   'doubleTap':{src:'tap.mp3'} ,
   'reset': {src:'windows_startup.mp3'}
 };
+
+var ridgelineData = [
+  {
+    power : [],
+    temp: []
+  },
+    {
+    power : [],
+    temp: []
+  }
+]
 
 
 const Marquee = dynamicMarquee.Marquee;
@@ -77,7 +88,8 @@ function updateCurStateRender() {
 
   renderImageState(imageState, recentTouch);
   //renderStateActions(stateActions);
-  renderActionsRadialGraph(stateActions);
+  renderRidgelineGraph();
+  renderBarGraph(stateActions);
   renderSystemInfo(systemInfo);
 }
 
@@ -266,7 +278,7 @@ function renderStateActions(stateActions) {
   stateActionsEl.append(...actionEls)
 }
 
-function renderActionsRadialGraph(stateActions) {
+function renderBarGraph(stateActions) {
     const actionEls = (stateActions || [])
     .filter(a => a.length > 1 && !!a[1].object_type) // only render tap object actions :)
     .map( (d,i) =>  {
@@ -277,19 +289,6 @@ function renderActionsRadialGraph(stateActions) {
     }).filter(a => !!a.confidence);
     // console.log("graoh data",JSON.stringify(actionEls))
     drawBarGraph(actionEls);
-}
-
-function initRadialGraph(){
-  if(radialGraph){
-    radialGraph.remove()
-    d3.selectAll("#radial_graph > svg").remove();
-  }
-  radialGraph = d3.select("#radial_graph")
-  .append("svg")
-    .attr("width", radialOpt.width + radialOpt.margin.left + radialOpt.margin.right)
-    .attr("height", radialOpt.height + radialOpt.margin.top +radialOpt.margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + (radialOpt.width / 2 + radialOpt.margin.left) + "," + (radialOpt.height / 2 + radialOpt.margin.top) + ")");
 }
 
 function initBarGraph(){
@@ -307,86 +306,41 @@ function initBarGraph(){
           "translate(" + radialOpt.margin.left + "," + radialOpt.margin.top + ")");
 }
 
-function drawRadialGraph(data) {
-  // from https://www.d3-graph-gallery.com/graph/circular_barplot_label.html
-  // Scales
-  initRadialGraph();
-  var x = d3.scaleBand()
-      .range([0, 2 * Math.PI])    // X axis goes from 0 to 2pi = all around the circle. If I stop at 1Pi, it will be around a half circle
-      .align(0)                  // This does nothing
-      .domain(data.map(function(d) { return d.label; })); // The domain of the X axis is the list of states.
-  var y = d3.scaleRadial()
-      .range([radialOpt.innerRadius, radialOpt.outerRadius])   // Domain will be define later.
-      .domain([0, 14000]); // Domain of Y is from 0 to the max seen in the data
-
-  // Add the bars
-  radialGraph.append("g")
-    .selectAll("path")
-    .data(data)
-    .enter()
-    .append("path")
-      .attr("fill", "rgba(0,0,0,.4)")
-      .attr("d", d3.arc()     // imagine your doing a part of a donut plot
-          .innerRadius(radialOpt.innerRadius)
-          .outerRadius(function(d) { return y(d['confidence']); })
-          .startAngle(function(d) { return x(d.label); })
-          .endAngle(function(d) { return x(d.label) + x.bandwidth(); })
-          .padAngle(0.01)
-          .padRadius(radialOpt.innerRadius))
-
-  // Add the labels
-  radialGraph.append("g")
-      .selectAll("g")
-      .data(data)
-      .enter()
-      .append("g")
-        .attr("text-anchor", function(d) { return (x(d.label) + x.bandwidth() / 2 + Math.PI) % (2 * Math.PI) < Math.PI ? "end" : "start"; })
-        .attr("transform", function(d) { return "rotate(" + ((x(d.label) + x.bandwidth() / 2) * 180 / Math.PI - 90) + ")"+"translate(" + (y(d['confidence'])+10) + ",0)"; })
-      .append("text")
-        .text(function(d){return(d.label)})
-        .attr("transform", function(d) { return (x(d.label) + x.bandwidth() / 2 + Math.PI) % (2 * Math.PI) < Math.PI ? "rotate(180)" : "rotate(0)"; })
-        .style("font-size", "11px")
-        .style("fill", "black")
-        .attr("alignment-baseline", "middle")
-
-
-};
-
 function drawBarGraph(data){
   initBarGraph()
 
-  var x = d3.scaleBand()
-  .range([ 0, radialOpt.width ])
-  .domain(data.map(function(d) { return d.label; }))
-  .padding(0.2);
+  var x = d3.scaleLinear()
+    .domain([0, 90000])
+    .range([ 0,300]);
+
+  var y = d3.scaleBand()
+    .range([ 0, (data.length)*barSize ])
+    .domain(data.map(function(d) { return d.label; }))
+    // .padding(0.2);
 
   radialGraph.append("g")
-    .attr("transform", "translate(0," + radialOpt.height + ")")
-    .call(d3.axisBottom(x))
+    // .call(d3.axisLeft(y))
+    .data(data)
+    .call(d3.axisLeft(y))
     .selectAll("text")
-      .attr("transform", "translate(-10,0)rotate(-45)")
-      .style("text-anchor", "end");
-
-  // Add Y axis
-  var y = d3.scaleLinear()
-    .domain([0, 13000])
-    .range([ radialOpt.height, 0]);
-  radialGraph.append("g")
-    .call(d3.axisLeft(y));
+    .attr("y", function(d,i) { y(d) })
+    .attr("x", function(d,i) { return x(data[i]['confidence']); }) 
+    .attr("transform", function(d){ return "translate("+ 15 +",0)" })
+    .attr("text-anchor","start")
+    .attr("fill","lime")
 
   // Bars
   radialGraph.selectAll("mybar")
     .data(data)
     .enter()
     .append("rect")
-      .attr("x", function(d) { return x(d.label); })
-      .attr("y", function(d) { return y(d['confidence']); })
-      .attr("width", x.bandwidth())
-      .attr("height", function(d) { return radialOpt.height - y(d['confidence']); })
-      // .attr("stroke", "lime")
-      .attr("fill", "rgba(255,255,255,.25)")
-
-
+      .attr("x", 10)
+      .attr("y", function(d,i) { return i*barSize; //y(d.label);
+      })
+      .attr("width", function(d) { return x(d['confidence']); })
+      .attr("height", barSize)
+      .attr("stroke", function(d,i){ console.log(d); return labelColorsMap[d['label'].split(": ")[1]] ? labelColorsMap[d['label'].split(": ")[1]] : "lime" })
+      .attr("fill", "rgba(255,255,255,.25)");//")
 }
 
 function initGpuMonitors(gpuData){
@@ -415,7 +369,7 @@ function initGpuMonitors(gpuData){
   }
 }
 var wattRange = [15,85]// [min, diffBtwMinMax]
-var tempRange = [20,70]
+var tempRange = [20,160]
 function renderGpuMonitors(gpuData){
   for(gpu in gpuData){
     var needleAngle = ((gpuData[gpu]["pwrDraw"] - wattRange[0] )/(wattRange[1]))*90 - 45
@@ -459,6 +413,10 @@ function renderAiLogs(aiLogs) {
 
   aiLogEl.innerHTML = ``
   aiLogEl.append(...logEls)
+}
+
+function renderRidgelineGraph(systemInfo) {
+  
 }
 
 function renderSystemInfo(systemInfo) {

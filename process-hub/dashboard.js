@@ -2,6 +2,7 @@ require('colors')
 const blessed = require('blessed')
 const contrib = require('blessed-contrib')
 const moment = require('moment')
+const stripAnsi = require('strip-ansi')
 const fs = require('fs')
 const path = require('path')
 
@@ -38,7 +39,7 @@ const getLogger = (name, row, col, width, height, color) => {
 
   const log = (line) => {
     logger.log(line)
-    stream.write(line + '\n')
+    stream.write(stripAnsi(line) + '\n')
   }
 
   return { name, filepath, stream, logger, log }
