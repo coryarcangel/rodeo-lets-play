@@ -52,6 +52,8 @@ class TfAgentDeepQManager(object):
         # Saving / Loading Params
         save_dir = self.save_dir = p_val('save_dir', os.getcwd() + '/deep_q_save')
         max_checkpoints = p_val('max_checkpoints', 1)
+        self.policy_save_interval = p_val('policy_save_interval', 0)
+        self.checkpoint_save_interval = p_val('checkpoint_save_interval', 0)
 
         self.q_net = q_network.QNetwork(
             self.tf_env.observation_spec(),
@@ -158,6 +160,14 @@ class TfAgentDeepQManager(object):
                 self.logger.info('training iteration = {0}: Average Return = {1}'.format(
                     step, avg_return))
                 returns.append(avg_return)
+
+            if self.checkpoint_save_interval > 0:
+                if step % self.checkpoint_save_interval == 0:
+                    self.save_checkpoint()
+
+            if self.policy_save_interval > 0:
+                if step % self.policy_save_interval == 0:
+                    self.save_policy()
 
     def save_policy(self, name='policy'):
         policy_save_dir = os.path.join(self.save_dir, name)
