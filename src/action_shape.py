@@ -4,6 +4,8 @@ selectable bubbles in the game are detected. This section of code helps define
 the types of bubbles to look for.
 '''
 
+import collections
+
 
 class ActionShape(object):
     """Enum-like iteration of all available action-shape hueristic guesses"""
@@ -20,21 +22,25 @@ all_action_shapes = [
 ]
 
 
-# Label, Lower HSV, Upper HSV, Min Area
+ShapeColorRange = collections.namedtuple(
+    "ShapeColorRange", ['label', 'lower', 'upper', 'min_area', 'max_area', 'min_verts', 'max_verts'])
+
+
 action_shape_color_ranges = [
-    ('Light Blue', (100, 160, 50), (120, 255, 255), 2000),
-    ('Light Green', (40, 100, 50), (65, 255, 255), 2000),
-    ('Light Gray', (100, 50, 200), (105, 100, 255), 2000),
-    ('Red', (0, 110, 225), (5, 140, 255), 60),
-    ('Gold', (10, 20, 50), (30, 255, 255), 2000),
-    # ('White', (0, 0, 253), (255, 1, 255), 40),
-    # ('Black', (0, 0, 0), (255, 255, 20), 60),
+    # ShapeColorRange('Light Blue', (100, 160, 50), (120, 255, 255), 200, 1400, 4, 12),
+    # ShapeColorRange('Light Green', (40, 100, 50), (65, 255, 255), 100, 1600, 4, 12),
+    # ShapeColorRange('Pink', (160, 20, 20), (170, 255, 255), 800, 1400, 4, 12),
+    # ShapeColorRange('Light Gray', (100, 50, 200), (105, 100, 255), 400, 1400, 4, 12),
+    ShapeColorRange('Red', (0, 50, 100), (3, 255, 255), 60, 400, 4, 12),
+    # ShapeColorRange('Yellow', (23, 100, 50), (30, 255, 255), 80, 1000, 4, 30),
+    # ShapeColorRange('Teal', (90, 100, 50), (95, 255, 255), 50, 1600, 4, 18),
+    # ShapeColorRange('White', (0, 0, 128), (255, 5, 255), 80, 400, 4, 30),
 ]
 
 
 def get_shape_data_likely_action_shape(shape_data, image_shape):
     ''' Gets best-guess of ActionShape from shape data (color, point, area, shape) '''
-    p, a, s, co = [shape_data[k] for k in ('point', 'area', 'shape', 'color_label')]
+    p, a, v, s, co = [shape_data[k] for k in ('point', 'rawArea', 'verts', 'shape', 'color_label')]
     x, y = p
     iw, ih = image_shape[0:2]
 
@@ -42,11 +48,13 @@ def get_shape_data_likely_action_shape(shape_data, image_shape):
         return ActionShape.MENU_EXIT
 
     centered = abs(x - iw / 2.0) < 100
-    if centered and co == 'Gold':
+    if co == 'Gold':
         return ActionShape.CONFIRM_OK
-    if centered and co == 'Light Green' and centered:
+    if co == 'Light Green':
         return ActionShape.MONEY_CHOICE
-    if centered and co in ('Light Gray', 'Light Blue'):
+    if co in ('Light Gray', 'Light Blue', 'Pink', 'Yellow'):
+        return ActionShape.TALK_CHOICE
+    if co == 'White' and v >= 10:  # white circle with "..."
         return ActionShape.TALK_CHOICE
 
     return ActionShape.UNKNOWN

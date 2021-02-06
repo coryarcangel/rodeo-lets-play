@@ -93,13 +93,13 @@ KEV_OPTIONS = {
         'dp': 0.25,  # (inverse ratio of accumulator resolution)
         'minDist': 30,  # min distance between circles
         'param1': 500,  # (confusing)
-        'param2': 50,  # (smaller means more false circles)
-        'minRadius': 5,
-        'maxRadius': 20
+        'param2': 40,  # (smaller means more false circles)
+        'minRadius': 2,
+        'maxRadius': 30
     }
 }
 
-OPTIONS = HEN_OPTIONS
+OPTIONS = KEV_OPTIONS
 
 # monitor config is system dependent
 MONITORS = OPTIONS['MONITORS']
@@ -125,6 +125,8 @@ IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
 VYSOR_WINDOW_NAME = 'VysorKim'
 
 HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
+
+CONTOUR_PROCESS_WIDTH = 300
 
 """
 Phone Rect / Game Rect is about the raw phone size.

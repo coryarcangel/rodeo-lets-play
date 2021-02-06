@@ -1,9 +1,12 @@
 ''' Module inspired by https://www.pyimagesearch.com/2016/02/08/opencv-shape-detection/ '''
 import cv2
 import imutils
+import time
 from image_blob import get_center_color
 from action_shape import action_shape_color_ranges
 from util import convert_point_between_rects
+from config import CONTOUR_PROCESS_WIDTH
+
 
 def get_contour_shape(c):
     # approximate the contour
@@ -24,7 +27,7 @@ def get_contour_shape(c):
     }
 
     verts = len(approx)
-    shape_name = vert_names[str(verts)] if str(verts) in vert_names else 'circle'
+    shape_name = vert_names[str(verts)] if str(verts) in vert_names else 'contour'
     return shape_name, verts
 
 
@@ -43,16 +46,14 @@ def get_contour_shape_data(c, image, resized_image):
 
         point = convert_point_between_rects((x, y), resized_rect, image_rect)
 
-        # cX = int((M["m10"] / area) * ratio)
-        # cY = int((M["m01"] / area) * ratio)
-
         shape, verts = get_contour_shape(c)
         return {
             'shape': shape,
             'verts': verts,
             'point': point,
-            'area': area * ratio,
-            'contour': (c.astype('float') * ratio).astype('int') # mult by ratio
+            'area': area * ratio * ratio,
+            'rawArea': area,
+            'contour': (c.astype('float') * ratio).astype('int')  # mult by ratio
         }
     except Exception as e:
         print(e)
@@ -66,7 +67,8 @@ def get_image_colored_shapes(image, color_ranges):
     '''
 
     # Resize for performance
-    img = image # imutils.resize(image, width=300)
+    img = image
+    img = imutils.resize(image, width=CONTOUR_PROCESS_WIDTH)
 
     # Blur to handle dumb pixel stuff
     img = cv2.GaussianBlur(img, (5, 5), 0)
@@ -76,11 +78,12 @@ def get_image_colored_shapes(image, color_ranges):
 
     shapes = []
 
-    for label, lower, upper, min_area in color_ranges:
+    for item in color_ranges:
+        label = item.label
         # Mask image to only within given color range
-        mask = cv2.inRange(hsv, lower, upper)
+        mask = cv2.inRange(hsv, item.lower, item.upper)
         res = cv2.bitwise_and(img, img, mask=mask)
-        # cv2.imshow('Res', res); cv2.waitKey(0)
+        cv2.imshow('Res', res); cv2.waitKey(0)
 
         # Convert to grayscale and threshold
         res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
@@ -94,7 +97,12 @@ def get_image_colored_shapes(image, color_ranges):
 
         # Get colored shapes
         color_shapes = [get_contour_shape_data(c, image, img) for c in contours]
-        color_shapes = [cs for cs in color_shapes if cs and cs['area'] >= min_area]
+        color_shapes = [cs for cs in color_shapes if cs and
+            cs['rawArea'] >= item.min_area and
+            cs['rawArea'] <= item.max_area and
+            cs['verts'] >= item.min_verts and
+            cs['verts'] <= item.max_verts]
+        for s in color_shapes: print(label, s['verts'], s['rawArea'])
         for cs in color_shapes:
             cs['color_label'] = label
 

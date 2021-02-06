@@ -11,7 +11,7 @@ from image_contours import get_kim_action_color_shapes
 from image_color import get_image_color_features
 from image_ocr import ImageOCRProcessor
 from ai_state_data import AIState
-from util import Rect, convert_rect_between_rects
+from util import convert_rect_between_rects
 
 
 def _process_image_objects(image_objects, image_size, scale=1):
@@ -101,7 +101,6 @@ class AIStateProcessor(object):
             circles = get_image_circles(np_img, HOUGH_CIRCLES_CONFIG)
 
             # Try to Filter out the menu circles
-            # tap_circles = [c for c in circles if c[1] < 350]
             tap_circles = circles
 
             return {'tap_circles': tap_circles}

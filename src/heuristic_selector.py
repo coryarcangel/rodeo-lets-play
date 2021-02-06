@@ -65,9 +65,9 @@ class HeuristicConfig(object):
         # Probabalistic weights to assign to best-guess of ActionShape variety
         self.action_shape_tap_weights = {
             ActionShape.MENU_EXIT: 10000,
-            ActionShape.CONFIRM_OK: 10000,
-            ActionShape.MONEY_CHOICE: 300,
-            ActionShape.TALK_CHOICE: 2500,
+            ActionShape.CONFIRM_OK: 1000,
+            ActionShape.MONEY_CHOICE: 1000,
+            ActionShape.TALK_CHOICE: 4000,
             ActionShape.UNKNOWN: 100
         }
 
