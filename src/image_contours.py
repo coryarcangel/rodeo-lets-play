@@ -83,7 +83,7 @@ def get_image_colored_shapes(image, color_ranges):
         # Mask image to only within given color range
         mask = cv2.inRange(hsv, item.lower, item.upper)
         res = cv2.bitwise_and(img, img, mask=mask)
-        cv2.imshow('Res', res); cv2.waitKey(0)
+        # cv2.imshow('Res', res); cv2.waitKey(0)
 
         # Convert to grayscale and threshold
         res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
@@ -155,7 +155,7 @@ def draw_shapes(image, shapes):
 
 
 if __name__ == '__main__':
-    image = cv2.imread('src/img/speech_actions_ss_03.png')
+    image = cv2.imread('src/img/redtest.png')
     shapes = get_kim_action_color_shapes(image)
     print([(s['shape'], s['verts'], s['point'], s['area']) for s in shapes])
 
