@@ -27,7 +27,6 @@ ShapeColorRange = collections.namedtuple(
     "ShapeColorRange", ['label', 'lower', 'upper', 'min_area', 'max_area', 'min_verts', 'max_verts'])
 
 
-# still seeking: purple
 action_shape_color_ranges = [
     ShapeColorRange('Light Blue', (100, 160, 50), (120, 255, 255), 200, 1400, 4, 12),
     ShapeColorRange('Light Green', (40, 100, 50), (65, 255, 255), 100, 1600, 4, 12),
@@ -39,6 +38,7 @@ action_shape_color_ranges = [
     ShapeColorRange('Red', (0, 25, 150), (1, 255, 255), 120, 200, 11, 30),
     ShapeColorRange('Yellow', (23, 100, 50), (30, 255, 255), 80, 1000, 4, 30),
     ShapeColorRange('Teal', (90, 150, 50), (95, 255, 200), 40, 1600, 4, 25),
+    ShapeColorRange('Violet', (153, 180, 150), (157, 205, 215), 40, 1600, 4, 25),  # TODO: need to Violet see in practice
     ShapeColorRange('White', (0, 0, 128), (255, 5, 255), 80, 400, 4, 30),
 ]
 
