@@ -2,4 +2,4 @@
 *$py.class
 *.pyc
 node_modules
-log
+logs
