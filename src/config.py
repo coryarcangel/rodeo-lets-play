@@ -56,8 +56,8 @@ HEN_OPTIONS = {
         'dp': 0.25,  # (inverse ratio of accumulator resolution)
         'minDist': 30,  # min distance between circles
         'param1': 500,  # (confusing)
-        'param2': 50,  # (smaller means more false circles)
-        'minRadius': 5,
+        'param2': 40,  # (smaller means more false circles)
+        'minRadius': 3,
         'maxRadius': 100
     }
 }
@@ -99,7 +99,7 @@ KEV_OPTIONS = {
     }
 }
 
-OPTIONS = KEV_OPTIONS
+OPTIONS = HEN_OPTIONS
 
 # monitor config is system dependent
 MONITORS = OPTIONS['MONITORS']
