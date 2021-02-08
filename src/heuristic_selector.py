@@ -65,9 +65,10 @@ class HeuristicConfig(object):
         # Probabalistic weights to assign to best-guess of ActionShape variety
         self.action_shape_tap_weights = {
             ActionShape.MENU_EXIT: 10000,
-            ActionShape.CONFIRM_OK: 10000,
-            ActionShape.MONEY_CHOICE: 300,
-            ActionShape.TALK_CHOICE: 2500,
+            ActionShape.CONFIRM_OK: 1000,
+            ActionShape.MONEY_CHOICE: 1000,
+            ActionShape.TALK_CHOICE: 4000,
+            ActionShape.ROOM_EXIT: 100,
             ActionShape.UNKNOWN: 100
         }
 
@@ -167,6 +168,8 @@ class HeuristicRoom(object):
 
     def _get_action_shape_tap_weight(self, img_obj):
         a_shape = get_shape_data_likely_action_shape(img_obj['shape_data'], self.cur_image_shape)
+        if a_shape == ActionShape.ROOM_EXIT:
+            return self._get_exit_action_weight()
         return self.config.get_action_shape_tap_weight(a_shape)
 
     def _get_object_tap_default_weight(self, a_tup):

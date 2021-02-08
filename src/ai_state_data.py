@@ -83,7 +83,7 @@ class AIState(object):
             p, a, s, co = [shape[k] for k in ('point', 'area', 'shape', 'color_label')]
             x, y = p
             r = int(pow(a, 0.5) / 2.0)
-            shape_data = { k: shape[k] for k in ('point', 'area', 'shape', 'color_label') }
+            shape_data = { k: shape[k] for k in ('point', 'area', 'rawArea', 'verts', 'shape', 'color_label') }
             shape_data['shape_label'] = get_shape_data_label(shape_data, image_shape)
             self.image_objects.append({
                 'label': '%s (%d) - %s' % (s, a, co),

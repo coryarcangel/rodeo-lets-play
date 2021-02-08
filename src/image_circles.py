@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 
+
 GALAXY8_FULL_HOUGH_CONFIG = {
     'dp': 0.25,  # (inverse ratio of accumulator resolution)
     'minDist': 100,  # min distance between circles
@@ -11,17 +12,8 @@ GALAXY8_FULL_HOUGH_CONFIG = {
     'maxRadius': 40
 }
 
-GALAXY8_VYSOR_HOUGH_CONFIG = {
-    'dp': 0.25,  # (inverse ratio of accumulator resolution)
-    'minDist': 30,  # min distance between circles
-    'param1': 500,  # (confusing)
-    'param2': 50,  # (smaller means more false circles)
-    'minRadius': 5,
-    'maxRadius': 20
-}
 
-
-def get_image_circles(image, hough_config=GALAXY8_VYSOR_HOUGH_CONFIG):
+def get_image_circles(image, hough_config):
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -35,10 +27,9 @@ def get_image_circles(image, hough_config=GALAXY8_VYSOR_HOUGH_CONFIG):
     if circles is None or len(circles) == 0:
         return []
 
-    int_circles = np.round(circles[0, :]).astype('int')
-
-    return [(int(x), int(y), int(r))
-            for x, y, r in int_circles]  # leave numpy world
+    # leave numpy world
+    int_circles = [(int(x), int(y), int(r)) for x, y, r in np.round(circles[0, :]).astype('int')]
+    return int_circles
 
 
 def draw_circles(image, circles):
