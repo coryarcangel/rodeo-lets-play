@@ -284,7 +284,8 @@ function renderBarGraph(stateActions) {
     .map( (d,i) =>  {
       return {
         label: i+": "+d[1].img_obj.label,
-        confidence: d[1].img_obj.confidence*100000
+        labelClean: d[1].img_obj.label,
+        confidence: d[1].img_obj.confidence
       }
     }).filter(a => !!a.confidence);
     // console.log("graoh data",JSON.stringify(actionEls))
@@ -306,11 +307,26 @@ function initBarGraph(){
           "translate(" + radialOpt.margin.left + "," + radialOpt.margin.top + ")");
 }
 
+function initRidgelineGraph(){
+  if(radialGraph){
+    radialGraph.remove()
+    d3.selectAll("#radial_graph > svg").remove();
+  }
+
+  radialGraph = d3.select("#radial_graph")
+  .append("svg")
+    .attr("width", radialOpt.width + radialOpt.margin.left + radialOpt.margin.right)
+    .attr("height", radialOpt.height + radialOpt.margin.top + radialOpt.margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + radialOpt.margin.left + "," + radialOpt.margin.top + ")");
+}
+
 function drawBarGraph(data){
   initBarGraph()
 
   var x = d3.scaleLinear()
-    .domain([0, 90000])
+    .domain([0, 1])
     .range([ 0,300]);
 
   var y = d3.scaleBand()
@@ -339,7 +355,7 @@ function drawBarGraph(data){
       })
       .attr("width", function(d) { return x(d['confidence']); })
       .attr("height", barSize)
-      .attr("stroke", function(d,i){ console.log(d); return labelColorsMap[d['label'].split(": ")[1]] ? labelColorsMap[d['label'].split(": ")[1]] : "lime" })
+      .attr("stroke", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "lime" })
       .attr("fill", "rgba(255,255,255,.25)");//")
 }
 
@@ -416,6 +432,20 @@ function renderAiLogs(aiLogs) {
 }
 
 function renderRidgelineGraph(systemInfo) {
+  // const actionEls = (stateActions || [])
+  //   .filter(a => a.length > 1 && !!a[1].object_type) // only render tap object actions :)
+  //   .map( (d,i) =>  {
+  //     return {
+  //       label: i+": "+d[1].img_obj.label,
+  //       labelClean: d[1].img_obj.label,
+  //       confidence: d[1].img_obj.confidence
+  //     }
+  //   }).filter(a => !!a.confidence);
+  //   // console.log("graoh data",JSON.stringify(actionEls))
+  //   drawBarGraph(actionEls);
+}
+
+function updateGpuData(gpuData){
   
 }
 
@@ -425,6 +455,8 @@ function renderSystemInfo(systemInfo) {
     return
   }
   const gpuData = systemInfo.gpuStats;
+  updateGpuData(gpuData);
+  //update gpu stat fifos
   if(!gaugeNeedles['gpu0'])
       initGpuMonitors(gpuData)
   renderGpuMonitors(gpuData)

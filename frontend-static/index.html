@@ -22,19 +22,31 @@
       width: 1584px;
       height: 792px;
     }
+    #action-history {
+      display: none;
+    }
     #action-history, .terminal, #ai-log {
-      position: fixed; 
-      top: 2px; 
-      right: calc(100vw - 1584px); 
-      color: #fff; 
-      background-color: rgba(0, 0, 0, 0.5); 
-      max-height: 310px; 
-      text-align: right;
-      overflow-y: hidden;
-      width: 400px;
+    position: fixed;
+    top: 2px;
+    right: calc(100vw - 1580px);
+    color: #fff;
+    background-color: rgba(0,0,0,0);
+    background-color: none;
+    max-height: 781px;
+    text-align: right;
+    overflow-y: hidden;
+    width: 320px;
+    font-family: monospace;
+    /* background-color: rgba(255,255,255,.5); */
+    color: lime;
+    /*background: white;*/
+    font-size: 1em;
+    /* text-shadow: 1px 1px black; */
+    /* border: solid white 3px; */
+    /* backdrop-filter: brightness(0.9); */
     }
     #ai-log {
-      top: 312px;
+      top: 9px;
     }
     #state-actions {
       position: fixed;
@@ -64,9 +76,9 @@
       height: 88px;
       overflow: hidden;
     }
-    #graphs_left {
+    #radial_graph {
       position: absolute;
-      bottom: 190px;
+      bottom: 200px;
       z-index: 20;
       /*transform: rotate(90deg);*/
       /*transform-origin: top left;*/
@@ -74,7 +86,9 @@
     #gpus {
       position: fixed;
       top: 635px;
-      left: -5px;
+      left: 5px;
+      width: 1270px;
+      height: 150px;
     }
     .gpu-monitor {
       margin: 0 1em;
@@ -132,10 +146,8 @@
     <div id="stats">
       <div id="marquee"></div>
     </div>
-    <div id="graphs_left">
-      <div id="gpus"></div>
-      <div id="radial_graph"></div>
-    </div>
+    <div id="gpus"></div>
+    <div id="radial_graph"></div>
   </div>
   <script src="https://d3js.org/d3.v4.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3-scale-radial.js"></script>
