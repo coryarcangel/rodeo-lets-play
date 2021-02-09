@@ -7,6 +7,8 @@
       margin: 0;
       font-size: 14px;
       overflow: hidden;
+      font-family: monospace;
+      color: lime;
     }
     #screen {
       width: 1584px;
@@ -23,13 +25,21 @@
       height: 792px;
     }
     #action-history {
-      display: none;
+      position: absolute;
+      right: auto;
+      text-align: left;
+      height: 15em;
+      top: 120px;
+      left: 2PX;
     }
-    #action-history, .terminal, #ai-log {
+    .terminal {
+      position: absolute;
+      width: 320px;
+    }
+    #ai-log {
     position: fixed;
     top: 2px;
     right: calc(100vw - 1580px);
-    color: #fff;
     background-color: rgba(0,0,0,0);
     background-color: none;
     max-height: 781px;
@@ -64,10 +74,10 @@
     }
     #fps {
       position: fixed;
-      bottom: 2px;
-      right: 2px;
-      color: #fff;
-      background-color: rgba(0, 0, 0, 0.9);
+      top: 26px;
+      left: 292px;
+      color: lime;
+      font-family: monospace;
     }
     #stats {
       position: absolute;
@@ -76,9 +86,9 @@
       height: 88px;
       overflow: hidden;
     }
-    #radial_graph {
+    #bar_graph {
       position: absolute;
-      bottom: 200px;
+      bottom: 0px;
       z-index: 20;
       /*transform: rotate(90deg);*/
       /*transform-origin: top left;*/
@@ -86,9 +96,10 @@
     #gpus {
       position: fixed;
       top: 635px;
-      left: 5px;
-      width: 1270px;
-      height: 150px;
+      left: 305px;
+      width: 970px;
+      height: 100px;
+      opacity: 0;
     }
     .gpu-monitor {
       margin: 0 1em;
@@ -139,7 +150,7 @@
       FPS: <span id="fps">0</span>
       | Frame: <span id="frameNum">0</span>
     </div>
-    <div id="action-history" class="terminal"></div>
+    <div id="action-history"></div>
     <div id="ai-log"></div>
     <div id="state-actions"></div>
     <canvas id="object-annotations" width="1584" height="792"></canvas>
@@ -147,7 +158,7 @@
       <div id="marquee"></div>
     </div>
     <div id="gpus"></div>
-    <div id="radial_graph"></div>
+    <div id="bar_graph"></div>
   </div>
   <script src="https://d3js.org/d3.v4.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3-scale-radial.js"></script>
