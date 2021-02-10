@@ -72,43 +72,46 @@ var renderState = {
   aiLogs: [],
 };
 
-var emojiSize = 16;
-var emojiPositions = {
-  'tennis racket' : [48,30],
-  'clock': [0,0],
-  'person': [14,20],
-  'stopsign': [2,17],
-  'circle': [30,36],
-  'reward': [0,0],
-  'money': [0,0],
-  'q': [0,0],
-  'message': [0,0],
-  'random': [0,0],
-  'bar': [0,0],
-  'O': [2,11],
-  'trophy': [49,41],
-  'Reward': [49,41],
-  'ok': [58,31],
-  'moneybag': [32,51],
-  'money': [32,45],
-  'alert': [24,9],
-  'fire': [30,51],
-  'graph': [32,25],
-  'warning': [4,61],
-  'chair': [6,25],
-  'medal': [17,28],
-  'point': [46,14],
-  'left_arrow': [60,17],
-  'right_arrow': [60,22],
-  'policy': [2,11],
-  'confetti': [51,19],
-  'message:': [31,52]
+function readTextFile(file, callback) {
+    var rawFile = new XMLHttpRequest();
+    rawFile.overrideMimeType("application/json");
+    rawFile.open("GET", file, true);
+    rawFile.onreadystatechange = function() {
+        if (rawFile.readyState === 4 && rawFile.status == "200") {
+            callback(rawFile.responseText);
+        }
+    }
+    rawFile.send(null);
+}
+var emojiPositions = actionEmoji = {}
+//usage:
+readTextFile("./emojimap.json", function(text){
+    emojiPositions = JSON.parse(text);
+    actionEmoji = {
+      tap_location: emoji("point"),
+      double_tap_location: emoji("point")+emoji("point"),
+      swipe_right:  emoji("point")+emoji("right_arrow"),
+      swipe_left: emoji("left_arrow")+ emoji("point")
+    }
+});
 
+function replaceWithEmojis(str){
+    var re = new RegExp(Object.keys(emojiPositions).join("|"),"gi");
+    return str.replace(re, function(matched){
+      console.log("matched: ",matched,emoji(matched))
+        return emoji(matched);
+    });
 }
 
+var emojiSize = 16;
+
+
 function emoji(emojiName) {
-  var offset = emojiPositions[emojiName] || [0,0];
-  return `<span class='emoji' style="background-position: ${(offset[0]*(emojiSize))} ${offset[1]*emojiSize};"></span>`;
+  var mapData = emojiPositions[emojiName] || [[0,0]];
+  //make sure we have an array of arrays, in case multiple emojis should be shown
+  var emojis = (typeof mapData[0] === "object" ? mapData : [mapData]);
+  
+  return emojis.map( emoj => `<span class='emoji' style="background-position: ${(emoj[0]*(emojiSize))} ${emoj[1]*emojiSize};"></span>`).join("");
 }
 
 function updateCurStateRender() {
@@ -138,11 +141,10 @@ function initSound(){
       src: sounds[i].src
     });
   }
-  console.log(sounds)
+  console.log("sounds loaded")
 }
 
 function playSound(sound){
-  console.log("played sound",sound)
   setTimeout(function(){
     sounds[sound].clip.play();
   }, sounds[sound].delay || 0)
@@ -239,7 +241,7 @@ function renderImageState(imageState, recentTouch) {
     ctx.restore();
     ctx.strokeStyle = style.color;
     ctx.lineWidth = 5;
-    ctx.font = `normal ${style.fontWeight} ${style.fontSize}px monospace`;
+    ctx.font = `normal ${style.fontWeight} ${style.fontSize}px Helvetica Neue Roman`;
     // Draw Image Shape
     let textPoint = { x: 0, y: 0 }
     if (circle) {
@@ -435,7 +437,7 @@ function drawBarGraph(data){
     .attr("x", function(d,i) { return x(data[i]['confidence']); }) 
     .attr("transform", function(d){ return "translate("+ 15 +",0)" })
     .attr("text-anchor","start")
-    .attr("font-family","Monospace")
+    .attr("font-family",'Helvetica Neue Roman')
     .attr("font-size","14px")
     .attr("fill","black")
 
@@ -498,18 +500,6 @@ function renderActionHistory(actionHistory) {
   actionHistoryEl.append(...actionEls)
 }
 
-var actionEmoji = {
-  tap_location: emoji("point"),
-  double_tap_location: emoji("point")+emoji("point"),
-  swipe_right:  emoji("point")+emoji("right_arrow"),
-  swipe_left: emoji("left_arrow")+ emoji("point")
-}
-
-function emojify(text){
-  // console.log("trying text",text)
-  return text.split(" ").map(word => emojiPositions[word] ? emoji(word) : word).join(" ")
-}
-
 
 function parseActionLog(actionString){
   //actionString = `Step 85 (1803) - Action (double_tap_location, {"x": 824, "y": 466, "type": "object", "object_type": "Circle #7", "img_obj": {"rect": [785, 427, 78, 78], "label": "Circle #7", "confidence": null, "object_type": "circle"}})`
@@ -537,7 +527,7 @@ function renderAiLogs(aiLogs) {
   const logEls = []
   for (let i = (noActions || []).length - 1; i >= 0; i--) {
     const el = document.createElement('div')
-    el.innerHTML = noActions[i]//emojify()
+    el.innerHTML = replaceWithEmojis(noActions[i])//()
     logEls.push(el)
   }
 

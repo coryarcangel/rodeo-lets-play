@@ -2,12 +2,22 @@
  <head>
   <title>KIM_FRONTEND</title>
   <style>
+    @font-face {
+      font-family: 'Helvetica Neue Md';
+      src: url("./HelveticaNeueLTPro-Md.otf") format("opentype");
+    }
+    @font-face {
+      font-family: 'Helvetica Neue Roman';
+      src: url("./HelveticaNeueLTPro-Roman.otf") format("opentype");
+    }
+
     body {
       padding: 0;
       margin: 0;
-      font-size: 14px;
+      font-size: 18px;
+      line-height: 22px;
       overflow: hidden;
-      font-family: monospace;
+      font-family: 'Helvetica Neue Roman',Helvetica;
       color: black;
     }
     #rodeo {
@@ -16,7 +26,7 @@
       left: 10px;
     }
     #screen {
-      width: 1584px;
+      width: 1760px;
       height: 880px;
       background: black;
       position: relative;
@@ -25,9 +35,8 @@
       position: fixed;
       top: 0%;
       left: 0%;
-      /*transform: translate(-50%, -50%);*/
-      width: 1584px;
-      height: 792px;
+      width: 1760px;
+      height: 880px;
     }
     #action-history {
       position: absolute;
@@ -39,6 +48,7 @@
     }
     #action-history pre {
       margin: 0;
+      font-family: inherit;
     }
     .action-json {
       margin-top: -2em;
@@ -50,24 +60,15 @@
     #ai-log {
     position: fixed;
     top: 2px;
-    right: calc(100vw - 1580px);
+    right: calc(100vw - 1758px);
     background-color: rgba(0,0,0,0);
     background-color: none;
     max-height: 781px;
     text-align: right;
-    overflow-y: hidden;
+    overflow: hidden;
     width: 320px;
-    font-family: monospace;
-    /* background-color: rgba(255,255,255,.5); */
-    /*color: lime;*/
-    /*background: white;*/
     font-size: 1em;
-    /* text-shadow: 1px 1px black; */
-    /* border: solid white 3px; */
-    /* backdrop-filter: brightness(0.9); */
-    }
-    #ai-log {
-      top: 9px;
+    top: 9px;
     }
     #state-actions {
       position: fixed;
@@ -87,8 +88,6 @@
       position: fixed;
       top: 26px;
       left: 292px;
-      /*color: lime;*/
-      font-family: monospace;
     }
     #stats {
       position: absolute;
@@ -152,14 +151,17 @@
     z-index: 1;
    }
   .emoji {
-    image-rendering: pixelated;
+    /*image-rendering: pixelated;*/
     background-image: url(sheet_apple_32_indexed_256.png);
     background-size: 5802%;
     background-position: 0 0;
     width: 16px;
     height: 16px;
     display: inline-block;
+    margin: 0 2px;
     vertical-align: top;
+    transform: scale(1.25);
+    transform-origin: top;
   }  
 </style>
  </head>
@@ -174,7 +176,7 @@
     <div id="action-history"></div>
     <div id="ai-log"></div>
     <div id="state-actions"></div>
-    <canvas id="object-annotations" width="1584" height="792"></canvas>
+    <canvas id="object-annotations" width="1760" height="880"></canvas>
     <div id="stats">
       <div id="marquee"></div>
     </div>
