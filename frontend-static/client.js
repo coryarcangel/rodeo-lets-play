@@ -72,8 +72,43 @@ var renderState = {
   aiLogs: [],
 };
 
-function setupLayout() {
+var emojiSize = 16;
+var emojiPositions = {
+  'tennis racket' : [48,30],
+  'clock': [0,0],
+  'person': [14,20],
+  'stopsign': [2,17],
+  'circle': [30,36],
+  'reward': [0,0],
+  'money': [0,0],
+  'q': [0,0],
+  'message': [0,0],
+  'random': [0,0],
+  'bar': [0,0],
+  'O': [2,11],
+  'trophy': [49,41],
+  'Reward': [49,41],
+  'ok': [58,31],
+  'moneybag': [32,51],
+  'money': [32,45],
+  'alert': [24,9],
+  'fire': [30,51],
+  'graph': [32,25],
+  'warning': [4,61],
+  'chair': [6,25],
+  'medal': [17,28],
+  'point': [46,14],
+  'left_arrow': [60,17],
+  'right_arrow': [60,22],
+  'policy': [2,11],
+  'confetti': [51,19],
+  'message:': [31,52]
 
+}
+
+function emoji(emojiName) {
+  var offset = emojiPositions[emojiName] || [0,0];
+  return `<span class='emoji' style="background-position: ${(offset[0]*(emojiSize))} ${offset[1]*emojiSize};"></span>`;
 }
 
 function updateCurStateRender() {
@@ -402,7 +437,7 @@ function drawBarGraph(data){
     .attr("text-anchor","start")
     .attr("font-family","Monospace")
     .attr("font-size","14px")
-    .attr("fill","lime")
+    .attr("fill","black")
 
   // Bars
   barGraph.selectAll("mybar")
@@ -414,8 +449,8 @@ function drawBarGraph(data){
       })
       .attr("width", function(d) { return x(d['confidence']); })
       .attr("height", barSize)
-      .attr("stroke", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "lime" })
-      .attr("fill", "rgba(255,255,255,.25)");//")
+      .attr("stroke", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "black" })
+      .attr("fill", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "black" });//")
 }
 
 function initGpuMonitors(gpuData){
@@ -463,6 +498,19 @@ function renderActionHistory(actionHistory) {
   actionHistoryEl.append(...actionEls)
 }
 
+var actionEmoji = {
+  tap_location: emoji("point"),
+  double_tap_location: emoji("point")+emoji("point"),
+  swipe_right:  emoji("point")+emoji("right_arrow"),
+  swipe_left: emoji("left_arrow")+ emoji("point")
+}
+
+function emojify(text){
+  // console.log("trying text",text)
+  return text.split(" ").map(word => emojiPositions[word] ? emoji(word) : word).join(" ")
+}
+
+
 function parseActionLog(actionString){
   //actionString = `Step 85 (1803) - Action (double_tap_location, {"x": 824, "y": 466, "type": "object", "object_type": "Circle #7", "img_obj": {"rect": [785, 427, 78, 78], "label": "Circle #7", "confidence": null, "object_type": "circle"}})`
   var split = actionString.split(" ");
@@ -470,9 +518,9 @@ function parseActionLog(actionString){
   var actionType = split[5].slice(1,-1)
   var actionJson = JSON.stringify(
     JSON.parse(actionString.slice(actionString.indexOf("{"),-1))
-    ,null,4)
+    ,null,2)
   return `
-  <div class='recent-action'>Action #${actionNumber}: ${actionType}</div>
+  <div class='recent-action'>Action #${actionNumber}: ${actionType} ${actionEmoji[actionType] || ''}</div>
   <div class='action-json'>${actionJson}</div>
   `
 }
@@ -489,7 +537,7 @@ function renderAiLogs(aiLogs) {
   const logEls = []
   for (let i = (noActions || []).length - 1; i >= 0; i--) {
     const el = document.createElement('div')
-    el.textContent = noActions[i]
+    el.innerHTML = noActions[i]//emojify()
     logEls.push(el)
   }
 
@@ -606,7 +654,6 @@ function handleAILogLineUpdate(line) {
 
 ws.onopen = function() {
   console.log('connection was established');
-  setupLayout();
   setupUserInteraction();
   start_time = performance.now();
   requestImage();

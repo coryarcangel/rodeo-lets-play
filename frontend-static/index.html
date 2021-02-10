@@ -8,7 +8,12 @@
       font-size: 14px;
       overflow: hidden;
       font-family: monospace;
-      color: lime;
+      color: black;
+    }
+    #rodeo {
+      position: absolute;
+      top: 10px;
+      left: 10px;
     }
     #screen {
       width: 1584px;
@@ -30,7 +35,13 @@
       text-align: left;
       height: 15em;
       top: 120px;
-      left: 2PX;
+      left: 2px;
+    }
+    #action-history pre {
+      margin: 0;
+    }
+    .action-json {
+      margin-top: -2em;
     }
     .terminal {
       position: absolute;
@@ -48,7 +59,7 @@
     width: 320px;
     font-family: monospace;
     /* background-color: rgba(255,255,255,.5); */
-    color: lime;
+    /*color: lime;*/
     /*background: white;*/
     font-size: 1em;
     /* text-shadow: 1px 1px black; */
@@ -76,7 +87,7 @@
       position: fixed;
       top: 26px;
       left: 292px;
-      color: lime;
+      /*color: lime;*/
       font-family: monospace;
     }
     #stats {
@@ -140,7 +151,16 @@
     color: white;
     z-index: 1;
    }
-
+  .emoji {
+    image-rendering: pixelated;
+    background-image: url(sheet_apple_32_indexed_256.png);
+    background-size: 5802%;
+    background-position: 0 0;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: top;
+  }  
 </style>
  </head>
  <body>
@@ -150,6 +170,7 @@
       FPS: <span id="fps">0</span>
       | Frame: <span id="frameNum">0</span>
     </div>
+    <div id="rodeo">v0.9</div>
     <div id="action-history"></div>
     <div id="ai-log"></div>
     <div id="state-actions"></div>
