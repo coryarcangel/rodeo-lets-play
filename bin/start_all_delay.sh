@@ -14,6 +14,8 @@ startAll=${2:-true} # start all default to true
 echo "waiting for $DELAY seconds before starting process hub..."
 sleep $DELAY
 
+# Have to run bash interactively for conda to work correctly.
+# https://stackoverflow.com/questions/55507519/python-activate-conda-env-through-shell-script
 echo "starting process hub"
 cd $DIR/..
-node process-hub/index.js --startAll $startAll
+bash -i $DIR/start_all.sh
