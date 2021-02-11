@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 import plotting
 from kim_logs import get_kim_logger
-from ai_actions import ACTIONS, NUM_ACTIONS
+from enums import ACTIONS, NUM_ACTIONS
 
 
 def copy_model_parameters(sess, estimator1, estimator2):

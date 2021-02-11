@@ -9,7 +9,8 @@ from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
 
 from kim_logs import get_kim_logger
-from ai_actions import Action, get_object_action_data, get_action_type_str
+from enums import Action
+from ai_actions import get_object_action_data, get_action_type_str
 from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from reward_calc import RewardCalculator
@@ -51,7 +52,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         # allow more than just two swipe actions so the algo can easily
         # discover value of swiping
-        self.num_as2_actions_per_swipe = 15
+        self.num_as2_actions_per_swipe = 50
         self.total_as2_swipe_actions = self.num_as2_actions_per_swipe * 2
 
         # 1 is for reset and pass, then count swipes, then grid_area * 2

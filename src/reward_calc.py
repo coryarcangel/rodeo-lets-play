@@ -1,5 +1,6 @@
 
-from ai_actions import Action
+from enums import Action
+from config import REWARD_PARAMS
 
 
 class RewardCalculator():
@@ -9,10 +10,10 @@ class RewardCalculator():
     """
 
     def __init__(self,
-                 money_mult=1.0,
-                 stars_mult=1.0,
-                 recent_swipe_threshold=20,
-                 recent_swipe_reward=150):
+                 money_mult=REWARD_PARAMS['money_mult'],
+                 stars_mult=REWARD_PARAMS['stars_mult'],
+                 recent_swipe_threshold=REWARD_PARAMS['recent_swipe_threshold'],
+                 recent_swipe_reward=REWARD_PARAMS['recent_swipe_reward']):
         self.money_mult = money_mult
         self.stars_mult = stars_mult
         self.recent_swipe_threshold = recent_swipe_threshold

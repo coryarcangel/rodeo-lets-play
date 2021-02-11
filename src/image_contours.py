@@ -3,9 +3,8 @@ import cv2
 import imutils
 import time
 from image_blob import get_center_color
-from action_shape import action_shape_color_ranges
 from util import convert_point_between_rects
-from config import CONTOUR_PROCESS_WIDTH
+from config import CONTOUR_PROCESS_WIDTH, ACTION_SHAPE_COLOR_RANGES
 
 
 def get_contour_shape(c):
@@ -97,12 +96,13 @@ def get_image_colored_shapes(image, color_ranges):
 
         # Get colored shapes
         color_shapes = [get_contour_shape_data(c, image, img) for c in contours]
+        # for s in color_shapes: print('raw', label, s['verts'], s['rawArea'])
         color_shapes = [cs for cs in color_shapes if cs and
             cs['rawArea'] >= item.min_area and
             cs['rawArea'] <= item.max_area and
             cs['verts'] >= item.min_verts and
             cs['verts'] <= item.max_verts]
-        for s in color_shapes: print(label, s['verts'], s['rawArea'])
+        # for s in color_shapes: print(label, s['verts'], s['rawArea'], s['point'])
         for cs in color_shapes:
             cs['color_label'] = label
 
@@ -112,7 +112,7 @@ def get_image_colored_shapes(image, color_ranges):
 
 
 def get_kim_action_color_shapes(image):
-    shapes = get_image_colored_shapes(image, action_shape_color_ranges)
+    shapes = get_image_colored_shapes(image, ACTION_SHAPE_COLOR_RANGES)
     return shapes
 
 

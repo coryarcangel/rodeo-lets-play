@@ -27,14 +27,15 @@ def run_frontend_client():
     chrome_p = None
     try:
         log('Opening Chrome to Frontend at {}'.format(FRONTEND_WEB_URL))
-        chrome_p = window.open_chrome_url(FRONTEND_WEB_URL, fullscreen=True, bg=True)
+        fullscreen = NUM_MONITORS >= 2
+        chrome_p = window.open_chrome_url(FRONTEND_WEB_URL, fullscreen=fullscreen, bg=True)
 
         # ** wait for the chrome to open
         time.sleep(2)
 
         # ** Move Chrome to the correct place
         mon_name = MON_NAMES[0]
-        if NUM_MONITORS >= 2:
+        if fullscreen:
             window.set_window_fullscreen(FRONTEND_NAME, mon_name)
         else:
             window.move_window_to_screen(FRONTEND_NAME, 800, 50, 1080, 608, mon_name)

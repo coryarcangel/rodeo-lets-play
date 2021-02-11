@@ -3,7 +3,7 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 """
 
 from kim_logs import get_kim_logger
-from ai_actions import Action
+from enums import Action
 from ai_state import AIStateProcessor
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from config import IMG_CONFIG_STUDIOBLU

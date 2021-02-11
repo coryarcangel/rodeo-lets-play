@@ -9,7 +9,7 @@ from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
 from config import SAFEGUARD_MENU_RECTS, SAFEGUARD_MENU_CLICKS_DEFAULT
 from util import is_in_rect, convert_point_between_rects
 from window import setup_vysor_window
-from ai_actions import Action
+from enums import Action
 from ai_info_publisher import get_ai_info_publisher
 
 

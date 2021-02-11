@@ -2,8 +2,10 @@
 
 from collections import deque
 from math import pow
-from ai_actions import ActionGetter, ActionWeighter, Action, get_action_type_str
-from action_shape import ActionShape, get_shape_data_likely_action_shape
+from enums import Action, ActionShape
+from config import HEURISTIC_CONFIG
+from ai_actions import ActionGetter, ActionWeighter, get_action_type_str
+from action_shape import get_shape_data_likely_action_shape
 
 
 '''
@@ -31,67 +33,52 @@ class HeuristicConfig(object):
         Heuristic Action Selector. '''
 
     def __init__(self):
-        # Toggle on / off specific heuristic usage
-        self.REPEAT_ACTION_DEPRESS = True
-        self.RECENT_ROOM_MEMORY = True
-        self.COLOR_ACTION_DETECT = True
+        HC = HEURISTIC_CONFIG
 
-        self.max_room_history_len = 100
+        # Toggle on / off specific heuristic usage
+        self.REPEAT_ACTION_DEPRESS = HC['REPEAT_ACTION_DEPRESS']
+        self.RECENT_ROOM_MEMORY = HC['RECENT_ROOM_MEMORY']
+        self.COLOR_ACTION_DETECT = HC['COLOR_ACTION_DETECT']
+
+        self.max_room_history_len = HC['max_room_history_len']
 
         # What is the maximum number of times I might expect to select the same action in a given room?
-        self.object_tap_action_max_sel_count = 5
-        self.other_action_max_sel_count = 2
+        self.object_tap_action_max_sel_count = HC['object_tap_action_max_sel_count']
+        self.other_action_max_sel_count = HC['other_action_max_sel_count']
 
         # What should the denominator be when determining a_sel_count depression mult?
-        self.object_tap_action_sel_denom = 15.0
-        self.other_action_sel_denom = 8.0
+        self.object_tap_action_sel_denom = HC['object_tap_action_sel_denom']
+        self.other_action_sel_denom = HC['other_action_sel_denom']
 
         # How aggressively should I depress repeated actions (lower is more aggressive)
-        self.action_sel_depress_exp = 1.0
+        self.action_sel_depress_exp = HC['action_sel_depress_exp']
 
         # How many frames do I need to wait on the same exact screen before resetting?
-        self.image_sig_stag_limit = 100
+        self.image_sig_stag_limit = HC['image_sig_stag_limit']
 
         # Probabalistic weights to assign to found blobs of given colors
-        self.blob_dom_color_weights = {
-            'red': 300,
-            'green': 600,
-            'blue': 1000,
-            'black': 200,
-            'white': 1000,
-            'other': 80
-        }
+        self.blob_dom_color_weights = HC['blob_dom_color_weights']
 
         # Probabalistic weights to assign to best-guess of ActionShape variety
-        self.action_shape_tap_weights = {
-            ActionShape.MENU_EXIT: 10000,
-            ActionShape.CONFIRM_OK: 1000,
-            ActionShape.MONEY_CHOICE: 1000,
-            ActionShape.TALK_CHOICE: 4000,
-            ActionShape.ROOM_EXIT: 100,
-            ActionShape.UNKNOWN: 100
-        }
+        self.action_shape_tap_weights = HC['action_shape_tap_weights']
 
         # How big does a blob need to be to pass the "large" filter
-        self.large_blob_threshold = 200
+        self.large_blob_threshold = HC['large_blob_threshold']
 
         # How much more should I emphasize large blobs
-        self.large_blob_weight_mult = 2
+        self.large_blob_weight_mult = HC['large_blob_weight_mult']
 
         # How many rooms should I look back to see if I have recently been here?
-        self.recent_room_threshold = 6
-
-        # What should the weight of exiting be if I have just been to this room?
-        self.recent_room_exit_weight = 2500
+        self.recent_room_threshold = HC['recent_room_threshold']
 
         # How many actions do I need to take in this room before I should look to leave?
-        self.same_room_threshold = 300
+        self.same_room_threshold = HC['same_room_threshold']
 
         # What should the weight of exiting be if I:
-        self.recent_room_exit_weight = 2500  # have just been to this room
-        self.same_room_exit_weight = 2500  # have been in this room a while?
-        self.no_money_exit_weight = 100  # have not made money in this room
-        self.default_exit_weight = 500  # default
+        self.recent_room_exit_weight = HC['recent_room_exit_weight']  # have just been to this room
+        self.same_room_exit_weight = HC['same_room_exit_weight']  # have been in this room a while?
+        self.no_money_exit_weight = HC['no_money_exit_weight']  # have not made money in this room
+        self.default_exit_weight = HC['default_exit_weight']  # default
 
     def get_blob_color_weight(self, color):
         weights = self.blob_dom_color_weights
@@ -138,7 +125,9 @@ class HeuristicRoom(object):
         if type != 'object':
             return name + '_' + type
 
-        return name + '_object_{}_y{}'.format(args['object_type'].lower(), args['y'])
+        rough_x = int(args['x'] * 0.1)
+        rough_y = int(args['y'] * 0.1)
+        return name + '_object_{}_x{}_y{}'.format(args['object_type'].lower(), rough_x, rough_y)
 
     def _have_recently_been_here(self):
         return self.rooms_since_last_visit < self.config.recent_room_threshold
@@ -146,17 +135,18 @@ class HeuristicRoom(object):
     def _have_been_here_a_while(self):
         return self.action_count >= self.config.same_room_threshold
 
-    def _get_exit_action_weight(self):
+    def _get_exit_action_weight(self, certain):
         ''' If I have recently been to this room, or it has been forever since I have left, let's emphasize leaving '''
         if not self.config.RECENT_ROOM_MEMORY:
             return self.config.default_exit_weight
 
+        mult = 1 if certain else 0.5
         if self._have_recently_been_here():
-            return self.config.recent_room_exit_weight
+            return mult * self.config.recent_room_exit_weight
         elif self._have_been_here_a_while():
-            return self.config.same_room_exit_weight
+            return mult * self.config.same_room_exit_weight
         elif self._have_not_made_money_here():
-            return self.config.no_money_exit_weight
+            return mult * self.config.no_money_exit_weight
         else:
             return self.config.default_exit_weight
 
@@ -166,11 +156,16 @@ class HeuristicRoom(object):
         size_mult = self.config.get_blob_size_mult(size)
         return color_weight * size_mult
 
-    def _get_action_shape_tap_weight(self, img_obj):
+    def _get_tap_action_weight(self, action, base_weight):
+        weight_ratio = self.action_weighter.get_tap_action_weight_ratio(action)
+        return base_weight * weight_ratio
+
+    def _get_action_shape_tap_weight(self, action, img_obj):
         a_shape = get_shape_data_likely_action_shape(img_obj['shape_data'], self.cur_image_shape)
+        base_weight = self.config.get_action_shape_tap_weight(a_shape)
         if a_shape == ActionShape.ROOM_EXIT:
-            return self._get_exit_action_weight()
-        return self.config.get_action_shape_tap_weight(a_shape)
+            base_weight = self._get_exit_action_weight(True)
+        return self._get_tap_action_weight(action, base_weight)
 
     def _get_object_tap_default_weight(self, a_tup):
         action_type, args = a_tup
@@ -179,9 +174,10 @@ class HeuristicRoom(object):
         if self.config.COLOR_ACTION_DETECT and type == 'blob':
             return self._get_blob_tap_weight(img_obj)
         elif self.config.COLOR_ACTION_DETECT and type == 'action_shape':
-            return self._get_action_shape_tap_weight(img_obj)
+            return self._get_action_shape_tap_weight(action_type, img_obj)
         elif self.action_weighter.is_object_type_likely_exit(type):
-            return self._get_exit_action_weight()
+            base_weight = self._get_exit_action_weight(False)
+            return self._get_tap_action_weight(action_type, base_weight)
         else:
             return self.action_weighter.get_action_weight(a_tup)
 

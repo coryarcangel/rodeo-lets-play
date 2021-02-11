@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from ai_actions import NUM_ACTIONS
+from enums import NUM_ACTIONS
 
 
 class QEstimator(object):

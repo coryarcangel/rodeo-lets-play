@@ -5,8 +5,9 @@ import random
 import numpy as np
 # import tensorflow as tf
 from kim_logs import get_kim_logger
+from enums import all_action_shapes
 from math import pow
-from action_shape import get_shape_data_label, all_action_shapes
+from action_shape import get_shape_data_label
 
 
 def get_random_object_type():
@@ -61,6 +62,7 @@ class AIState(object):
             self.image_objects.append({
                 'label': 'Circle #%d' % (idx + 1),
                 'object_type': 'circle',
+                'radius': r,
                 'confidence': None,
                 'rect': (x - r, y - r, 2 * r, 2 * r)
             })

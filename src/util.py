@@ -3,6 +3,7 @@
 import collections
 import os
 import signal
+import random
 from datetime import datetime
 
 Point = collections.namedtuple("Point", ['x', 'y'])
@@ -34,6 +35,15 @@ def get_rect_center(rect):
     ''' rect is tuple of x,y,w,h '''
     x, y, w, h = rect
     return Point(x + w / 2, y + h / 2)
+
+
+def get_noisy_rect_center(rect, noise):
+    ''' rect is tuple of x,y,w,h | noise is float 0 -> 1'''
+    _, _, w, h = rect
+    c = get_rect_center(rect)
+    x_var = (-noise * w) + (random.random() * 2 * w * noise)
+    y_var = (-noise * h) + (random.random() * 2 * h * noise)
+    return Point(c[0] + x_var, c[1] + y_var)
 
 
 def is_in_rect(point, rect):

@@ -9,7 +9,8 @@ from collections import namedtuple
 from kim_logs import get_kim_logger
 from old_ai_env import DeviceClientKimEnv, ScreenshotKimEnv
 from device_client import DeviceClient
-from ai_actions import ActionGetter, ActionWeighter, Action
+from enums import Action
+from ai_actions import ActionGetter, ActionWeighter
 from heuristic_selector import HeuristicActionSelector
 
 
