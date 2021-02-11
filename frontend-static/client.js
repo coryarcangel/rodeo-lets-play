@@ -515,6 +515,40 @@ function parseActionLog(actionString){
   `
 }
 
+function transformAiLogs(log){
+  const el = document.createElement('div')
+  var str = ""
+  var split = log.split(" ")
+  switch (split[0]){
+    case "Chose":  
+      str = 
+        `
+        <div class="ai-choice ${split[1].toLowerCase()}">
+          <div class="ai-choice-label">Chose ${split[1].toLowerCase()}</div>
+          ${replaceWithEmojis('DEEP_Q Heuristic RANDOM point')}
+         </div>`
+      break
+    case "Sending":  
+      console.log("1",log);
+      str = log
+      break
+    case "Step":  
+      
+      str = log//replaceWithEmojis(split.slice(0,2).join(" "))+ split.slice(2).join(" ")
+      break
+    case "received":  
+      console.log("4",log);
+      str = log
+      break
+    case "Safeguarded":  
+      console.log("5",log);
+      str = log
+      break
+    }
+    el.innerHTML = str
+  return el
+}
+
 function renderAiLogs(aiLogs) {
   //take out action logs and put in action-history div
   const noActions = aiLogs.filter((log)=> {
@@ -526,9 +560,7 @@ function renderAiLogs(aiLogs) {
   })
   const logEls = []
   for (let i = (noActions || []).length - 1; i >= 0; i--) {
-    const el = document.createElement('div')
-    el.innerHTML = replaceWithEmojis(noActions[i])//()
-    logEls.push(el)
+    logEls.push(transformAiLogs(noActions[i]))
   }
 
   aiLogEl.innerHTML = ``

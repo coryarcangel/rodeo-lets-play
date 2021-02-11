@@ -63,12 +63,42 @@
     right: calc(100vw - 1758px);
     background-color: rgba(0,0,0,0);
     background-color: none;
-    max-height: 781px;
+    max-height: 880px;
     text-align: right;
     overflow: hidden;
     width: 320px;
     font-size: 1em;
     top: 9px;
+    }
+    #ai-log > div:first-child {
+      display: none;
+    }
+    .ai-choice {
+      margin-top: 3em;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-areas:
+      "label label label"
+      "topleft topcenter topright" 
+      "bottomleft bottomcenter bottomright";
+      grid-template-rows: 26px 37px;
+      height: 100px;
+    }
+    .ai-choice-label {
+      grid-column: span 3;
+      text-align: left;
+    }
+    .ai-choice span {
+      margin: 0 auto;
+    }
+    .ai-choice.deep_q span:nth-child(5) {
+      grid-area: bottomleft;
+    }
+    .ai-choice.heuristic span:nth-child(5) {
+      grid-area: bottomcenter;
+    }
+    .ai-choice.random span:nth-child(5) {
+      grid-area: bottomright;
     }
     #state-actions {
       position: fixed;
@@ -158,9 +188,9 @@
     width: 16px;
     height: 16px;
     display: inline-block;
-    margin: 0 2px;
+    margin: 4px 2px;
     vertical-align: top;
-    transform: scale(1.25);
+    transform: scale(1.75);
     transform-origin: top;
   }  
 </style>
