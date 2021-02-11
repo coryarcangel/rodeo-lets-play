@@ -49,7 +49,7 @@ async function main() {
   // set up phone window
   try {
     console.log('setting up phone window')
-    clickPosInMainVysor(750, 135)
+    clickPosInMainVysor(500, 135)
     activateFrontend()
   } catch (err) {
     console.log('error controlling vysor window', err)

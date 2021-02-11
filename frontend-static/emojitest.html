@@ -1,0 +1,33 @@
+<html>
+ <head>
+  <title>KIM_FRONTEND</title>
+  <style>
+  .emoji {
+  	background-image: url(sheet_apple_32_indexed_256.png); 
+	background-size: 5802%;
+	background-position: 0 0;
+  	width: 16px;
+	height: 16px;
+	display: inline-block;
+	vertical-align: top;
+  }  
+  </style>
+ </head>
+ <body>
+ 	<p id ="textbox" style="max-width: 50%; transform: scale(2); transform-origin: left top"></p>
+  <script type="text/javascript" >
+  	function emoji(){
+      var emojiSize = 16;
+  		var str = "";
+  		for (var i = 61; i >= 0; i--) {
+  			for (var j = 61; j >= 0; j--) {
+  				str += `<span class="emoji" copy-this="[${i},${j}]" style='background-position: ${emojiSize*i}px ${emojiSize*j}px;'></span>`
+  			}
+  		}
+  		
+  		document.getElementById("textbox").innerHTML = str;
+  	}
+  	emoji()
+  </script>
+ </body>
+</html>

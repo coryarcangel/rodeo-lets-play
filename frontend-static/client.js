@@ -7,7 +7,7 @@ var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 var stats = document.getElementById('stats');
 
-var target_fps = 12;
+var target_fps = 20;
 
 var request_start_time = performance.now();
 var start_time = performance.now();
@@ -17,34 +17,29 @@ var time_smoothing = 0.9; // larger=more smoothing
 var request_time_smoothing = 0.2; // larger=more smoothing
 var target_time = 1000 / target_fps;
 
-var radialGraph;
+var barGraph, ridgeGraph;
 const radialOpt = {
   margin: {top: 0, right: 100, bottom: 0, left: 0},
     width: 320,
     height: 400
 }
+const ridgeOpt = {
+   margin: {top: 50, right: 0, bottom: 0, left: 0},
+    width: document.getElementById("gpus").offsetWidth,
+    height: document.getElementById("gpus").offsetHeight
+}
+
+var gpuGraphData = {};
 
 var barSize = 20;
 
 var gaugeNeedles = {}
 
 var sounds = {
-  'tap': {src:'tap.mp3'},
-  'doubleTap':{src:'tap.mp3'} ,
-  'reset': {src:'windows_startup.mp3'}
+  'tap_location': {src:'tap.mp3'},
+  'double_tap_location':{src:'tap.mp3'} ,
+  'reset': {src:'windows_startup.mp3', delay: 3500}
 };
-
-var ridgelineData = [
-  {
-    power : [],
-    temp: []
-  },
-    {
-    power : [],
-    temp: []
-  }
-]
-
 
 const Marquee = dynamicMarquee.Marquee;
 
@@ -77,18 +72,55 @@ var renderState = {
   aiLogs: [],
 };
 
-function setupLayout() {
+function readTextFile(file, callback) {
+    var rawFile = new XMLHttpRequest();
+    rawFile.overrideMimeType("application/json");
+    rawFile.open("GET", file, true);
+    rawFile.onreadystatechange = function() {
+        if (rawFile.readyState === 4 && rawFile.status == "200") {
+            callback(rawFile.responseText);
+        }
+    }
+    rawFile.send(null);
+}
+var emojiPositions = actionEmoji = {}
+//usage:
+readTextFile("./emojimap.json", function(text){
+    emojiPositions = JSON.parse(text);
+    actionEmoji = {
+      tap_location: emoji("point"),
+      double_tap_location: emoji("point")+emoji("point"),
+      swipe_right:  emoji("point")+emoji("right_arrow"),
+      swipe_left: emoji("left_arrow")+ emoji("point")
+    }
+});
 
+function replaceWithEmojis(str){
+    var re = new RegExp(Object.keys(emojiPositions).join("|"),"gi");
+    return str.replace(re, function(matched){
+      console.log("matched: ",matched,emoji(matched))
+        return emoji(matched);
+    });
+}
+
+var emojiSize = 16;
+
+
+function emoji(emojiName) {
+  var mapData = emojiPositions[emojiName] || [[0,0]];
+  //make sure we have an array of arrays, in case multiple emojis should be shown
+  var emojis = (typeof mapData[0] === "object" ? mapData : [mapData]);
+  
+  return emojis.map( emoj => `<span class='emoji' style="background-position: ${(emoj[0]*(emojiSize))} ${emoj[1]*emojiSize};"></span>`).join("");
 }
 
 function updateCurStateRender() {
   const { frameNum, fps, imageState, recentTouch, stateActions = [], systemInfo } = renderState;
-  fpsText.textContent = fps;
+  fpsText.textContent = fps+" fps";
   frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
   //renderStateActions(stateActions);
-  renderRidgelineGraph();
   renderBarGraph(stateActions);
   renderSystemInfo(systemInfo);
 }
@@ -109,15 +141,17 @@ function initSound(){
       src: sounds[i].src
     });
   }
-  console.log(sounds)
+  console.log("sounds loaded")
 }
 
 function playSound(sound){
-  console.log("playing ",sound)
-  sounds[sound].clip.play();
+  setTimeout(function(){
+    sounds[sound].clip.play();
+  }, sounds[sound].delay || 0)
 }
 
 initSound();
+
 //to play a sound
 //playSound("tap");
 
@@ -188,13 +222,13 @@ function renderImageState(imageState, recentTouch) {
 
     const style = {
       color: getImageObjectColor(label, confidence),
-      fontSize: 34,
-      fontWeight: 'bold'
+      fontSize: 14,
+      fontFamily: "Cursive",
+      fontWeight: 'normal'
     }
 
     // Special handling of action_shape objects to remove color label if we know the color :)
     if (type == 'action_shape') {
-      style.fontSize = 24;
       style.fontWeight = 'medium';
       if (shape_data) {
         colorKey = (shape_data.color_label || '').toLowerCase().replace(/ /g, '')
@@ -207,8 +241,7 @@ function renderImageState(imageState, recentTouch) {
     ctx.restore();
     ctx.strokeStyle = style.color;
     ctx.lineWidth = 5;
-    ctx.font = `${style.fontSize}px Helvetica ${style.fontWeight}`;
-
+    ctx.font = `normal ${style.fontWeight} ${style.fontSize}px Helvetica Neue Roman`;
     // Draw Image Shape
     let textPoint = { x: 0, y: 0 }
     if (circle) {
@@ -284,7 +317,8 @@ function renderBarGraph(stateActions) {
     .map( (d,i) =>  {
       return {
         label: i+": "+d[1].img_obj.label,
-        confidence: d[1].img_obj.confidence*100000
+        labelClean: d[1].img_obj.label,
+        confidence: d[1].img_obj.confidence
       }
     }).filter(a => !!a.confidence);
     // console.log("graoh data",JSON.stringify(actionEls))
@@ -292,12 +326,12 @@ function renderBarGraph(stateActions) {
 }
 
 function initBarGraph(){
-  if(radialGraph){
-    radialGraph.remove()
-    d3.selectAll("#radial_graph > svg").remove();
+  if(barGraph){
+    barGraph.remove()
+    d3.selectAll("#bar_graph > svg").remove();
   }
 
-  radialGraph = d3.select("#radial_graph")
+  barGraph = d3.select("#bar_graph")
   .append("svg")
     .attr("width", radialOpt.width + radialOpt.margin.left + radialOpt.margin.right)
     .attr("height", radialOpt.height + radialOpt.margin.top + radialOpt.margin.bottom)
@@ -306,19 +340,95 @@ function initBarGraph(){
           "translate(" + radialOpt.margin.left + "," + radialOpt.margin.top + ")");
 }
 
+function initRidgelineGraph(){
+  if(ridgeGraph){
+    ridgeGraph.remove()
+    d3.selectAll("#gpus > svg").remove();
+  }
+
+  ridgeGraph = d3.select("#gpus")
+  .append("svg")
+    .attr("width", ridgeOpt.width + ridgeOpt.margin.left + ridgeOpt.margin.right)
+    .attr("height", ridgeOpt.height + ridgeOpt.margin.top + ridgeOpt.margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + ridgeOpt.margin.left + "," + ridgeOpt.margin.top + ")");
+}
+
+function drawRidgelineGraph(data){
+  initRidgelineGraph()
+  var categories = Object.keys(data)
+  var n = categories.length
+
+  var x = d3.scaleLinear()
+    .domain([0, 130])
+    .range([ 0, ridgeOpt.width ]);
+  ridgeGraph.append("g")
+    .attr("transform", "translate(0," + ridgeOpt.height + ")")
+    .call(d3.axisBottom(x));
+
+  var y = d3.scaleLinear()
+    .domain([0, 0.4])
+    .range([ ridgeOpt.height, 0]);
+
+  var yName = d3.scaleBand()
+    .domain(categories)
+    .range([0, ridgeOpt.height])
+    .paddingInner(1)
+  ridgeGraph.append("g")
+    .call(d3.axisLeft(yName));
+
+  // Compute kernel density estimation for each column:
+  var kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40)) // increase this 40 for more accurate density.
+  var allDensity = []
+  for (column in data) {
+      key = column
+      density = kde( data[column] )
+      allDensity.push({key: key, density: density})
+  }
+
+  ridgeGraph.selectAll("areas")
+    .data(allDensity)
+    .enter()
+    .append("path")
+      .attr("transform", function(d){return("translate(0," + (yName(d.key)-ridgeOpt.height) +")" )})
+      .datum(function(d){return(d.density)})
+      .attr("fill", "#69b3a2")
+      .attr("stroke", "#000")
+      .attr("stroke-width", 1)
+      .attr("d",  d3.line()
+          .curve(d3.curveBasis)
+          .x(function(d) { return x(d[0]); })
+          .y(function(d) { return y(d[1]); })
+      )  
+
+  function kernelDensityEstimator(kernel, X) {
+    return function(V) {
+      return X.map(function(x) {
+        return [x, d3.mean(V, function(v) { return kernel(x - v); })];
+      });
+    };
+  }
+  function kernelEpanechnikov(k) {
+    return function(v) {
+      return Math.abs(v /= k) <= 1 ? 0.75 * (1 - v * v) / k : 0;
+    };
+  }
+}
+
 function drawBarGraph(data){
   initBarGraph()
 
   var x = d3.scaleLinear()
-    .domain([0, 90000])
-    .range([ 0,300]);
+    .domain([0, 1])
+    .range([ 0,350]);
 
   var y = d3.scaleBand()
     .range([ 0, (data.length)*barSize ])
     .domain(data.map(function(d) { return d.label; }))
     // .padding(0.2);
 
-  radialGraph.append("g")
+  barGraph.append("g")
     // .call(d3.axisLeft(y))
     .data(data)
     .call(d3.axisLeft(y))
@@ -327,10 +437,12 @@ function drawBarGraph(data){
     .attr("x", function(d,i) { return x(data[i]['confidence']); }) 
     .attr("transform", function(d){ return "translate("+ 15 +",0)" })
     .attr("text-anchor","start")
-    .attr("fill","lime")
+    .attr("font-family",'Helvetica Neue Roman')
+    .attr("font-size","14px")
+    .attr("fill","black")
 
   // Bars
-  radialGraph.selectAll("mybar")
+  barGraph.selectAll("mybar")
     .data(data)
     .enter()
     .append("rect")
@@ -339,46 +451,31 @@ function drawBarGraph(data){
       })
       .attr("width", function(d) { return x(d['confidence']); })
       .attr("height", barSize)
-      .attr("stroke", function(d,i){ console.log(d); return labelColorsMap[d['label'].split(": ")[1]] ? labelColorsMap[d['label'].split(": ")[1]] : "lime" })
-      .attr("fill", "rgba(255,255,255,.25)");//")
+      .attr("stroke", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "black" })
+      .attr("fill", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "black" });//")
 }
 
 function initGpuMonitors(gpuData){
+
   for(gpu in gpuData){
-    var html = ""
-    var container = document.getElementById("gpus");
-    html+= `<div id="${gpu}" class="gpu-monitor">
-        <label>${gpu}</label>
-        <div class="power gauge"><div class="reading"></div><div class="needle"></div></div>
-        <div class="temp gauge"><div class="reading"></div><div class="needle"></div></div>
-      </div>`;
-    container.innerHTML += html;
-  }
-  //need all gaugeNeedles to render before we save them
-  for(gpu in gpuData){
-    gaugeNeedles[gpu] = {
-      'temp': {
-        'needle': document.querySelector("#"+gpu+" .temp .needle"),
-        'reading': document.querySelector("#"+gpu+" .temp .reading")
-      },
-      'power': {
-        'needle': document.querySelector("#"+gpu+" .power .needle"),
-        'reading': document.querySelector("#"+gpu+" .power .reading")
-      }
-    }
+    gpuGraphData[gpu+" power"] = []
+    gpuGraphData[gpu+" temp"] = []
   }
 }
+
 var wattRange = [15,85]// [min, diffBtwMinMax]
 var tempRange = [20,160]
 function renderGpuMonitors(gpuData){
+
   for(gpu in gpuData){
-    var needleAngle = ((gpuData[gpu]["pwrDraw"] - wattRange[0] )/(wattRange[1]))*90 - 45
-    gaugeNeedles[gpu]["power"]['needle']['style']['transform'] = 'rotate('+needleAngle+'deg)'//'rotate('+(gpuData[gpu]["pwrDraw"]-25)+'deg)'
-    gaugeNeedles[gpu]["power"]['reading']['innerHTML'] = "pwr: "+gpuData[gpu]["pwrDraw"] +"W";
-    needleAngle = ((gpuData[gpu]["temp"] - wattRange[0] )/(wattRange[1]))*90 - 45
-    gaugeNeedles[gpu]["temp"]['needle']['style']['transform'] = 'rotate('+needleAngle+'deg)'//'rotate('+(gpuData[gpu]["temp"]-25)+'deg)'
-    gaugeNeedles[gpu]["temp"]['reading']['innerHTML'] = "temp: "+gpuData[gpu]["temp"] + "C";
+    gpuGraphData[gpu+" power"].push(gpuData[gpu]["pwrDraw"] + (Math.floor(Math.random()*8)-4));
+    //FIFO 250 elements long
+    if(gpuGraphData[gpu+" temp"].push(gpuData[gpu]["temp"] + (Math.floor(Math.random()*8)-4)) > 250){
+      gpuGraphData[gpu+" power"].shift();
+      gpuGraphData[gpu+" temp"].shift();
+    }
   }
+  drawRidgelineGraph(gpuGraphData);
 }
 
 function renderActionHistory(actionHistory) {
@@ -403,20 +500,39 @@ function renderActionHistory(actionHistory) {
   actionHistoryEl.append(...actionEls)
 }
 
+
+function parseActionLog(actionString){
+  //actionString = `Step 85 (1803) - Action (double_tap_location, {"x": 824, "y": 466, "type": "object", "object_type": "Circle #7", "img_obj": {"rect": [785, 427, 78, 78], "label": "Circle #7", "confidence": null, "object_type": "circle"}})`
+  var split = actionString.split(" ");
+  var actionNumber = split[1];
+  var actionType = split[5].slice(1,-1)
+  var actionJson = JSON.stringify(
+    JSON.parse(actionString.slice(actionString.indexOf("{"),-1))
+    ,null,2)
+  return `
+  <div class='recent-action'>Action #${actionNumber}: ${actionType} ${actionEmoji[actionType] || ''}</div>
+  <div class='action-json'>${actionJson}</div>
+  `
+}
+
 function renderAiLogs(aiLogs) {
+  //take out action logs and put in action-history div
+  const noActions = aiLogs.filter((log)=> {
+    if(log.indexOf(" Action ")>-1){
+      actionHistoryEl.innerHTML = `<pre>${parseActionLog(log)}</pre>`
+      return false
+    }
+    return true
+  })
   const logEls = []
-  for (let i = (aiLogs || []).length - 1; i >= 0; i--) {
+  for (let i = (noActions || []).length - 1; i >= 0; i--) {
     const el = document.createElement('div')
-    el.textContent = aiLogs[i]
+    el.innerHTML = replaceWithEmojis(noActions[i])//()
     logEls.push(el)
   }
 
   aiLogEl.innerHTML = ``
   aiLogEl.append(...logEls)
-}
-
-function renderRidgelineGraph(systemInfo) {
-  
 }
 
 function renderSystemInfo(systemInfo) {
@@ -425,9 +541,12 @@ function renderSystemInfo(systemInfo) {
     return
   }
   const gpuData = systemInfo.gpuStats;
-  if(!gaugeNeedles['gpu0'])
-      initGpuMonitors(gpuData)
-  renderGpuMonitors(gpuData)
+  //update gpu stat fifos
+  if(!gpuGraphData['gpu0 power']){
+        initGpuMonitors(gpuData)
+        initRidgelineGraph();
+    }
+    renderGpuMonitors(gpuData)
   // stats.innerHTML = JSON.stringify(systemInfo)
 
   // TODO: henry here will be a json object with various keys you can log and play with.
@@ -500,6 +619,8 @@ function handleAIActionUpdate(data) {
   if (!playing) {
     return
   }
+  if(sounds && sounds[data.type])
+    playSound(data.type)
 
   if (data.type === 'tap_location' || data.type === 'double_tap_location') {
     renderState.recentTouch = data
@@ -508,14 +629,13 @@ function handleAIActionUpdate(data) {
   }
 
   pushToMaxLengthArray(renderState.actionHistory, data, 100)
-  renderActionHistory(renderState.actionHistory)
+  //renderActionHistory(renderState.actionHistory)
 }
 
 function handleAILogLineUpdate(line) {
   if (!playing) {
     return
   }
-
   pushToMaxLengthArray(renderState.aiLogs, line, 100)
   renderAiLogs(renderState.aiLogs)
 }
@@ -524,7 +644,6 @@ function handleAILogLineUpdate(line) {
 
 ws.onopen = function() {
   console.log('connection was established');
-  setupLayout();
   setupUserInteraction();
   start_time = performance.now();
   requestImage();
