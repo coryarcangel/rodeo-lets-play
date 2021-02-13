@@ -34,6 +34,7 @@ SAFEGUARD_MENU_CLICKS_DEFAULT = True
 SAFEGUARD_MENU_RECTS = [
     Rect(0, 0, 3000, 100),  # the entire top bar is bad news
     Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
+    Rect(1840, 0, 1000, 450),  # the special E / fans / etc thing in the top right
 ]
 
 """
@@ -42,8 +43,8 @@ BEHAVIOR
 
 ACTION_WEIGHTS = {
     Action.PASS: 50,
-    Action.SWIPE_LEFT: 1200,
-    Action.SWIPE_RIGHT: 1200,
+    Action.SWIPE_LEFT: 500,
+    Action.SWIPE_RIGHT: 500,
     Action.TAP_LOCATION: 100,
     Action.DOUBLE_TAP_LOCATION: 10,
     Action.RESET: 0.01
@@ -103,26 +104,26 @@ HEURISTIC_CONFIG = {
     }
 }
 
-# label, lower, upper, min_area, max_area, min_verts, max_verts
-ACTION_SHAPE_COLOR_RANGES = [
-    ShapeColorRange('Light Blue', (100, 160, 50), (120, 255, 255), 200, 2500, 4, 15),
-    ShapeColorRange('Light Green', (40, 100, 50), (65, 255, 255), 100, 1600, 4, 12),
-    ShapeColorRange('Pink', (160, 20, 20), (170, 255, 255), 100, 1400, 4, 12),
-    ShapeColorRange('Orange', (14, 50, 200), (15, 255, 255), 200, 1400, 4, 12),
-    ShapeColorRange('Light Gray', (100, 50, 200), (105, 100, 255), 400, 1400, 4, 12),
-    ShapeColorRange('Light Gray', (0, 15, 170), (255, 25, 195), 400, 1400, 4, 12),
-    ShapeColorRange('Red', (0, 100, 200), (1, 255, 255), 40, 600, 4, 12),
-    ShapeColorRange('Red', (0, 25, 150), (1, 255, 255), 120, 200, 11, 30),
-    ShapeColorRange('Yellow', (23, 100, 50), (30, 255, 255), 80, 1000, 4, 30),
-    ShapeColorRange('Teal', (90, 150, 50), (95, 255, 200), 40, 1600, 4, 25),
-    ShapeColorRange('Violet', (153, 180, 150), (157, 205, 215), 40, 1600, 4, 25),  # TODO: need to Violet see in practice
-    ShapeColorRange('White', (0, 0, 128), (255, 5, 255), 110, 400, 10, 30),
-    ## ShapeColorRange('White', (0, 0, 128), (255, 5, 255), 80, 400, 4, 30),
-]
-
-CONTOUR_PROCESS_WIDTH = 300
-
 MAX_NON_KIM_APP_TIME = 8  # seconds we can not be in the KK:H app
+CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
+
+# NOTE: areas configured to CONTOUR_PROCESS_HEIGHT at 400. Should eventually make this ratio based..
+# label, lower HSV, upper HSV, min_area, max_area, min_verts, max_verts
+ACTION_SHAPE_COLOR_RANGES = [
+    ShapeColorRange(ActionShape.MENU_EXIT, 'Red', (-2, 100, 200), (1, 255, 255), 200, 600, 4, 8),
+    ShapeColorRange(ActionShape.ROOM_EXIT, 'Red', (-2, 25, 150), (1, 255, 255), 1200, 4500, 11, 30),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Blue', (100, 160, 50), (120, 255, 255), 600, 9000, 4, 15), # most common action
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure', (100, 50, 200), (105, 100, 255), 3500, 7500, 4, 15),
+    ShapeColorRange(ActionShape.MONEY_CHOICE, 'Light Green', (40, 100, 50), (65, 255, 255), 800, 9000, 4, 15), # money green
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Gray', (0, 15, 170), (255, 25, 195), 2500, 8500, 4, 15), # usually cancel
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Pink', (160, 20, 20), (170, 255, 255), 600, 9000, 4, 15), # flirting
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Teal', (90, 150, 50), (95, 255, 200), 320, 9000, 4, 15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Yellow', (23, 100, 50), (30, 255, 255), 300, 2500, 4, 30), # yellow exclamation marks
+    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White', (0, 0, 225), (255, 5, 255), 800, 1500, 10, 20), # circular white "..."
+    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White', (0, 0, 128), (255, 5, 255), 12000, 30000, 4, 25), # huge white boxes
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Orange', (14, 50, 200), (15, 255, 255), 800, 9000, 4, 15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet', (153, 180, 150), (157, 205, 215), 320, 9000, 4, 15),  # TODO: need to Violet see in practice
+]
 
 """
 REWARD CALCULATION

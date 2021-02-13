@@ -41,4 +41,5 @@ all_action_shapes = [
 
 
 ShapeColorRange = collections.namedtuple(
-    "ShapeColorRange", ['label', 'lower', 'upper', 'min_area', 'max_area', 'min_verts', 'max_verts'])
+    "ShapeColorRange",
+    ['action_shape', 'color_label', 'lower', 'upper', 'min_area', 'max_area', 'min_verts', 'max_verts'])

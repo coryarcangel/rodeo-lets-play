@@ -5,7 +5,6 @@ from math import pow
 from enums import Action, ActionShape
 from config import HEURISTIC_CONFIG
 from ai_actions import ActionGetter, ActionWeighter, get_action_type_str
-from action_shape import get_shape_data_likely_action_shape
 
 
 '''
@@ -161,7 +160,7 @@ class HeuristicRoom(object):
         return base_weight * weight_ratio
 
     def _get_action_shape_tap_weight(self, action, img_obj):
-        a_shape = get_shape_data_likely_action_shape(img_obj['shape_data'], self.cur_image_shape)
+        a_shape = img_obj['shape_data']['action_shape']
         base_weight = self.config.get_action_shape_tap_weight(a_shape)
         if a_shape == ActionShape.ROOM_EXIT:
             base_weight = self._get_exit_action_weight(True)

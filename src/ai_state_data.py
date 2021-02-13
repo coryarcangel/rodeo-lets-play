@@ -7,7 +7,6 @@ import numpy as np
 from kim_logs import get_kim_logger
 from enums import all_action_shapes
 from math import pow
-from action_shape import get_shape_data_label
 
 
 def get_random_object_type():
@@ -82,19 +81,16 @@ class AIState(object):
             })
 
         for idx, shape in enumerate(shapes):
-            p, a, s, co = [shape[k] for k in ('point', 'area', 'shape', 'color_label')]
-            x, y = p
-            r = int(pow(a, 0.5) / 2.0)
-            shape_data = { k: shape[k] for k in ('point', 'area', 'rawArea', 'verts', 'shape', 'color_label') }
-            shape_data['shape_label'] = get_shape_data_label(shape_data, image_shape)
+            a, s, co, ashape, raw, v = [shape[k] for k in ('area', 'shape', 'color_label', 'action_shape', 'rawArea', 'verts')]
+            shape_data = { k: shape[k] for k in ('area', 'verts', 'shape', 'color_label', 'action_shape') }
+            shape_data['shape_label'] = '%s (%s, %s, %d, %d)' % (ashape, s, co, v, raw)
             self.image_objects.append({
                 'label': '%s (%d) - %s' % (s, a, co),
-                'simple_label': '%s (%d)' % (s, a),
                 'object_type': 'action_shape',
                 'confidence': None,
                 'shape_data': shape_data,
                 # 'contour': c,
-                'rect': (x - r, y - r, 2 * r, 2 * r)
+                'rect': shape['rect'],
             })
 
     @classmethod
