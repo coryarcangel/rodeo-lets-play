@@ -226,7 +226,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     def _get_tap_action(self, action_name, x_grid, y_grid):
         x, y = self._grid_point_to_client_point(x_grid, y_grid)
         ai_state = self.get_cur_ai_state()
-        img_obj = ai_state.find_object_from_point(x, y) if ai_state else None
+        img_obj, obj_dist = ai_state.find_nearest_object(x, y, 2500) if ai_state else (None, 2500)
 
         action_data = get_object_action_data(img_obj) if img_obj else {
             'x': x,

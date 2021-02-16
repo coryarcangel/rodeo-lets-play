@@ -6,7 +6,6 @@ import numpy as np
 # import tensorflow as tf
 from kim_logs import get_kim_logger
 from enums import all_action_shapes
-from math import pow
 
 
 def get_random_object_type():
@@ -81,7 +80,7 @@ class AIState(object):
             })
 
         for idx, shape in enumerate(shapes):
-            a, s, co, ashape, raw, v = [shape[k] for k in ('area', 'shape', 'color_label', 'action_shape', 'rawArea', 'verts')]
+            a, s, co, ashape, raw, v = [shape[k] for k in ('area', 'shape', 'color_label', 'action_shape', 'boundsArea', 'verts')]
             shape_data = { k: shape[k] for k in ('area', 'verts', 'shape', 'color_label', 'action_shape') }
             shape_data['shape_label'] = '%s (%s, %s, %d, %d)' % (ashape, s, co, v, raw)
             self.image_objects.append({
@@ -162,7 +161,7 @@ class AIState(object):
         """ Converts high-level object into numbers with shape STATE_INPUT_SHAPE """
         return np.array([1, self.money, self.stars])
 
-    def find_object_from_point(self, x, y):
+    def find_nearest_object(self, x, y, dist_threshold):
         min_dist, min_obj = (1000000, None)
         for obj in self.image_objects:
             x1, y1, _, _ = obj['rect']
@@ -172,4 +171,4 @@ class AIState(object):
                 min_dist = dist
                 min_obj = obj
 
-        return min_obj if min_dist < 2500 else None
+        return (min_obj, min_dist) if min_dist < dist_threshold else None

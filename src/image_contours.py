@@ -55,8 +55,9 @@ def get_contour_shape_data(c, image, resized_image):
             'verts': verts,
             'point': point,
             'area': area,
-            'rawArea': bounding_area,
+            'boundsArea': bounding_area,
             'contourArea': contour_area,
+            'areaRatio': float(bounding_area) / contour_area,
             'rect': rect,
             'rawRect': bounding_rect,
             'contour': (c.astype('float') * ratio).astype('int')  # mult by ratio
@@ -96,7 +97,7 @@ def get_grayscale_image_shapes(image):
 
 def print_color_shapes(color_shapes):
     for s in color_shapes:
-        print(s['action_shape'], s['color_label'], s['verts'], s['rawRect'], s['rawArea'], s['contourArea'])
+        print(s['action_shape'], s['color_label'], s['verts'], s['rawRect'], s['boundsArea'], s['contourArea'])
 
 
 def get_image_colored_shapes(image, shape_color_ranges):
@@ -137,16 +138,24 @@ def get_image_colored_shapes(image, shape_color_ranges):
 
         # Get colored shapes
         color_shapes = [get_contour_shape_data(c, image, img) for c in contours]
-        color_shapes = [cs for cs in color_shapes if cs['rawArea'] > 60 and cs['contourArea'] > 10 and cs['rawArea'] / cs['contourArea'] < 5]
+
+        # filter for at least reasonable shapes
+        color_shapes = [cs for cs in color_shapes if cs['boundsArea'] > 60 and cs['contourArea'] > 10]
+
+        # add some data
         for cs in color_shapes:
             cs['action_shape'] = item.action_shape
             cs['color_label'] = item.color_label
+
+        # filter for this ShapeColorRange
         # print_color_shapes(color_shapes)
-        color_shapes = [cs for cs in color_shapes if cs and
-            cs['rawArea'] >= item.min_area and
-            cs['rawArea'] <= item.max_area and
-            cs['verts'] >= item.min_verts and
-            cs['verts'] <= item.max_verts]
+        color_shapes = [cs for cs in color_shapes if cs
+                        and cs['boundsArea'] >= item.min_area
+                        and cs['boundsArea'] <= item.max_area
+                        and cs['verts'] >= item.min_verts
+                        and cs['verts'] <= item.max_verts
+                        and cs['areaRatio'] >= item.min_area_ratio
+                        and cs['areaRatio'] <= item.max_area_ratio]
         # print_color_shapes(color_shapes)
 
         shapes += color_shapes

@@ -52,6 +52,7 @@ ACTION_WEIGHTS = {
 
 TAP_TYPE_ACTION_WEIGHTS = {
     'menu': 1,
+    'hot_region': 250,
     'object': 100
 }
 
@@ -107,23 +108,80 @@ HEURISTIC_CONFIG = {
 MAX_NON_KIM_APP_TIME = 8  # seconds we can not be in the KK:H app
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
+TAP_OBJECT_CENTER_NOISE = 0.15
+
 # NOTE: areas configured to CONTOUR_PROCESS_HEIGHT at 400. Should eventually make this ratio based..
-# label, lower HSV, upper HSV, min_area, max_area, min_verts, max_verts
 ACTION_SHAPE_COLOR_RANGES = [
-    ShapeColorRange(ActionShape.MENU_EXIT, 'Red', (-2, 100, 200), (1, 255, 255), 200, 600, 4, 8),
-    ShapeColorRange(ActionShape.ROOM_EXIT, 'Red', (-2, 25, 150), (1, 255, 255), 1200, 4500, 11, 30),
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Blue', (100, 160, 50), (120, 255, 255), 600, 9000, 4, 15), # most common action
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure', (100, 50, 200), (105, 100, 255), 3500, 7500, 4, 15),
-    ShapeColorRange(ActionShape.MONEY_CHOICE, 'Light Green', (40, 100, 50), (65, 255, 255), 800, 9000, 4, 15), # money green
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Gray', (0, 15, 170), (255, 25, 195), 2500, 8500, 4, 15), # usually cancel
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Pink', (160, 20, 20), (170, 255, 255), 600, 9000, 4, 15), # flirting
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Teal', (90, 150, 50), (95, 255, 200), 320, 9000, 4, 15),
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Yellow', (23, 100, 50), (30, 255, 255), 300, 2500, 4, 30), # yellow exclamation marks
-    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White', (0, 0, 225), (255, 5, 255), 800, 1500, 10, 20), # circular white "..."
-    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White', (0, 0, 128), (255, 5, 255), 12000, 30000, 4, 25), # huge white boxes
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Orange', (14, 50, 200), (15, 255, 255), 800, 9000, 4, 15),
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet', (153, 180, 150), (157, 205, 215), 320, 9000, 4, 15),  # TODO: need to Violet see in practice
+    ShapeColorRange(ActionShape.MENU_EXIT, 'Red',
+                    upper=(-2, 100, 200), lower=(1, 255, 255),
+                    min_area=200, max_area=600, min_verts=4, max_verts=8),
+    ShapeColorRange(ActionShape.ROOM_EXIT, 'Red',
+                    upper=(-2, 25, 150), lower=(1, 255, 255),
+                    min_area=1200, max_area=4500, min_verts=11, max_verts=30),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Blue',  # most common action
+                    upper=(100, 160, 50), lower=(120, 255, 255),
+                    min_area=600, max_area=9000, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure',
+                    upper=(100, 50, 200), lower=(105, 100, 255),
+                    min_area=3500, max_area=7500, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.MONEY_CHOICE, 'Light Green',  # money green
+                    upper=(40, 100, 50), lower=(65, 255, 255),
+                    min_area=800, max_area=9000, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Gray',  # usually cancel
+                    upper=(0, 15, 170), lower=(255, 25, 195),
+                    min_area=2500, max_area=8500, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Pink',  # flirting
+                    upper=(160, 20, 20), lower=(170, 255, 255),
+                    min_area=600, max_area=9000, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Teal',
+                    upper=(90, 150, 50), lower=(95, 255, 200),
+                    min_area=320, max_area=9000, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Yellow',  # yellow exclamation marks
+                    upper=(23, 100, 50), lower=(30, 255, 255),
+                    min_area=300, max_area=2500, min_verts=4, max_verts=30),
+    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White',  # circular white "..."
+                    upper=(0, 0, 225), lower=(255, 5, 255),
+                    min_area=800, max_area=1500, min_verts=10, max_verts=20),
+    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White',  # huge white boxes
+                    upper=(0, 0, 128), lower=(255, 5, 255),
+                    min_area=12000, max_area=30000, min_verts=4, max_verts=25),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Orange',
+                    upper=(14, 50, 200), lower=(15, 255, 255),
+                    min_area=800, max_area=9000, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet',  # TODO: need to Violet see in practice
+                    upper=(153, 180, 150), lower=(157, 205, 215),
+                    min_area=320, max_area=9000, min_verts=4, max_verts=15),
 ]
+
+DARKNET_SPECIFIC_OBJECT_THRESHOLDS = {
+    'person': 0.1,
+    'bicycle': 0.07,
+    'clock': 0.07
+}
+
+
+def GET_KNOWN_TAP_LOCATIONS(img_rect, img_rect_center):
+    _, _, w, h = img_rect
+    cx, cy = img_rect_center
+
+    bottom_menu_regions = [
+        {'type': 'menu', 'x': w - 80 - 51 * i, 'y': h - 28} for i in range(4)]
+
+    qw = int(w * 0.25)
+    qh = int(h * 0.25)
+    hot_regions = [
+        # For pressing the "OK"
+        {'type': 'hot_region', 'x': cx, 'y': cy + 35},
+
+        # quadrant regions to catch occassional big tappable boxes
+        {'type': 'hot_region', 'x': cx + qw, 'y': cy + qh},
+        {'type': 'hot_region', 'x': cx + qw, 'y': cy - qh},
+        {'type': 'hot_region', 'x': cx - qw, 'y': cy + qh},
+        {'type': 'hot_region', 'x': cx - qw, 'y': cy - qh},
+    ]
+
+    return bottom_menu_regions + hot_regions
+
 
 """
 REWARD CALCULATION
@@ -133,7 +191,9 @@ REWARD_PARAMS = {
     'money_mult': 1.0,
     'stars_mult': 1.0,
     'recent_swipe_threshold': 20,
-    'recent_swipe_reward': 150,
+    'swipe_reward': 150,
+    'recent_object_tap_threshold': 5,
+    'object_tap_reward': 30,
 }
 
 """
@@ -155,7 +215,7 @@ HEN_OPTIONS = {
         'model': 'cfg/tiny-yolo.cfg',
         'load': 'dfbin/tiny-yolo.weights',
         'gpu': 0.75,
-        'threshold': 0.07
+        'threshold': 0.05
     },
     'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
     'TF_AI_POLICY_WEIGHTS': {
@@ -192,7 +252,7 @@ KEV_OPTIONS = {
         'model': 'cfg/tiny-yolo.cfg',
         'load': 'dfbin/tiny-yolo.weights',
         'gpu': 0.5,
-        'threshold': 0.1
+        'threshold': 0.05
     },
     'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
     'TF_AI_POLICY_WEIGHTS': {

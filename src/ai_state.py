@@ -5,6 +5,7 @@ import cv2
 from concurrent import futures
 from darkflow.net.build import TFNet
 from config import TFNET_CONFIG, CURRENT_IMG_CONFIG, HOUGH_CIRCLES_CONFIG
+from config import DARKNET_SPECIFIC_OBJECT_THRESHOLDS
 from image_circles import get_image_circles
 from image_blob import BlobDetector
 from image_contours import get_kim_action_color_shapes
@@ -42,7 +43,15 @@ def _process_image_objects(image_objects, image_size, scale=1):
             'rect': rect
         }
 
-    return [process_obj(i) for i in image_objects]
+    all_objects = [process_obj(i) for i in image_objects]
+
+    # filter for specific object thresholds
+    def filter_object(o):
+        thresholds = DARKNET_SPECIFIC_OBJECT_THRESHOLDS
+        return o['label'] not in thresholds or o['confidence'] >= thresholds[o['label']]
+    filtered_objects = [o for o in all_objects if filter_object(o)]
+
+    return filtered_objects
 
 
 class AIStateProcessor(object):
