@@ -424,9 +424,8 @@ function drawBarGraph(data){
     .range([ 0,350]);
 
   var y = d3.scaleBand()
-    .range([ 0, (data.length)*barSize ])
+    .range([ 0, (data.length)*(2+barSize) ])
     .domain(data.map(function(d) { return d.label; }))
-    // .padding(0.2);
 
   barGraph.append("g")
     // .call(d3.axisLeft(y))
@@ -438,7 +437,7 @@ function drawBarGraph(data){
     .attr("transform", function(d){ return "translate("+ 15 +",0)" })
     .attr("text-anchor","start")
     .attr("font-family",'Helvetica Neue Roman')
-    .attr("font-size","14px")
+    .attr("font-size","18px")
     .attr("fill","black")
 
   // Bars
@@ -447,8 +446,7 @@ function drawBarGraph(data){
     .enter()
     .append("rect")
       .attr("x", 10)
-      .attr("y", function(d,i) { return i*barSize; //y(d.label);
-      })
+      .attr("y", function(d,i) { return i*(2+barSize); })
       .attr("width", function(d) { return x(d['confidence']); })
       .attr("height", barSize)
       .attr("stroke", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "black" })
@@ -533,8 +531,8 @@ function transformAiLogs(log){
       str = log
       break
     case "Step":  
-      
-      str = log//replaceWithEmojis(split.slice(0,2).join(" "))+ split.slice(2).join(" ")
+      console.log(split.slice(0,2).join(" "),"AAAND",split.slice(2).join(" "))
+      str = replaceWithEmojis(split.slice(0,2).join(" "))
       break
     case "received":  
       console.log("4",log);
@@ -560,6 +558,9 @@ function renderAiLogs(aiLogs) {
   })
   const logEls = []
   for (let i = (noActions || []).length - 1; i >= 0; i--) {
+    // const el = document.createElement('div')
+    // el.innerHTML = replaceWithEmojis(noActions[i])
+    // logEls.push(el)
     logEls.push(transformAiLogs(noActions[i]))
   }
 
