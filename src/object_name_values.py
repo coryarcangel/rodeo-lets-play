@@ -1,6 +1,6 @@
 import os
 
-from action_shape import all_action_shapes
+from enums import all_action_shapes
 
 
 def get_object_name_int_values():

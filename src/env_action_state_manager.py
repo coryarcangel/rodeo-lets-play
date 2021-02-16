@@ -1,8 +1,9 @@
 """ Shared manager between old ai_env and tf_ai_env """
 
 import json
+import time
 from kim_logs import get_kim_logger
-from ai_actions import Action
+from enums import Action
 from ai_state_data import AIState
 from ai_info_publisher import get_ai_info_publisher
 from config import REDIS_HOST, REDIS_PORT
@@ -50,7 +51,7 @@ class DeviceClientEnvActionStateManager(object):
         return state if state is not None else AIState()
 
     def perform_pass_action(self, args):
-        pass
+        time.sleep(0.5)
 
     def perform_reset_action(self, args):
         self.client.reset_game()

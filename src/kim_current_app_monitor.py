@@ -1,4 +1,5 @@
 from datetime import datetime
+from config import MAX_NON_KIM_APP_TIME
 from kim_logs import get_kim_logger
 from device_client import DeviceClient
 
@@ -17,7 +18,7 @@ class KimCurrentAppMonitor(object):
         self.logger = get_kim_logger('CurAppMonitor')
         self.last_ping_time = datetime.now()
         self.last_kim_process_time = datetime.now()
-        self.max_non_kim_time = 25  # 25 seconds until we force a reset.
+        self.max_non_kim_time = MAX_NON_KIM_APP_TIME
 
         self.client = DeviceClient()
         self.client.start()

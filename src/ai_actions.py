@@ -1,33 +1,14 @@
 """Defines Constants for available game actions."""
 
+from enums import Action
 from config import CURRENT_IMG_CONFIG
-from util import get_rect_center, Rect
+from config import ACTION_WEIGHTS, TAP_TYPE_ACTION_WEIGHTS, TAP_OBJECT_ACTION_WEIGHTS
+
+from util import get_rect_center, get_noisy_rect_center, Rect
 import numpy as np
 
 img_rect = Rect(0, 0, CURRENT_IMG_CONFIG.width, CURRENT_IMG_CONFIG.height)
 img_rect_center = get_rect_center(img_rect)
-
-
-class Action(object):
-    """Enum-like iteration of all available actions"""
-    PASS = 0
-    RESET = 1
-    SWIPE_LEFT = 2
-    SWIPE_RIGHT = 3
-    TAP_LOCATION = 4
-    DOUBLE_TAP_LOCATION = 5
-
-
-ACTIONS = [
-    Action.PASS,
-    Action.SWIPE_LEFT,
-    Action.SWIPE_RIGHT,
-    Action.TAP_LOCATION,
-    Action.DOUBLE_TAP_LOCATION,
-    Action.RESET
-]
-
-NUM_ACTIONS = len(ACTIONS)
 
 
 def get_action_type_str(action_type):
@@ -48,12 +29,12 @@ def get_action_type_str(action_type):
 
 
 def get_object_action_data(obj):
-    x, y = get_rect_center(obj['rect'])
+    x, y = get_noisy_rect_center(obj['rect'], 0.15)
     return {
         'x': int(x),
         'y': int(y),
         'type': 'object',
-        'object_type': obj['object_type'] if 'obj_type' in obj else obj['label'],
+        'object_type': obj['object_type'] if 'object_type' in obj else obj['label'],
         'img_obj': obj
     }
 
@@ -101,32 +82,16 @@ class ActionWeighter(object):
     ''' gets default action weights for weighted-random selection '''
 
     def __init__(self):
-        self.ActionWeights = {
-            Action.PASS: 25,
-            Action.SWIPE_LEFT: 150,
-            Action.SWIPE_RIGHT: 150,
-            Action.TAP_LOCATION: 100,
-            Action.DOUBLE_TAP_LOCATION: 40,
-            Action.RESET: 0.01
-        }
-        self.TapTypeWeights = {
-            'menu': 1,
-            'object': 100
-        }
-        self.TapObjectTypeWeights = {
-            'frisbee': 500,
-            'circle': 500,
-            'clock': 500,
-            'sports ball': 500,
-            'traffic light': 10,
-            'doorbell': 250,
-            'person': 5,
-            'umbrella': 5,
-            'chair': 5
-        }
+        self.ActionWeights = ACTION_WEIGHTS
+        self.double_tap_to_tap_ratio = float(self.ActionWeights[Action.DOUBLE_TAP_LOCATION]) / self.ActionWeights[Action.TAP_LOCATION]
+        self.TapTypeWeights = TAP_TYPE_ACTION_WEIGHTS
+        self.TapObjectTypeWeights = TAP_OBJECT_ACTION_WEIGHTS
 
     def is_object_type_likely_exit(self, object_type):
         return object_type == 'circle' or object_type == 'clock' or object_type == 'frisbee'
+
+    def get_tap_action_weight_ratio(self, action):
+        return 1 if action == Action.TAP_LOCATION else self.double_tap_to_tap_ratio
 
     def get_action_weight(self, a_tup):
         ''' Assigns a weight to action based on its type / content '''
@@ -136,9 +101,10 @@ class ActionWeighter(object):
         is_tap = action == Action.TAP_LOCATION or action == Action.DOUBLE_TAP_LOCATION
 
         if is_tap and action_type in self.TapTypeWeights:
+            base_weight = self.TapTypeWeights[action_type]
             if object_type and object_type in self.TapObjectTypeWeights:
-                return self.TapObjectTypeWeights[object_type]
-            return self.TapTypeWeights[action_type]
+                base_weight = self.TapObjectTypeWeights[object_type]
+            return self.get_tap_action_weight_ratio(action) * base_weight
         if action in self.ActionWeights:
             return self.ActionWeights[action]
         return 1

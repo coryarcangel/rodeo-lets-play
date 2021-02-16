@@ -1,6 +1,7 @@
 """ DeviceManager class to control an Android emulator or phone """
 
 from time import sleep
+from random import randint
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from kim_logs import get_kim_logger
 
@@ -21,6 +22,8 @@ class DeviceManager(object):
         self.device = device
         self.frame_count = 0
         self.logger = get_kim_logger('DeviceManager')
+        self.device_width = int(self.device.getProperty('display.width'))
+        self.device_height = int(self.device.getProperty('display.height'))
 
     def log_info(self):
         """ Logs information about the connected device """
@@ -64,7 +67,10 @@ class DeviceManager(object):
                    delta_y=0, duration=1, steps=100):
         ''' Drags a finger along the device screen a given distance '''
         if start_pos is None:
-            start_pos = (800, 400)
+            # start_pos = (800, 400)
+            max_x = int(self.device_width * 0.6)
+            max_y = int(self.device_height * 0.7)
+            start_pos = (randint(420, max_x), randint(250, max_y))
 
         end_pos = (start_pos[0] + delta_x, start_pos[1] + delta_y)
         self.drag(start_pos, end_pos, duration, steps)
@@ -72,22 +78,15 @@ class DeviceManager(object):
     def tap(self, x, y):
         ''' Taps device at given location '''
         self.logger.debug('Tapping at (%d, %d)' % (x, y))
-        # self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
-        self.touch_down(x, y)
-        sleep(0.4)
-        self.touch_up(x, y)
+        self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
         sleep(1)  # Reasonable Down Time
 
     def double_tap(self, x, y):
         ''' Double Taps device at given location '''
         self.logger.debug('Double Tapping at (%d, %d)' % (x, y))
-        self.touch_down(x, y)
+        self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
         sleep(0.3)
-        self.touch_up(x, y)
-        sleep(0.2)
-        self.touch_down(x, y)
-        sleep(0.3)
-        self.touch_up(x, y)
+        self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
         sleep(1)  # Reasonable Down Time
 
     def touch_down(self, x, y):

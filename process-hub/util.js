@@ -9,9 +9,10 @@ const setWindowTitle = (title) => {
   )
 }
 
-const setupProcessHubScreen = (title) => {
+const setupProcessHubScreen = async (title) => {
   const filepath = `${__dirname}/../src/set_process_hub_screen.py`
   childProcess.execSync(`python3 ${filepath} ${title}`)
+  // await delay(100)
 }
 
 module.exports = { delay, setWindowTitle, setupProcessHubScreen }

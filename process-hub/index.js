@@ -256,7 +256,7 @@ async function main() {
   genlog('Hello, User. Starting KIM AI processes now...')
 
   setWindowTitle(WIN_TITLE)
-  setupProcessHubScreen(WIN_TITLE)
+  await setupProcessHubScreen(WIN_TITLE)
 
   dashboardParts.commandList.focus()
 

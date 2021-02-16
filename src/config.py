@@ -1,6 +1,11 @@
 import collections
 
 from util import Rect
+from enums import Action, ActionShape, ShapeColorRange
+
+"""
+PORTS AND STUFF
+"""
 
 # Redis for sharing state between all non-monkeyrunner processes
 REDIS_HOST = 'localhost'
@@ -14,15 +19,126 @@ DEVICE_PORT = 5005
 FRONTEND_WEB_URL = 'http://localhost:8888'
 FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
 
+# Name of the phone in vysor (change in vysor settings)
+VYSOR_WINDOW_NAME = 'VysorKim'
+
+"""
+SAFEGUARDING
+"""
+
 KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 
 # Areas of the device that are not clickable if device_client.safeguard_menu_clicks
 # is set to True (useful in training).
-SAFEGUARD_MENU_CLICKS_DEFAULT = False
+SAFEGUARD_MENU_CLICKS_DEFAULT = True
 SAFEGUARD_MENU_RECTS = [
     Rect(0, 0, 3000, 100),  # the entire top bar is bad news
     Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
+    Rect(1840, 0, 1000, 450),  # the special E / fans / etc thing in the top right
 ]
+
+"""
+BEHAVIOR
+"""
+
+ACTION_WEIGHTS = {
+    Action.PASS: 50,
+    Action.SWIPE_LEFT: 500,
+    Action.SWIPE_RIGHT: 500,
+    Action.TAP_LOCATION: 100,
+    Action.DOUBLE_TAP_LOCATION: 10,
+    Action.RESET: 0.01
+}
+
+TAP_TYPE_ACTION_WEIGHTS = {
+    'menu': 1,
+    'object': 100
+}
+
+TAP_OBJECT_ACTION_WEIGHTS = {
+    'frisbee': 500,
+    'circle': 500,
+    'clock': 500,
+    'sports ball': 500,
+    'traffic light': 10,
+    'doorbell': 250,
+    'person': 5,
+    'umbrella': 5,
+    'chair': 5
+}
+
+# see heuristic_selector.py for documentation
+HEURISTIC_CONFIG = {
+    'REPEAT_ACTION_DEPRESS': True,
+    'RECENT_ROOM_MEMORY': True,
+    'COLOR_ACTION_DETECT': True,
+
+    'max_room_history_len': 100,
+    'object_tap_action_max_sel_count': 7,
+    'other_action_max_sel_count': 2,
+    'object_tap_action_sel_denom': 10,
+    'other_action_sel_denom': 100,
+    'action_sel_depress_exp': 1.0,
+    'image_sig_stag_limit': 500,
+    'large_blob_threshold': 200,
+    'large_blob_weight_mult': 2,
+    'recent_room_threshold': 1,
+    'same_room_threshold': 1500,
+    'recent_room_exit_weight': 2500,
+    'same_room_exit_weight': 2500,
+    'no_money_exit_weight': 100,
+    'default_exit_weight': 400,
+
+    'blob_dom_color_weights': {
+        'red': 300, 'green': 600, 'blue': 1000, 'black': 200, 'white': 1000, 'other': 80
+    },
+
+    'action_shape_tap_weights': {
+        ActionShape.MENU_EXIT: 10000,
+        ActionShape.CONFIRM_OK: 1000,
+        ActionShape.MONEY_CHOICE: 2500,
+        ActionShape.TALK_CHOICE: 4000,
+        ActionShape.MAYBE_TALK_CHOICE: 1000,
+        ActionShape.ROOM_EXIT: 100,
+        ActionShape.UNKNOWN: 100
+    }
+}
+
+MAX_NON_KIM_APP_TIME = 8  # seconds we can not be in the KK:H app
+CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
+
+# NOTE: areas configured to CONTOUR_PROCESS_HEIGHT at 400. Should eventually make this ratio based..
+# label, lower HSV, upper HSV, min_area, max_area, min_verts, max_verts
+ACTION_SHAPE_COLOR_RANGES = [
+    ShapeColorRange(ActionShape.MENU_EXIT, 'Red', (-2, 100, 200), (1, 255, 255), 200, 600, 4, 8),
+    ShapeColorRange(ActionShape.ROOM_EXIT, 'Red', (-2, 25, 150), (1, 255, 255), 1200, 4500, 11, 30),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Blue', (100, 160, 50), (120, 255, 255), 600, 9000, 4, 15), # most common action
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure', (100, 50, 200), (105, 100, 255), 3500, 7500, 4, 15),
+    ShapeColorRange(ActionShape.MONEY_CHOICE, 'Light Green', (40, 100, 50), (65, 255, 255), 800, 9000, 4, 15), # money green
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Gray', (0, 15, 170), (255, 25, 195), 2500, 8500, 4, 15), # usually cancel
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Pink', (160, 20, 20), (170, 255, 255), 600, 9000, 4, 15), # flirting
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Teal', (90, 150, 50), (95, 255, 200), 320, 9000, 4, 15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Yellow', (23, 100, 50), (30, 255, 255), 300, 2500, 4, 30), # yellow exclamation marks
+    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White', (0, 0, 225), (255, 5, 255), 800, 1500, 10, 20), # circular white "..."
+    ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White', (0, 0, 128), (255, 5, 255), 12000, 30000, 4, 25), # huge white boxes
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Orange', (14, 50, 200), (15, 255, 255), 800, 9000, 4, 15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet', (153, 180, 150), (157, 205, 215), 320, 9000, 4, 15),  # TODO: need to Violet see in practice
+]
+
+"""
+REWARD CALCULATION
+"""
+
+REWARD_PARAMS = {
+    'money_mult': 1.0,
+    'stars_mult': 1.0,
+    'recent_swipe_threshold': 20,
+    'recent_swipe_reward': 150,
+}
+
+"""
+SYSTEM SPECIFIC CONFIG (PHONE, COMP, ETC)
+"""
 
 # Galaxy 10
 GALAXY10_RECT = Rect(0, 0, 2280, 1080)
@@ -121,12 +237,7 @@ TF_AI_POLICY_WEIGHTS = OPTIONS['TF_AI_POLICY_WEIGHTS']
 VYSOR_RECT = OPTIONS['VYSOR_RECT']
 IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
 
-# Name of the phone in vysor (change in vysor settings)
-VYSOR_WINDOW_NAME = 'VysorKim'
-
 HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
-
-CONTOUR_PROCESS_WIDTH = 300
 
 """
 Phone Rect / Game Rect is about the raw phone size.
@@ -194,7 +305,5 @@ IMG_CONFIG_GALAXY10 = ImageConfig(
     top_menu_padding=20,
     top_menu_item_width=120
 )
-
-# TODO: IMG_CONFIG_GALAXY10
 
 CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY10
