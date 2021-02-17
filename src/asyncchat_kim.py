@@ -1,4 +1,5 @@
 import asynchat
+from random import randint
 from kim_logs import get_kim_logger
 from config import DEVICE_HOST, DEVICE_PORT
 
@@ -28,7 +29,6 @@ class AsyncchatKim(asynchat.async_chat):
         self.host = host
         self.port = port
         self.logger = get_kim_logger(logger_name)
-        self.command_id = 0
         self.command_ack_map = {}
         self.command_res_queue = []
         self.comm = None
@@ -73,12 +73,10 @@ class AsyncchatKim(asynchat.async_chat):
 
     def _send_command(self, *args):
         # grab current command id and send message
-        command_id = str(self.command_id)
+        command_id = str(randint(1, 99999999))
         msg = COMMAND_SEP.join([command_id] + [str(a) for a in args]) + '\n'
         self._send_message(msg)
-
-        # increment id for next command
-        self.command_id += 1
+        return command_id
 
     def send_ack(self, command_id, res_data):
         ''' Sends ACK of completed command with given id and optional data '''

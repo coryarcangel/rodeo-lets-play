@@ -30,13 +30,17 @@ class ActionShape(object):
     MONEY_CHOICE = 'money_choice'
     TALK_CHOICE = 'talk_choice'
     MAYBE_TALK_CHOICE = 'maybe_talk_choice'
+    IMPORTANT_MARKER = 'important_marker'
+    COLLECTABLE = 'collectable'
     ROOM_EXIT = 'room_exit'
     UNKNOWN = 'unknown'
 
 
 all_action_shapes = [
     ActionShape.MENU_EXIT, ActionShape.CONFIRM_OK, ActionShape.MONEY_CHOICE,
-    ActionShape.TALK_CHOICE, ActionShape.MAYBE_TALK_CHOICE, ActionShape.ROOM_EXIT, ActionShape.UNKNOWN
+    ActionShape.TALK_CHOICE, ActionShape.MAYBE_TALK_CHOICE,
+    ActionShape.IMPORTANT_MARKER, ActionShape.COLLECTABLE,
+    ActionShape.ROOM_EXIT, ActionShape.UNKNOWN
 ]
 
 
@@ -64,3 +68,14 @@ class ShapeColorRange(object):
         self.max_verts = max_verts
         self.min_area_ratio = min_area_ratio
         self.max_area_ratio = max_area_ratio
+
+    def get_color_ranges(self):
+        # allow user to input negative hue values
+        low = self.lower
+        up = self.upper
+        if low[0] < 0:
+            return (
+                ((180 + low[0], low[1], low[2]), (180, up[1], up[2])),
+                ((0, low[1], low[2]), up))
+        else:
+            return ((low, up),)

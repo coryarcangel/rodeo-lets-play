@@ -97,8 +97,7 @@ class DeviceClient(AsyncchatKim):
         return data
 
     def _send_command(self, *args):
-        command_id = str(self.command_id)
-        AsyncchatKim._send_command(self, *args)
+        command_id = AsyncchatKim._send_command(self, *args)
 
         # Wait for ack for "consistency!!"
         res_data = self._wait_for_ack(command_id)

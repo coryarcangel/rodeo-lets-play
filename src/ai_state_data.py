@@ -171,4 +171,4 @@ class AIState(object):
                 min_dist = dist
                 min_obj = obj
 
-        return (min_obj, min_dist) if min_dist < dist_threshold else None
+        return (min_obj, min_dist) if min_dist < dist_threshold else (None, dist_threshold)

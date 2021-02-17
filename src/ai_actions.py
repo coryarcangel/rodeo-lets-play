@@ -3,7 +3,7 @@
 from enums import Action
 from config import CURRENT_IMG_CONFIG
 from config import ACTION_WEIGHTS, TAP_TYPE_ACTION_WEIGHTS, TAP_OBJECT_ACTION_WEIGHTS
-from config import TAP_OBJECT_CENTER_NOISE, GET_KNOWN_TAP_LOCATIONS
+from config import GET_OBJECT_TAP_POINT_NOISE, GET_KNOWN_TAP_LOCATIONS
 
 from util import get_rect_center, get_noisy_rect_center, Rect
 import numpy as np
@@ -29,8 +29,11 @@ def get_action_type_str(action_type):
         return 'uknown - ' + str(action_type)
 
 
-def get_object_action_data(obj):
-    x, y = get_noisy_rect_center(obj['rect'], TAP_OBJECT_CENTER_NOISE)
+def get_object_action_data(obj, noise=None):
+    if noise is None:
+        noise = GET_OBJECT_TAP_POINT_NOISE(obj)
+
+    x, y = get_noisy_rect_center(obj['rect'], noise)
     return {
         'x': int(x),
         'y': int(y),
