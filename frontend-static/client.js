@@ -6,6 +6,7 @@ var aiLogEl = document.getElementById('ai-log');
 var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 var stats = document.getElementById('stats');
+var titleEl = document.getElementById('rodeo');
 
 var target_fps = 20;
 
@@ -93,6 +94,9 @@ readTextFile("./emojimap.json", function(text){
       swipe_right:  emoji("point")+emoji("right_arrow"),
       swipe_left: emoji("left_arrow")+ emoji("point")
     }
+
+    titleEl.innerHTML = `${emoji("goat")} ⋆ ${emoji("rabbit")}  ${emoji("ribbon")}  /𝓇${emoji("blueheart")}ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻${emoji("hearteyes")}𝐿𝐿𝒴𝒲${emoji("cookie")}❤𝒟 𝓋 𝟣.♡  🎀  ${emoji("rabbit")} ⋆ ${emoji("goat")}`
+
 });
 
 function replaceWithEmojis(str){

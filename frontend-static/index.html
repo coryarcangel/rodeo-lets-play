@@ -1,4 +1,5 @@
 <html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
  <head>
   <title>KIM_FRONTEND</title>
   <style>
@@ -22,7 +23,7 @@
     }
     #rodeo {
       position: absolute;
-      top: 10px;
+      bottom: 10px;
       left: 10px;
     }
     #screen {
@@ -30,9 +31,17 @@
       height: 880px;
       background: black;
       position: relative;
+      overflow: hidden;
+    }
+    body.recording {
+      background: black;
+    }
+    body.recording #screen {
+      top: calc((100vh - 880px ) / 2);
+      left: calc((100vw - 1760px) / 2);
     }
     #liveImg {
-      position: fixed;
+      position: absolute;
       top: 0%;
       left: 0%;
       width: 1760px;
@@ -58,7 +67,7 @@
       width: 320px;
     }
     #ai-log {
-    position: fixed;
+    position: absolute;
     top: 2px;
     right: calc(100vw - 1758px);
     background-color: rgba(0,0,0,0);
@@ -104,21 +113,21 @@
       grid-area: bottomright;
     }
     #state-actions {
-      position: fixed;
+      position: absolute;
       top: 2px;
       left: 2px;
       color: #fff;
       background-color: rgba(0, 0, 0, 0.5);
     }
     #object-annotations {
-      position: fixed;
+      position: absolute;
       z-index: 10;
       top: 0%;
       left: 0%;
       /*transform: translate(-50%, -50%);*/
     }
     #fps {
-      position: fixed;
+      position: absolute;
       top: 26px;
       left: 292px;
     }
@@ -137,7 +146,7 @@
       /*transform-origin: top left;*/
     }
     #gpus {
-      position: fixed;
+      position: absolute;
       top: 635px;
       left: 305px;
       width: 970px;
@@ -198,14 +207,14 @@
   }  
 </style>
  </head>
- <body>
+ <body class="recording">
   <div id="screen">
     <img id="liveImg" />
     <div id="fps">
       FPS: <span id="fps">0</span>
       | Frame: <span id="frameNum">0</span>
     </div>
-    <div id="rodeo">v0.9</div>
+    <div id="rodeo">🐐 ⋆ 🐰  🎀  /𝓇💙ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻😍𝐿𝐿𝒴𝒲🍪❤𝒟 𝓋 𝟣.♡  🎀  🐰 ⋆ 🐐</div>
     <div id="action-history"></div>
     <div id="ai-log"></div>
     <div id="state-actions"></div>
