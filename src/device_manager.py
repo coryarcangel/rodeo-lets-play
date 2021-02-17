@@ -78,24 +78,20 @@ class DeviceManager(object):
     def tap(self, x, y):
         ''' Taps device at given location '''
         self.logger.debug('Tapping at (%d, %d)' % (x, y))
-        self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
-        sleep(1)  # Reasonable Down Time
+        self.touch(x, y)
+        sleep(1.2)  # Reasonable Down Time
 
     def double_tap(self, x, y):
         ''' Double Taps device at given location '''
         self.logger.debug('Double Tapping at (%d, %d)' % (x, y))
-        self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
-        sleep(0.3)
-        self.device.touch(x, y, MonkeyDevice.DOWN_AND_UP)
-        sleep(1)  # Reasonable Down Time
+        self.touch(x, y)
+        sleep(0.2)
+        self.device.touch(x, y)
+        sleep(1.2)  # Reasonable Down Time
 
-    def touch_down(self, x, y):
-        ''' Presses finger down at given location '''
-        self.device.touch(x, y, MonkeyDevice.DOWN)
-
-    def touch_up(self, x, y):
-        ''' Removes finger down from given location '''
-        self.device.touch(x, y, MonkeyDevice.UP)
+    def touch(self, x, y):
+        ''' inputs tap at given location '''
+        self.device.shell('input tap %d %d' % (x, y))
 
     def unlock_phone(self):
         ''' Swipe up to unlock phone if necessary... '''

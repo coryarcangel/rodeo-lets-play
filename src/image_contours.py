@@ -55,8 +55,9 @@ def get_contour_shape_data(c, image, resized_image):
             'verts': verts,
             'point': point,
             'area': area,
-            'rawArea': bounding_area,
+            'boundsArea': bounding_area,
             'contourArea': contour_area,
+            'areaRatio': float(bounding_area) / contour_area,
             'rect': rect,
             'rawRect': bounding_rect,
             'contour': (c.astype('float') * ratio).astype('int')  # mult by ratio
@@ -94,9 +95,16 @@ def get_grayscale_image_shapes(image):
     return [s for s in shapes if s and s['shape']]
 
 
+def get_color_shape_data(shape_color_range, c, image, resized_image):
+    data = get_contour_shape_data(c, image, resized_image)
+    data['action_shape'] = shape_color_range.action_shape
+    data['color_label'] = shape_color_range.color_label
+    return data
+
+
 def print_color_shapes(color_shapes):
     for s in color_shapes:
-        print(s['action_shape'], s['color_label'], s['verts'], s['rawRect'], s['rawArea'], s['contourArea'])
+        print(s['action_shape'], s['color_label'], s['verts'], s['rawRect'], s['boundsArea'], s['areaRatio'])
 
 
 def get_image_colored_shapes(image, shape_color_ranges):
@@ -120,8 +128,14 @@ def get_image_colored_shapes(image, shape_color_ranges):
     shapes = []
 
     for item in shape_color_ranges:
-        # Mask image to only within given color range
-        mask = cv2.inRange(hsv, item.lower, item.upper)
+        # Mask image to only within given color range(s)
+        mask = None
+        for lower, upper in item.get_color_ranges():
+            range_mask = cv2.inRange(hsv, lower, upper)
+            if mask is None:
+                mask = range_mask
+            else:
+                mask = cv2.addWeighted(mask, 1, range_mask, 1, 0)
         res = cv2.bitwise_and(img, img, mask=mask)
         # cv2.imshow('Res', res); cv2.waitKey(0); cv2.destroyWindow('Res')
 
@@ -136,17 +150,20 @@ def get_image_colored_shapes(image, shape_color_ranges):
         contours = contour_res[1] if len(contour_res) == 3 else contour_res[0]
 
         # Get colored shapes
-        color_shapes = [get_contour_shape_data(c, image, img) for c in contours]
-        color_shapes = [cs for cs in color_shapes if cs['rawArea'] > 60 and cs['contourArea'] > 10 and cs['rawArea'] / cs['contourArea'] < 5]
-        for cs in color_shapes:
-            cs['action_shape'] = item.action_shape
-            cs['color_label'] = item.color_label
+        color_shapes = [get_color_shape_data(item, c, image, img) for c in contours]
+
+        # filter for at least reasonable shapes
+        color_shapes = [cs for cs in color_shapes if cs['boundsArea'] > 60 and cs['contourArea'] > 10]
+
+        # filter for this ShapeColorRange
         # print_color_shapes(color_shapes)
-        color_shapes = [cs for cs in color_shapes if cs and
-            cs['rawArea'] >= item.min_area and
-            cs['rawArea'] <= item.max_area and
-            cs['verts'] >= item.min_verts and
-            cs['verts'] <= item.max_verts]
+        color_shapes = [cs for cs in color_shapes if cs
+                        and cs['boundsArea'] >= item.min_area
+                        and cs['boundsArea'] <= item.max_area
+                        and cs['verts'] >= item.min_verts
+                        and cs['verts'] <= item.max_verts
+                        and cs['areaRatio'] >= item.min_area_ratio
+                        and cs['areaRatio'] <= item.max_area_ratio]
         # print_color_shapes(color_shapes)
 
         shapes += color_shapes
@@ -175,18 +192,31 @@ def draw_shapes(image, shapes):
 if __name__ == '__main__':
     sources = [
         'src/img/redtest.png',
+        'src/img/speech_actions_ss_01.png',
+        'src/img/gold_and_white_test.png',
         'src/img/henry_screenshots/red_x.png',
         'src/img/henry_screenshots/red_x_2.png',
         'src/img/henry_screenshots/yellow_and_white.png',
         'src/img/henry_screenshots/green_and_grey.png',
         'src/img/henry_screenshots/blue_and_red.png',
         'src/img/henry_screenshots/teal.png',
+        'src/img/henry_screenshots/vysor_red_x.png',
+        'src/img/henry_screenshots/vysor_red_x_2.png',
+        'src/img/henry_screenshots/vysor_red_x_3.png',
+        'src/img/henry_screenshots/vysor_green_grey.png',
+        'src/img/henry_screenshots/vysor_silver.png',
+        'src/img/henry_screenshots/vysor_teal.png',
+        'src/img/henry_screenshots/vysor_white_yellow.png',
+        'src/img/henry_screenshots/vysor_gold.png',
+        'src/img/lightning_on_ground.png',
+        'src/img/star_on_ground.png',
+        'src/img/stars_money_people.png',
     ]
     for src in sources:
         image = cv2.imread(src)
         resized = imutils.resize(image, height=CONTOUR_PROCESS_HEIGHT, inter=cv2.INTER_LINEAR)
         print(src, image.shape, image.shape[0] / image.shape[1], resized.shape)
-        cv2.imshow(src, resized); cv2.waitKey(0); # cv2.destroyWindow('Res')
+        # cv2.imshow(src, resized); cv2.waitKey(0); # cv2.destroyWindow('Res')
         shapes = get_kim_action_color_shapes(image)
         print("Drawn Shapes:")
         print_color_shapes(shapes)

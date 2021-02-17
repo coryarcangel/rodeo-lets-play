@@ -13,13 +13,17 @@ class RewardCalculator():
                  money_mult=REWARD_PARAMS['money_mult'],
                  stars_mult=REWARD_PARAMS['stars_mult'],
                  recent_swipe_threshold=REWARD_PARAMS['recent_swipe_threshold'],
-                 recent_swipe_reward=REWARD_PARAMS['recent_swipe_reward']):
+                 swipe_reward=REWARD_PARAMS['swipe_reward'],
+                 recent_object_tap_threshold=REWARD_PARAMS['recent_object_tap_threshold'],
+                 object_tap_reward=REWARD_PARAMS['object_tap_reward']):
         self.money_mult = money_mult
         self.stars_mult = stars_mult
         self.recent_swipe_threshold = recent_swipe_threshold
-        self.recent_swipe_reward = recent_swipe_reward
+        self.swipe_reward = swipe_reward
+        self.recent_object_tap_threshold = recent_object_tap_threshold
+        self.object_tap_reward = object_tap_reward
 
-        self.last_step_num_keys = ['swipe', 'pass', 'tap', 'double_tap']
+        self.last_step_num_keys = ['swipe', 'pass', 'tap', 'double_tap', 'object_tap']
         self.mark_reset()
 
     def mark_reset(self):
@@ -38,12 +42,16 @@ class RewardCalculator():
         # if we swipe and haven't swiped in a while, give a reward boost.
         if action_name in (Action.SWIPE_LEFT, Action.SWIPE_RIGHT):
             if step_num - self.last_step_nums['swipe'] >= self.recent_swipe_threshold:
-                reward += self.recent_swipe_reward
+                reward += self.swipe_reward
             self.last_step_nums['swipe'] = step_num
         elif action_name == Action.PASS:
             self.last_step_nums['pass'] = step_num
         elif action_name == Action.TAP_LOCATION:
             self.last_step_nums['tap'] = step_num
+            if 'object_type' in args and args['object_type'] != 'deep_q':
+                if step_num - self.last_step_nums['object_tap'] >= self.recent_object_tap_threshold:
+                    reward += self.object_tap_reward
+                self.last_step_nums['object_tap'] = step_num
         elif action_name == Action.DOUBLE_TAP_LOCATION:
             self.last_step_nums['double_tap'] = step_num
 
