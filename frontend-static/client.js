@@ -98,9 +98,15 @@ readTextFile("./emojimap.json", function(text){
 function replaceWithEmojis(str){
     var re = new RegExp(Object.keys(emojiPositions).join("|"),"gi");
     return str.replace(re, function(matched){
-      console.log("matched: ",matched,emoji(matched))
+      if(matched.indexOf("tap")>-1)
+      console.log("matched",matched)
         return emoji(matched);
     });
+}
+
+function stripStrings(substrings,str){
+    var re = new RegExp(substrings.join("|"),"gi");
+    return str.replace(re,"");
 }
 
 var emojiSize = 16;
@@ -121,7 +127,7 @@ function updateCurStateRender() {
 
   renderImageState(imageState, recentTouch);
   //renderStateActions(stateActions);
-  renderBarGraph(stateActions);
+  // renderBarGraph(stateActions);
   renderSystemInfo(systemInfo);
 }
 
@@ -503,43 +509,47 @@ function parseActionLog(actionString){
   //actionString = `Step 85 (1803) - Action (double_tap_location, {"x": 824, "y": 466, "type": "object", "object_type": "Circle #7", "img_obj": {"rect": [785, 427, 78, 78], "label": "Circle #7", "confidence": null, "object_type": "circle"}})`
   var split = actionString.split(" ");
   var actionNumber = split[1];
-  var actionType = split[5].slice(1,-1)
-  var actionJson = JSON.stringify(
-    JSON.parse(actionString.slice(actionString.indexOf("{"),-1))
-    ,null,2)
+  var actionType = split[5].slice(1,-1).replace("(","")
+  console.log("oh yah",actionType)
+  var actionJson = stripStrings(["{","}","\[","\]"],replaceWithEmojis(JSON.stringify(
+        JSON.parse(actionString.slice(actionString.indexOf("{"),-1))
+        ,{},'jsonemoji')))
   return `
-  <div class='recent-action'>Action #${actionNumber}: ${actionType} ${actionEmoji[actionType] || ''}</div>
+  <div class='recent-action'>${replaceWithEmojis("Action "+actionNumber+" "+actionType)}</div>
   <div class='action-json'>${actionJson}</div>
   `
 }
 
-function transformAiLogs(log){
+function stripParens(str){
+  return str.replace(")","").replace("(","")
+}
+
+function transformAiLogs(log){ 
   const el = document.createElement('div')
   var str = ""
   var split = log.split(" ")
+  //${replaceWithEmojis('DEEP_Q Heuristic RANDOM point')}
   switch (split[0]){
     case "Chose":  
       str = 
-        `
-        <div class="ai-choice ${split[1].toLowerCase()}">
-          <div class="ai-choice-label">Chose ${split[1].toLowerCase()}</div>
-          ${replaceWithEmojis('DEEP_Q Heuristic RANDOM point')}
-         </div>`
+        `<div class="ai-choice-label">${emoji("Chose")} ${emoji(split[1].toUpperCase())}</div></div>`
       break
-    case "Sending":  
-      console.log("1",log);
-      str = log
+    case "Sending":
+      var lastCommand = split[2].split("|")
+      str += emoji("Sending message:")+"<br>"
+      str += replaceWithEmojis(lastCommand.slice(0,4).join(" ").replaceAll("-",""))+ (lastCommand[4] ? lastCommand[4] : "")
+      str += "<br>"+replaceWithEmojis("clock1 clock2 clock3")
       break
-    case "Step":  
-      console.log(split.slice(0,2).join(" "),"AAAND",split.slice(2).join(" "))
-      str = replaceWithEmojis(split.slice(0,2).join(" "))
+    case "Step":
+      str = emoji("Step")+" "+replaceWithEmojis(split[1])+ emoji("space") + 
+      emoji("right_arrow") +replaceWithEmojis(stripParens(split[2]))+ emoji("left_arrow") +"<br>" +
+      emoji("Reward") + replaceWithEmojis(stripParens(split[5]))
+
       break
-    case "received":  
-      console.log("4",log);
-      str = log
+    case "received":
+      str = replaceWithEmojis("received message:") + "<br>" + replaceWithEmojis(split[2].replaceAll("|","  "))
       break
-    case "Safeguarded":  
-      console.log("5",log);
+    case "Safeguarded":
       str = log
       break
     }
