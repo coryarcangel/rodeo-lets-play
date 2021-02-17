@@ -95,7 +95,7 @@ readTextFile("./emojimap.json", function(text){
       swipe_left: emoji("left_arrow")+ emoji("point")
     }
 
-    titleEl.innerHTML = `${emoji("goat")} ⋆ ${emoji("rabbit")}  ${emoji("ribbon")}  /𝓇${emoji("blueheart")}ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻${emoji("hearteyes")}𝐿𝐿𝒴𝒲${emoji("cookie")}❤𝒟 𝓋 𝟣.♡  🎀  ${emoji("rabbit")} ⋆ ${emoji("goat")}`
+    titleEl.innerHTML = `${emoji("goat")} ⋆ ${emoji("rabbit")}  ${emoji("ribbon")}  /𝓇${emoji("blueheart")}ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻${emoji("hearteyes")}𝐿𝐿𝒴𝒲${emoji("cookie")}❤𝒟 𝓋 𝟣.♡  ${emoji("ribbon")}  ${emoji("rabbit")} ⋆ ${emoji("goat")}`
 
 });
 
@@ -113,7 +113,7 @@ function stripStrings(substrings,str){
     return str.replace(re,"");
 }
 
-var emojiSize = 16;
+var emojiSize = 36;
 
 
 function emoji(emojiName) {
@@ -232,7 +232,7 @@ function renderImageState(imageState, recentTouch) {
 
     const style = {
       color: getImageObjectColor(label, confidence),
-      fontSize: 14,
+      fontSize: 18,
       fontFamily: "Cursive",
       fontWeight: 'normal'
     }
@@ -447,7 +447,7 @@ function drawBarGraph(data){
     .attr("transform", function(d){ return "translate("+ 15 +",0)" })
     .attr("text-anchor","start")
     .attr("font-family",'Helvetica Neue Roman')
-    .attr("font-size","18px")
+    .attr("font-size","36px")
     .attr("fill","black")
 
   // Bars

@@ -33,7 +33,7 @@ KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 SAFEGUARD_MENU_CLICKS_DEFAULT = True
 SAFEGUARD_MENU_RECTS = [
     Rect(0, 0, 3000, 100),  # the entire top bar is bad news
-    Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
+    Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
     Rect(1840, 0, 1000, 350),  # the special E / fans / etc thing in the top right
 ]
 
