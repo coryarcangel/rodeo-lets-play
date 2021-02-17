@@ -3,6 +3,7 @@
 from enums import Action
 from config import CURRENT_IMG_CONFIG
 from config import ACTION_WEIGHTS, TAP_TYPE_ACTION_WEIGHTS, TAP_OBJECT_ACTION_WEIGHTS
+from config import GET_OBJECT_TAP_POINT_NOISE, GET_KNOWN_TAP_LOCATIONS
 
 from util import get_rect_center, get_noisy_rect_center, Rect
 import numpy as np
@@ -28,8 +29,11 @@ def get_action_type_str(action_type):
         return 'uknown - ' + str(action_type)
 
 
-def get_object_action_data(obj):
-    x, y = get_noisy_rect_center(obj['rect'], 0.15)
+def get_object_action_data(obj, noise=None):
+    if noise is None:
+        noise = GET_OBJECT_TAP_POINT_NOISE(obj)
+
+    x, y = get_noisy_rect_center(obj['rect'], noise)
     return {
         'x': int(x),
         'y': int(y),
@@ -45,21 +49,10 @@ class ActionGetter(object):
         (Action.SWIPE_LEFT, {'distance': 400}),
         (Action.SWIPE_RIGHT, {'distance': 400}),
     ]
-    BottomMenuTaps = [(Action.TAP_LOCATION,
-                       {'type': 'menu',
-                        'x': img_rect.w - 80 - 51 * i,
-                        'y': img_rect.h - 28}) for i in range(4)]
-    MenuTaps = [
-        # For pressing the "OK"
-        (Action.TAP_LOCATION,
-         {'type': 'menu',
-          'x': img_rect_center.x,
-          'y': img_rect_center.y + 35}),
-    ]
-    # MenuTaps += BottomMenuTaps
 
-    Base = [Pass] + Swipes + MenuTaps
-    # Base = MenuTaps
+    KnownTapActions = [(Action.TAP_LOCATION, loc) for loc in GET_KNOWN_TAP_LOCATIONS(img_rect, img_rect_center)]
+
+    Base = [Pass] + Swipes + KnownTapActions
 
     @classmethod
     def get_actions_from_state(cls, state):

@@ -10,7 +10,7 @@ from window import move_window_to_screen, set_window_fullscreen
 
 def setup_process_hub_screen(win_name):
     if NUM_MONITORS == 1:
-        w = 1920 / 2
+        w = int(1920 / 2)
         x, y, h = (1920 - w, 0, 1080)
         move_window_to_screen(win_name, x, y, w, h, MON_NAMES[0])
     elif NUM_MONITORS == 2:

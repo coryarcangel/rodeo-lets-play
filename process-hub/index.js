@@ -252,11 +252,16 @@ async function quit() {
   return process.exit(0)
 }
 
+async function setupScreenLoop() {
+  await setupProcessHubScreen(WIN_TITLE)
+  setTimeout(setupScreenLoop, 60000)
+}
+
 async function main() {
   genlog('Hello, User. Starting KIM AI processes now...')
 
   setWindowTitle(WIN_TITLE)
-  await setupProcessHubScreen(WIN_TITLE)
+  await setupScreenLoop()
 
   dashboardParts.commandList.focus()
 
