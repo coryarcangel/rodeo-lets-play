@@ -113,7 +113,7 @@ function stripStrings(substrings,str){
     return str.replace(re,"");
 }
 
-var emojiSize = 36;
+var emojiSize = 28;
 
 
 function emoji(emojiName) {
@@ -131,7 +131,6 @@ function updateCurStateRender() {
 
   renderImageState(imageState, recentTouch);
   //renderStateActions(stateActions);
-  // renderBarGraph(stateActions);
   renderSystemInfo(systemInfo);
 }
 
@@ -250,7 +249,7 @@ function renderImageState(imageState, recentTouch) {
     // Set style
     ctx.restore();
     ctx.strokeStyle = style.color;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.font = `normal ${style.fontWeight} ${style.fontSize}px Helvetica Neue Roman`;
     // Draw Image Shape
     let textPoint = { x: 0, y: 0 }
@@ -286,7 +285,7 @@ function renderImageState(imageState, recentTouch) {
     const [x, y] = translatePointToScreen(image_shape, p[0], p[1])
     const [w, h] = getCanvasSize()
     const r = 3
-    ctx.lineWidth = 5
+    ctx.lineWidth = 3
     ctx.strokeStyle = color
     drawLine(ctx, w, y, x + r, y)
     drawLine(ctx, x, 0, x, y - r)
@@ -319,171 +318,6 @@ function renderStateActions(stateActions) {
 
   stateActionsEl.innerHTML = ``
   stateActionsEl.append(...actionEls)
-}
-
-function renderBarGraph(stateActions) {
-    const actionEls = (stateActions || [])
-    .filter(a => a.length > 1 && !!a[1].object_type) // only render tap object actions :)
-    .map( (d,i) =>  {
-      return {
-        label: i+": "+d[1].img_obj.label,
-        labelClean: d[1].img_obj.label,
-        confidence: d[1].img_obj.confidence
-      }
-    }).filter(a => !!a.confidence);
-    // console.log("graoh data",JSON.stringify(actionEls))
-    drawBarGraph(actionEls);
-}
-
-function initBarGraph(){
-  if(barGraph){
-    barGraph.remove()
-    d3.selectAll("#bar_graph > svg").remove();
-  }
-
-  barGraph = d3.select("#bar_graph")
-  .append("svg")
-    .attr("width", radialOpt.width + radialOpt.margin.left + radialOpt.margin.right)
-    .attr("height", radialOpt.height + radialOpt.margin.top + radialOpt.margin.bottom)
-  .append("g")
-    .attr("transform",
-          "translate(" + radialOpt.margin.left + "," + radialOpt.margin.top + ")");
-}
-
-function initRidgelineGraph(){
-  if(ridgeGraph){
-    ridgeGraph.remove()
-    d3.selectAll("#gpus > svg").remove();
-  }
-
-  ridgeGraph = d3.select("#gpus")
-  .append("svg")
-    .attr("width", ridgeOpt.width + ridgeOpt.margin.left + ridgeOpt.margin.right)
-    .attr("height", ridgeOpt.height + ridgeOpt.margin.top + ridgeOpt.margin.bottom)
-  .append("g")
-    .attr("transform",
-          "translate(" + ridgeOpt.margin.left + "," + ridgeOpt.margin.top + ")");
-}
-
-function drawRidgelineGraph(data){
-  initRidgelineGraph()
-  var categories = Object.keys(data)
-  var n = categories.length
-
-  var x = d3.scaleLinear()
-    .domain([0, 130])
-    .range([ 0, ridgeOpt.width ]);
-  ridgeGraph.append("g")
-    .attr("transform", "translate(0," + ridgeOpt.height + ")")
-    .call(d3.axisBottom(x));
-
-  var y = d3.scaleLinear()
-    .domain([0, 0.4])
-    .range([ ridgeOpt.height, 0]);
-
-  var yName = d3.scaleBand()
-    .domain(categories)
-    .range([0, ridgeOpt.height])
-    .paddingInner(1)
-  ridgeGraph.append("g")
-    .call(d3.axisLeft(yName));
-
-  // Compute kernel density estimation for each column:
-  var kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40)) // increase this 40 for more accurate density.
-  var allDensity = []
-  for (column in data) {
-      key = column
-      density = kde( data[column] )
-      allDensity.push({key: key, density: density})
-  }
-
-  ridgeGraph.selectAll("areas")
-    .data(allDensity)
-    .enter()
-    .append("path")
-      .attr("transform", function(d){return("translate(0," + (yName(d.key)-ridgeOpt.height) +")" )})
-      .datum(function(d){return(d.density)})
-      .attr("fill", "#69b3a2")
-      .attr("stroke", "#000")
-      .attr("stroke-width", 1)
-      .attr("d",  d3.line()
-          .curve(d3.curveBasis)
-          .x(function(d) { return x(d[0]); })
-          .y(function(d) { return y(d[1]); })
-      )  
-
-  function kernelDensityEstimator(kernel, X) {
-    return function(V) {
-      return X.map(function(x) {
-        return [x, d3.mean(V, function(v) { return kernel(x - v); })];
-      });
-    };
-  }
-  function kernelEpanechnikov(k) {
-    return function(v) {
-      return Math.abs(v /= k) <= 1 ? 0.75 * (1 - v * v) / k : 0;
-    };
-  }
-}
-
-function drawBarGraph(data){
-  initBarGraph()
-
-  var x = d3.scaleLinear()
-    .domain([0, 1])
-    .range([ 0,350]);
-
-  var y = d3.scaleBand()
-    .range([ 0, (data.length)*(2+barSize) ])
-    .domain(data.map(function(d) { return d.label; }))
-
-  barGraph.append("g")
-    // .call(d3.axisLeft(y))
-    .data(data)
-    .call(d3.axisLeft(y))
-    .selectAll("text")
-    .attr("y", function(d,i) { y(d) })
-    .attr("x", function(d,i) { return x(data[i]['confidence']); }) 
-    .attr("transform", function(d){ return "translate("+ 15 +",0)" })
-    .attr("text-anchor","start")
-    .attr("font-family",'Helvetica Neue Roman')
-    .attr("font-size","36px")
-    .attr("fill","black")
-
-  // Bars
-  barGraph.selectAll("mybar")
-    .data(data)
-    .enter()
-    .append("rect")
-      .attr("x", 10)
-      .attr("y", function(d,i) { return i*(2+barSize); })
-      .attr("width", function(d) { return x(d['confidence']); })
-      .attr("height", barSize)
-      .attr("stroke", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "black" })
-      .attr("fill", function(d,i){ return labelColorsMap[d['labelClean']] ? labelColorsMap[d['labelClean']] : "black" });//")
-}
-
-function initGpuMonitors(gpuData){
-
-  for(gpu in gpuData){
-    gpuGraphData[gpu+" power"] = []
-    gpuGraphData[gpu+" temp"] = []
-  }
-}
-
-var wattRange = [15,85]// [min, diffBtwMinMax]
-var tempRange = [20,160]
-function renderGpuMonitors(gpuData){
-
-  for(gpu in gpuData){
-    gpuGraphData[gpu+" power"].push(gpuData[gpu]["pwrDraw"] + (Math.floor(Math.random()*8)-4));
-    //FIFO 250 elements long
-    if(gpuGraphData[gpu+" temp"].push(gpuData[gpu]["temp"] + (Math.floor(Math.random()*8)-4)) > 250){
-      gpuGraphData[gpu+" power"].shift();
-      gpuGraphData[gpu+" temp"].shift();
-    }
-  }
-  drawRidgelineGraph(gpuGraphData);
 }
 
 function renderActionHistory(actionHistory) {
@@ -577,7 +411,7 @@ function renderAiLogs(aiLogs) {
     // logEls.push(el)
     logEls.push(transformAiLogs(noActions[i]))
   }
-
+  console.log("appended")
   aiLogEl.innerHTML = ``
   aiLogEl.append(...logEls)
 }
@@ -587,17 +421,6 @@ function renderSystemInfo(systemInfo) {
   if (!systemInfo) {
     return
   }
-  const gpuData = systemInfo.gpuStats;
-  //update gpu stat fifos
-  if(!gpuGraphData['gpu0 power']){
-        initGpuMonitors(gpuData)
-        initRidgelineGraph();
-    }
-    renderGpuMonitors(gpuData)
-  // stats.innerHTML = JSON.stringify(systemInfo)
-
-  // TODO: henry here will be a json object with various keys you can log and play with.
-  // some docs: https://github.com/sebhildebrandt/systeminformation
 }
 
 /// Image Handling

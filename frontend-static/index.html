@@ -15,8 +15,8 @@
     body {
       padding: 0;
       margin: 0;
-      font-size: 36px;
-      line-height: 36px;
+      font-size: 28px;
+      line-height: 28px;
       overflow: hidden;
       font-family: 'Helvetica Neue Roman',Helvetica;
       color: black;
@@ -25,6 +25,8 @@
       position: absolute;
       bottom: 8px;
       left: 1px;
+      width: 100%;
+      text-align: center;
     }
     #screen {
       width: 1760px;
@@ -39,6 +41,7 @@
     body.recording #screen {
       top: calc((100vh - 880px ) / 2);
       left: calc((100vw - 1760px) / 2);
+      transform: scale(1.091);
     }
     #liveImg {
       position: absolute;
@@ -51,16 +54,18 @@
       position: absolute;
       right: auto;
       text-align: left;
-      height: 15em;
-      top: 120px;
+      height: 14em;
+      overflow: hidden;
+      top: 36vh;
       left: 2px;
+      width: 450px;
     }
     #action-history pre {
       margin: 0;
       font-family: inherit;
     }
     .action-json {
-      margin-top: -2em;
+      margin-top: -3em;
     }
     .terminal {
       position: absolute;
@@ -73,7 +78,7 @@
     background-color: rgba(0,0,0,0);
     background-color: none;
     max-height: 880px;
-    text-align: left;
+    text-align: right;
     overflow: hidden;
     width: 450px;
     top: 9px;
@@ -97,7 +102,7 @@
     }
     .ai-choice-label {
       grid-column: span 3;
-      text-align: left;
+      text-align: right;
     }
     .ai-choice span {
       margin: 0 auto;
@@ -196,8 +201,8 @@
     background-image: url(sheet_apple_64_indexed_256.png);
     background-size: 5802%;
     background-position: 0 0;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     display: inline-block;
     /*margin: 4px 7px;*/
     vertical-align: top;
