@@ -33,20 +33,6 @@ KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 # is set to True (useful in training).
 SAFEGUARD_MENU_CLICKS_DEFAULT = True
 
-KEVIN_SAFEGUARD_MENU_RECTS = [
-    Rect(0, 0, 3000, 100),  # the entire top bar is bad news
-    Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
-    Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
-]
-
-HENRY_SAFEGUARD_MENU_RECTS = [
-    Rect(0, 0, 3000, 120),  # the entire top bar is bad news
-    Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
-    Rect(1895, 0, 1000, 345),
-]
-
-SAFEGUARD_MENU_RECTS = HENRY_SAFEGUARD_MENU_RECTS
-
 """
 BEHAVIOR
 """
@@ -280,7 +266,12 @@ HEN_OPTIONS = {
         'param2': 40,  # (smaller means more false circles)
         'minRadius': 3,
         'maxRadius': 100
-    }
+    },
+    'SAFEGUARD_MENU_RECTS': [
+        Rect(0, 0, 3000, 120),  # the entire top bar is bad news
+        Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
+        Rect(1895, 0, 1000, 345),
+    ]
 }
 
 # Galaxy 8
@@ -317,7 +308,12 @@ KEV_OPTIONS = {
         'param2': 40,  # (smaller means more false circles)
         'minRadius': 2,
         'maxRadius': 30
-    }
+    },
+    'SAFEGUARD_MENU_RECTS': [
+        Rect(0, 0, 3000, 100),  # the entire top bar is bad news
+        Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
+        Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
+    ]
 }
 
 OPTIONS = HEN_OPTIONS
@@ -343,6 +339,7 @@ VYSOR_RECT = OPTIONS['VYSOR_RECT']
 IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
 
 HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
+SAFEGUARD_MENU_RECTS = OPTIONS['SAFEGUARD_MENU_RECTS']
 
 """
 Phone Rect / Game Rect is about the raw phone size.
