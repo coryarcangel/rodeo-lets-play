@@ -7,6 +7,10 @@ var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 var stats = document.getElementById('stats');
 var titleEl = document.getElementById('rodeo');
+var resetCoverEl = document.getElementById('reset-cover')
+var resetEmojisEl = document.getElementById('reset-emojis')
+
+var SHOW_RESET_SCREEN = true;
 
 var target_fps = 20;
 
@@ -71,6 +75,7 @@ var renderState = {
   systemInfo: {},
   actionHistory: [],
   aiLogs: [],
+  showingResetScreen: false,
 };
 
 function readTextFile(file, callback) {
@@ -92,7 +97,8 @@ readTextFile("./emojimap.json", function(text){
       tap_location: emoji("point"),
       double_tap_location: emoji("point")+emoji("point"),
       swipe_right:  emoji("point")+emoji("right_arrow"),
-      swipe_left: emoji("left_arrow")+ emoji("point")
+      swipe_left: emoji("left_arrow")+ emoji("point"),
+      reset: emoji("siren"),
     }
 
     titleEl.innerHTML = `${emoji("goat")} ⋆ ${emoji("rabbit")}  ${emoji("ribbon")}  /𝓇${emoji("blueheart")}ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻${emoji("hearteyes")}𝐿𝐿𝒴𝒲${emoji("cookie")}❤𝒟 𝓋 𝟣.♡  ${emoji("ribbon")}  ${emoji("rabbit")} ⋆ ${emoji("goat")}`
@@ -434,6 +440,25 @@ function renderSystemInfo(systemInfo) {
   }
 }
 
+function showResetScreen() {
+  if (!SHOW_RESET_SCREEN || renderState.showingResetScreen) {
+    return
+  }
+
+  renderState.showingResetScreen = true
+  resetCoverEl.style.display = 'block'
+  setTimeout(function() { resetCoverEl.style.opacity = 0.9 }, 5)
+  setTimeout(function() { resetEmojisEl.style.display = 'block' }, 500)
+
+  var resetDelay = 11000
+  setTimeout(function() { resetCoverEl.style.opacity = 0 }, resetDelay - 500)
+  setTimeout(function() {
+    renderState.showingResetScreen = false
+    resetCoverEl.style.display = 'none'
+    resetEmojisEl.style.display = 'none'
+  }, resetDelay)
+}
+
 /// Image Handling
 
 function requestImage() {
@@ -507,6 +532,10 @@ function handleAIActionUpdate(data) {
     renderState.recentTouch = data
   } else {
     renderState.recentTouch = null
+  }
+
+  if (data.type === 'reset') {
+    showResetScreen()
   }
 
   pushToMaxLengthArray(renderState.actionHistory, data, 100)

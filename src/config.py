@@ -24,18 +24,13 @@ DASHBOARD_NAME = 'AI_DASHBOARD'
 VYSOR_WINDOW_NAME = 'VysorKim'
 
 """
-SAFEGUARDING
+BEHAVIOR
 """
 
 KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 
-# Areas of the device that are not clickable if device_client.safeguard_menu_clicks
-# is set to True (useful in training).
+# Areas of the device that are not clickable if set to True (useful in training).
 SAFEGUARD_MENU_CLICKS_DEFAULT = True
-
-"""
-BEHAVIOR
-"""
 
 ACTION_WEIGHTS = {
     Action.PASS: 50,

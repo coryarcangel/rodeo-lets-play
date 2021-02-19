@@ -169,7 +169,7 @@ def get_image_colored_shapes(image, shape_color_ranges):
         # print_color_shapes(color_shapes)
         return color_shapes
 
-    THREADED = True
+    THREADED = False
     if THREADED:
         with futures.ThreadPoolExecutor() as executor:
             shape_futures = [executor.submit(lambda: run_shape_range(x)) for x in shape_color_ranges]
