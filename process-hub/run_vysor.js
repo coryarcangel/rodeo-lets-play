@@ -24,10 +24,12 @@ function clickPosInMainVysor(x, y) {
 }
 
 function activateFrontend() {
-  const windowId = getWindowId('KIM_FRONTEND')
-  if (windowId) {
-    activateWinId(windowId)
-  }
+  try {
+    const windowId = getWindowId('KIM_FRONTEND')
+    if (windowId) {
+      activateWinId(windowId)
+    }
+  } catch (err) {}
 }
 
 let vysor

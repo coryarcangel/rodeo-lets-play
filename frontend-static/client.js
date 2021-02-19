@@ -110,7 +110,7 @@ function emoji(emojiName) {
   var mapData = emojiPositions[emojiName] || [[0,0]];
   //make sure we have an array of arrays, in case multiple emojis should be shown
   var emojis = (typeof mapData[0] === "object" ? mapData : [mapData]);
-  
+
   return emojis.map( emoj => `<span class='emoji' style="background-position: ${(emoj[0]*(emojiSize))} ${emoj[1]*emojiSize};"></span>`).join("");
 }
 
@@ -133,6 +133,17 @@ const labelColorsMap = {
   'tvmonitor': colors['black'],
   'laptop': colors['black'],
   'traffic light': colors['chartreuse'],
+  'chair': colors['saddlebrown'],
+  'cell phone': colors['darkgrey'],
+  'bicycle': colors['gold'],
+  'car': colors['royalblue'],
+  'skateboard': colors['orange'],
+  'sports ball': colors['maroon'],
+  'bottle': colors['beige'],
+  'banana': colors['yellow'],
+  'umbrella': colors['salmon'],
+  'frisbee': colors['sienna'],
+  'teddy bear': colors['brown']
 }
 
 function initSound(){
@@ -400,7 +411,7 @@ function drawRidgelineGraph(data){
           .curve(d3.curveBasis)
           .x(function(d) { return x(d[0]); })
           .y(function(d) { return y(d[1]); })
-      )  
+      )
 
   function kernelDensityEstimator(kernel, X) {
     return function(V) {
@@ -434,7 +445,7 @@ function drawBarGraph(data){
     .call(d3.axisLeft(y))
     .selectAll("text")
     .attr("y", function(d,i) { y(d) })
-    .attr("x", function(d,i) { return x(data[i]['confidence']); }) 
+    .attr("x", function(d,i) { return x(data[i]['confidence']); })
     .attr("transform", function(d){ return "translate("+ 15 +",0)" })
     .attr("text-anchor","start")
     .attr("font-family",'Helvetica Neue Roman')

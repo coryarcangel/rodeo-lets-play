@@ -9,12 +9,12 @@ const path = require('path')
 /// Config
 
 const ROWS = 48
-const COLS = 4
+const COLS = 16
 
 /// Dashboard Setup
 
 const screen = blessed.screen()
-const grid = new contrib.grid({ rows: ROWS, cols: COLS, screen: screen })
+const grid = new contrib.grid({ rows: ROWS, cols: COLS, screen: screen, hideBorder: true })
 
 /// Logging
 
@@ -25,6 +25,7 @@ const getLogger = (name, row, col, width, height, color) => {
     label: `${name} Log`,
     fg: color,
     selectedFg: color,
+    border: { type: 'line', fg: color },
   })
 
   const filepath = `${__dirname}/../logs/${name.toLowerCase().replace(/ /g, '_')}.log`
@@ -79,20 +80,10 @@ const endLogWriteStreams = () => {
 
 let processStopPos = { row: ROWS / 4, height: ROWS / 3 }
 
-const dashboardParts = {
-  mainDashboardLogger: getLogger('Dashboard', 0, 0, ROWS / 6, COLS / 2, 'white'),
+const dashboardParts = {}
 
-  commandList: grid.set(0, COLS / 2, ROWS / 4, 1, blessed.list, {
-    label: 'Commands & Status',
-    mouse: true,
-    keys: true,
-    style: {
-      selected: { bg: 'gray' }
-    },
-    items: ['Test', 'Test 2']
-  }),
-
-  timerLcd: grid.set(0, 3, ROWS / 4, 1, contrib.lcd, {
+const resetDashboardTimer = () => {
+  dashboardParts.timerLcd = grid.set(0, COLS * 0.75, ROWS / 4, COLS / 4, contrib.lcd, {
     label: 'Run Time',
     elements: 8,
     display: '00:00:00',
@@ -102,10 +93,28 @@ const dashboardParts = {
     elementPadding: 4,
     elementSpacing: 2,
     color: 'yellow',
-    style: { bg: 'black' }
-  }),
+    style: { bg: 'black' },
+    border: { type: 'line', fg: 'red' },
+  })
+}
 
-  processStopLineGraph: grid.set(processStopPos.row, COLS / 2, processStopPos.height, COLS / 2, contrib.line, {
+const resetDashboardParts = () => {
+  dashboardParts.mainDashboardLogger = getLogger('Dashboard', 0, 0, ROWS / 6, COLS / 2, 'white')
+
+  dashboardParts.commandList = grid.set(0, COLS / 2, ROWS / 4, COLS / 4, blessed.list, {
+    label: 'Commands & Status',
+    mouse: true,
+    keys: true,
+    style: {
+      selected: { bg: 'gray' }
+    },
+    items: ['Test', 'Test 2'],
+    border: { type: 'line', fg: 'blue' },
+  })
+
+  resetDashboardTimer()
+
+  dashboardParts.processStopLineGraph = grid.set(processStopPos.row, COLS / 2, processStopPos.height, COLS / 2, contrib.line, {
     label: 'Restarts Over Time',
     wholeNumbersOnly: true,
     showLegend: true,
@@ -117,26 +126,41 @@ const dashboardParts = {
       line: 'yellow',
       text: 'green',
       baseline: 'black'
-    }
-  }),
+    },
+    border: { type: 'line', fg: 'white' },
+  })
 
-  processStopBarGraph: grid.set(processStopPos.row + processStopPos.height, COLS / 2, ROWS / 6, COLS / 2, contrib.stackedBar, {
+  dashboardParts.processStopBarGraph = grid.set(processStopPos.row + processStopPos.height, COLS / 2, ROWS / 6, COLS / 2, contrib.stackedBar, {
     label: 'Total Process Restarts',
     barWidth: 12,
     barSpacing: 20,
     xOffset: 0,
-    barBgColor: ['green', 'red']
-  }),
+    barBgColor: ['green', 'red'],
+    border: { type: 'line', fg: 'yellow' },
+  })
 
-  aiStatusBox: grid.set(ROWS - ROWS / 4, COLS / 2, ROWS / 4, COLS / 2, blessed.box, {
+  dashboardParts.aiStatusBox = grid.set(ROWS - ROWS / 4, COLS / 2, ROWS / 4, 3, blessed.box, {
     label: 'Current AI Status',
     content: 'Unknown at this time'.red.bold,
-    style: { bg: 'blue', fg: 'white' },
-  }),
+    border: { type: 'line', fg: 'blue' },
+    style: { bg: 'black', fg: 'white' },
+  })
+
+  dashboardParts.aiActionsTable = grid.set(ROWS - ROWS / 4, COLS / 2 + 3, ROWS / 4, COLS / 2 - 3, contrib.table, {
+    label: 'AI Actions',
+    keys: false,
+    interactive: false,
+    bg: 'black', fg: 'green',
+    border: { type: 'line', fg: 'green' },
+    columnSpacing: 2,
+    columnWidth: [50, 6],
+  })
 }
+
+resetDashboardParts()
 
 const genlog = (...strings) => logToDashboard(dashboardParts.mainDashboardLogger, ...strings)
 
 module.exports = {
-  grid, screen, ROWS, COLS, dashboardParts, getProcessLogger, logToDashboard, genlog, endLogWriteStreams
+  grid, screen, ROWS, COLS, dashboardParts, resetDashboardParts, resetDashboardTimer, getProcessLogger, logToDashboard, genlog, endLogWriteStreams
 }

@@ -93,6 +93,15 @@ class DeviceManager(object):
         ''' inputs tap at given location '''
         self.device.shell('input tap %d %d' % (x, y))
 
+    def press_back_button(self):
+        self.device.press('KEYCODE_BACK', MonkeyDevice.DOWN_AND_UP)
+
+    def press_double_back_button(self):
+        self.press_back_button()
+        sleep(1.2)
+        self.press_back_button()
+        sleep(0.2)
+
     def unlock_phone(self):
         ''' Swipe up to unlock phone if necessary... '''
         self.device.wake()
@@ -134,12 +143,29 @@ class DeviceManager(object):
         self.logger.debug('Wrote image to file: %s', filename)
         return filename
 
-    def get_cur_app_name(self):
-        """ Return name of active package for MonkeyDevice """
+    def get_property(self, name):
         try:
-            return self.device.getProperty('am.current.package')
+            return self.device.getProperty(name)
         except Exception:
             return ''
+
+    def get_cur_app_name(self):
+        """ Return name of active package for MonkeyDevice """
+        return self.get_property('am.current.package')
+
+    def get_cur_action(self):
+        """ android.intent.action.MAIN """
+        return self.get_property('am.current.action')
+
+    def get_cur_activity_starter(self):
+        """ com.glu.blammo.Blammo com.google.android.vending.expansion.downloader_impl.DownloaderActivity """
+        """ com.tapjoy.TJAdUnitActivity com.ironsource.sdk.controller.ControllerActivity com.google.android.gms.ads.AdActivity """
+        return self.get_property('am.current.comp.class')
+
+    def get_cur_app_info(self):
+        return {'name': self.get_cur_app_name(),
+                'action': self.get_cur_action(),
+                'starter': self.get_cur_activity_starter()}
 
     def exit_gracefully(self):
         self.logger.info('Gracefully exiting...')
