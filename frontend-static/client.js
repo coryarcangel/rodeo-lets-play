@@ -1,4 +1,5 @@
 var img = document.getElementById('liveImg');
+var screenEl = document.getElementById('screen');
 var fpsText = document.getElementById('fps');
 var frameNumText = document.getElementById('frameNum');
 var actionHistoryEl = document.getElementById('action-history');
@@ -11,6 +12,7 @@ var resetCoverEl = document.getElementById('reset-cover')
 var resetEmojisEl = document.getElementById('reset-emojis')
 
 var SHOW_RESET_SCREEN = true;
+var SHOW_NEW_MONEY_ANIMATION = false;
 
 var target_fps = 20;
 
@@ -76,6 +78,7 @@ var renderState = {
   actionHistory: [],
   aiLogs: [],
   showingResetScreen: false,
+  playingNewMoneyAnimation: false,
 };
 
 function readTextFile(file, callback) {
@@ -459,6 +462,41 @@ function showResetScreen() {
   }, resetDelay)
 }
 
+function playNewMoneyAnimation() {
+  if (!SHOW_NEW_MONEY_ANIMATION || renderState.playingNewMoneyAnimation) {
+    return
+  }
+
+  renderState.playingNewMoneyAnimation = true
+
+  var duration = 5000
+  var items = 5
+  var elements = []
+  for (var i = 0; i < items; i++) {
+    var el = document.createElement('div')
+    el.innerHTML = emoji('moneybag')
+    el.className = 'animating-money'
+    el.style.left = (5 + Math.random() * 90) + '%'
+    screenEl.appendChild(el)
+    elements.push(el)
+  }
+
+  setTimeout(function() {
+    elements.forEach(el => {
+      el.style.opacity = 1
+      el.style.top = (100 + Math.random() * 50) + '%';
+    })
+  }, 5)
+
+  setTimeout(function() {
+    elements.forEach(el => { el.style.opacity = 0 })
+  }, duration - 300)
+  setTimeout(function() {
+    elements.forEach(el => { el.parentNode.removeChild(el) })
+    renderState.playingNewMoneyAnimation = false
+  }, duration)
+}
+
 /// Image Handling
 
 function requestImage() {
@@ -500,6 +538,8 @@ function handleCurStateUpdate(data) {
     return
   }
 
+  var lastState = renderState.imageState
+
   renderState.frameNum = data.frameNum;
   renderState.imageState = parseMessageKey(data, 'imageState')
   renderState.systemInfo = parseMessageKey(data, 'systemInfo')
@@ -510,6 +550,10 @@ function handleCurStateUpdate(data) {
   renderState.aiStepNum = aiStatus.step_num || 0
   renderState.aiPolicyChoice = aiStatus.policy_choice
   renderState.aiRecentActionStepNums = aiStatus.recent_action_step_nums
+
+  if (lastState && lastState.money !== undefined && renderState.imageState && renderState.imageState.money > lastState.money) {
+    playNewMoneyAnimation()
+  }
 
   updateCurStateRender()
 }
