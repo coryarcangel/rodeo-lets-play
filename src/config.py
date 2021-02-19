@@ -32,11 +32,20 @@ KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 # Areas of the device that are not clickable if device_client.safeguard_menu_clicks
 # is set to True (useful in training).
 SAFEGUARD_MENU_CLICKS_DEFAULT = True
-SAFEGUARD_MENU_RECTS = [
+
+KEVIN_SAFEGUARD_MENU_RECTS = [
     Rect(0, 0, 3000, 100),  # the entire top bar is bad news
     Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
     Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
 ]
+
+HENRY_SAFEGUARD_MENU_RECTS = [
+    Rect(0, 0, 3000, 120),  # the entire top bar is bad news
+    Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
+    Rect(1895, 0, 1000, 345),
+]
+
+SAFEGUARD_MENU_RECTS = HENRY_SAFEGUARD_MENU_RECTS
 
 """
 BEHAVIOR
@@ -251,7 +260,7 @@ HEN_OPTIONS = {
         'model': 'cfg/tiny-yolo.cfg',
         'load': 'dfbin/tiny-yolo.weights',
         'gpu': 0.75,
-        'threshold': 0.05
+        'threshold': 0.075
     },
     'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
     'TF_AI_POLICY_WEIGHTS': {
