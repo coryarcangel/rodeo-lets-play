@@ -1,6 +1,7 @@
 ''' Module inspired by https://www.pyimagesearch.com/2016/02/08/opencv-shape-detection/ '''
 import cv2
 import imutils
+from concurrent import futures
 from image_blob import get_center_color
 from util import convert_point_between_rects, convert_rect_between_rects
 from config import CONTOUR_PROCESS_HEIGHT, ACTION_SHAPE_COLOR_RANGES
@@ -127,7 +128,7 @@ def get_image_colored_shapes(image, shape_color_ranges):
 
     shapes = []
 
-    for item in shape_color_ranges:
+    def run_shape_range(item):
         # Mask image to only within given color range(s)
         mask = None
         for lower, upper in item.get_color_ranges():
@@ -163,10 +164,24 @@ def get_image_colored_shapes(image, shape_color_ranges):
                         and cs['verts'] >= item.min_verts
                         and cs['verts'] <= item.max_verts
                         and cs['areaRatio'] >= item.min_area_ratio
-                        and cs['areaRatio'] <= item.max_area_ratio]
+                        and cs['areaRatio'] <= item.max_area_ratio
+                        and cs['rawRect'][1] >= item.min_y]
         # print_color_shapes(color_shapes)
+        return color_shapes
 
-        shapes += color_shapes
+    THREADED = False
+    if THREADED:
+        with futures.ThreadPoolExecutor() as executor:
+            shape_futures = [executor.submit(lambda: run_shape_range(x)) for x in shape_color_ranges]
+            futures.wait(shape_futures)
+            for item in shape_futures:
+                try:
+                    shapes += item.result()
+                except Exception as e:
+                    print('Exception running threaded shape: %s' % (e))
+    else:
+        for item in shape_color_ranges:
+            shapes += run_shape_range(item)
 
     return shapes
 

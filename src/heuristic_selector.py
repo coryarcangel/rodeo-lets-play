@@ -144,7 +144,7 @@ class HeuristicRoom(object):
             return mult * self.config.recent_room_exit_weight
         elif self._have_been_here_a_while():
             return mult * self.config.same_room_exit_weight
-        elif self._have_not_made_money_here():
+        elif not self.has_gained_money:
             return mult * self.config.no_money_exit_weight
         else:
             return self.config.default_exit_weight

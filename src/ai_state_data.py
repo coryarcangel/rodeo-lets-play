@@ -145,6 +145,7 @@ class AIState(object):
         return json.dumps({
             'money': self.money,
             'stars': self.stars,
+            'color_features': self.color_features,
             'image_objects': [clean_img_obj(o) for o in self.image_objects],
             'image_shape': self.image_shape
         })

@@ -18,32 +18,23 @@ DEVICE_PORT = 5005
 
 FRONTEND_WEB_URL = 'http://localhost:8888'
 FRONTEND_NAME = 'KIM_FRONTEND'  # 'hollywood - Google Chrome'
+DASHBOARD_NAME = 'AI_DASHBOARD'
 
 # Name of the phone in vysor (change in vysor settings)
 VYSOR_WINDOW_NAME = 'VysorKim'
 
 """
-SAFEGUARDING
+BEHAVIOR
 """
 
 KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 
-# Areas of the device that are not clickable if device_client.safeguard_menu_clicks
-# is set to True (useful in training).
+# Areas of the device that are not clickable if set to True (useful in training).
 SAFEGUARD_MENU_CLICKS_DEFAULT = True
-SAFEGUARD_MENU_RECTS = [
-    Rect(0, 0, 3000, 120),  # the entire top bar is bad news
-    Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
-    Rect(1840, 0, 1000, 350),  # the special E / fans / etc thing in the top right
-]
-
-"""
-BEHAVIOR
-"""
 
 ACTION_WEIGHTS = {
     Action.PASS: 50,
-    Action.SWIPE_LEFT: 700,
+    Action.SWIPE_LEFT: 1000,  # push forward more than back
     Action.SWIPE_RIGHT: 700,
     Action.TAP_LOCATION: 100,
     Action.DOUBLE_TAP_LOCATION: 10,
@@ -86,11 +77,11 @@ HEURISTIC_CONFIG = {
     'object_tap_action_sel_denom': 18,
     'other_action_sel_denom': 100,
     'action_sel_depress_exp': 1.0,
-    'image_sig_stag_limit': 500,
+    'image_sig_stag_limit': 60,
     'large_blob_threshold': 200,
     'large_blob_weight_mult': 2,
     'recent_room_threshold': 1,
-    'same_room_threshold': 1500,
+    'same_room_threshold': 600,
     'recent_room_exit_weight': 2500,
     'same_room_exit_weight': 2500,
     'no_money_exit_weight': 100,
@@ -103,7 +94,7 @@ HEURISTIC_CONFIG = {
     'action_shape_tap_weights': {
         ActionShape.MENU_EXIT: 10000,
         ActionShape.CONFIRM_OK: 2000,
-        ActionShape.MONEY_CHOICE: 2000,
+        ActionShape.MONEY_CHOICE: 500,
         ActionShape.TALK_CHOICE: 4000,
         ActionShape.COLLECTABLE: 4000,
         ActionShape.MAYBE_TALK_CHOICE: 1000,
@@ -159,13 +150,16 @@ ACTION_SHAPE_COLOR_RANGES = [
                     min_area=320, max_area=9000, min_verts=4, max_verts=15),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Green',  # clickable money
                     lower=(40, 100, 50), upper=(52, 255, 255),
-                    min_area=100, max_area=500, min_verts=8, max_verts=20, min_area_ratio=1.2, max_area_ratio=2),
+                    min_area=100, max_area=500, min_verts=8, max_verts=20,
+                    min_y=275, min_area_ratio=1.2, max_area_ratio=2),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Aqua',  # clickable stars :)
                     lower=(87, 50, 50), upper=(95, 255, 255),
-                    min_area=380, max_area=800, min_verts=13, max_verts=25, min_area_ratio=1.5, max_area_ratio=3),
+                    min_area=380, max_area=800, min_verts=13, max_verts=25,
+                    min_y=275, min_area_ratio=1.5, max_area_ratio=3),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Khaki',  # clickable people :)
                     lower=(17, 50, 120), upper=(24, 150, 255),
-                    min_area=700, max_area=1100, min_verts=8, max_verts=30, min_area_ratio=1.2, max_area_ratio=3),
+                    min_area=700, max_area=1100, min_verts=8, max_verts=30,
+                    min_y=275, min_area_ratio=1.2, max_area_ratio=3),
 
     # ShapeColorRange(ActionShape.COLLECTABLE, 'PowderBlue',  # clickable lightning :)
     #                 lower=(70, 15, 150), upper=(100, 80, 255),
@@ -176,7 +170,7 @@ ACTION_SHAPE_COLOR_RANGES = [
 ]
 
 
-MAX_NON_KIM_APP_TIME = 8  # seconds we can not be in the KK:H app
+MAX_NON_KIM_APP_TIME = 6  # seconds we can not be in the KK:H app
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
 
@@ -267,7 +261,12 @@ HEN_OPTIONS = {
         'param2': 40,  # (smaller means more false circles)
         'minRadius': 3,
         'maxRadius': 100
-    }
+    },
+    'SAFEGUARD_MENU_RECTS': [
+        Rect(0, 0, 3000, 120),  # the entire top bar is bad news
+        Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
+        Rect(1895, 0, 1000, 345),
+    ]
 }
 
 # Galaxy 8
@@ -304,7 +303,12 @@ KEV_OPTIONS = {
         'param2': 40,  # (smaller means more false circles)
         'minRadius': 2,
         'maxRadius': 30
-    }
+    },
+    'SAFEGUARD_MENU_RECTS': [
+        Rect(0, 0, 3000, 100),  # the entire top bar is bad news
+        Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
+        Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
+    ]
 }
 
 OPTIONS = HEN_OPTIONS
@@ -330,6 +334,7 @@ VYSOR_RECT = OPTIONS['VYSOR_RECT']
 IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
 
 HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
+SAFEGUARD_MENU_RECTS = OPTIONS['SAFEGUARD_MENU_RECTS']
 
 """
 Phone Rect / Game Rect is about the raw phone size.

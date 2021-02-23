@@ -9,10 +9,10 @@ const setWindowTitle = (title) => {
   )
 }
 
-const setupProcessHubScreen = async (title) => {
-  const filepath = `${__dirname}/../src/set_process_hub_screen.py`
-  childProcess.execSync(`python3 ${filepath} ${title}`)
+const setupVisibleWindows = async () => {
+  const filepath = `${__dirname}/../src/window_setup.py`
+  childProcess.execSync(`python3 ${filepath}`)
   // await delay(100)
 }
 
-module.exports = { delay, setWindowTitle, setupProcessHubScreen }
+module.exports = { delay, setWindowTitle, setupVisibleWindows }

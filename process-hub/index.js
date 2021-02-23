@@ -1,19 +1,28 @@
 #!/usr/bin/env node
 
+require('colors')
 const moment = require('moment')
 const redis = require('redis')
 const { argv } = require('yargs')
 const { chunk } = require('lodash')
 const stripAnsi = require('strip-ansi')
-const { screen, dashboardParts, genlog, endLogWriteStreams } = require('./dashboard')
+const { screen, grid, dashboardParts, resetDashboardTimer, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 const { getSystemInfoObject } = require('./system-info')
-const { setWindowTitle, setupProcessHubScreen } = require('./util')
+const { setWindowTitle, setupVisibleWindows } = require('./util')
 
 const rSubscriber = redis.createClient()
 const rPublisher = redis.createClient()
 
 /// Config
+
+const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
+const WIN_TITLE = 'AI_DASHBOARD'
+const KILL_ADB_ON_DEVICE_SERVER_EXIT = false
+const SYSTEM_INFO_PUBLISH_INTERVAL = 15000
+const SCREEN_SETUP_INTERVAL = 5 * 60000
+const DEVICE_SERVER_MAX_TIME_BETWEEN_LOGS = 30000
+const DELAY_BEFORE_MAIN_PROCESS = 10000
 
 const modes = {
   DUMMY: 0,
@@ -31,10 +40,6 @@ if (argv.dummy !== undefined) {
   mode = modes.OLD_AI
 }
 
-const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
-const WIN_TITLE = 'AI Dashboard'
-const KILL_ADB_ON_DEVICE_SERVER_EXIT = false
-
 const startTime = moment()
 
 const getMainProcessConfig = () => {
@@ -49,7 +54,7 @@ const processConfigs = [
     abbrev: 'DS',
     name: 'Device Server',
     script: 'bin/start_device_server.sh',
-    maxTimeBetweenLogs: 30000,
+    maxTimeBetweenLogs: DEVICE_SERVER_MAX_TIME_BETWEEN_LOGS,
     chainedRestarts: KILL_ADB_ON_DEVICE_SERVER_EXIT ? ['Vysor'] : []
   },
   {
@@ -64,7 +69,7 @@ const processConfigs = [
     ...getMainProcessConfig(),
     abbrev: 'AI',
     main: true,
-    delayBefore: 10000,
+    delayBefore: DELAY_BEFORE_MAIN_PROCESS,
     onLog: (logLines) => {
       logLines.forEach(line => rPublisher.publish('ai-log-lines', stripAnsi(line)))
     }
@@ -113,7 +118,7 @@ const aiStatusState = {
   stepNum: 0,
   recentPolicyChoice: null,
   recentActionStepNums: {},
-  statusLines: []
+  actionItems: [],
 }
 
 function handlePhoneImageStates(data) {
@@ -144,51 +149,59 @@ function handleAIStatusUpdates(data) {
     5: 'DOUBLE_TAP',
   }
 
+  const actionNameColors = {
+    PASS: 'white',
+    RESET: 'red',
+    SWIPE_LEFT: 'yellow',
+    SWIPE_RIGHT: 'yellow',
+    TAP: 'brightBlue',
+    DOUBLE_TAP: 'brightMagenta'
+  }
+
   const actions = data && data.actions || []
   const actionProbs = data && data.action_probs || []
-  const actionTextList = actions
+  const actionItems = actions
     .map((a, i) => {
       const p = actionProbs[i] || 0
       const [type, data] = a
       return { type, data, prob: p }
     })
     .sort((a, b) => b.prob - a.prob)
-    .slice(0, 10)
+    .slice(0, 12)
     .map(({ type, data, prob }, i) => {
       const name = actionTypeNames[type] || 'Unknown'
       const parts = [
-        `#${i + 1}. ${name}`,
         ...(name === 'TAP' || name === 'DOUBLE_TAP' ? [
           [
-            name === 'TAP' ? 'Tap' : 'Double Tap',
-            data.object_type || data.type,
+            (data.img_obj && data.img_obj.shape_data ? `${data.img_obj.shape_data.action_shape} ${data.img_obj.shape_data.color_label}` : data.object_type || data.type).brightCyan,
             `(${data.x}, ${data.y})`,
-            ...(data.img_obj ? [`- ${((data.img_obj.confidence || 0) * 100).toFixed(1)}%`] : []),
+            ...(data.img_obj && data.img_obj.confidence ? [`- ${((data.img_obj.confidence || 0) * 100).toFixed(1)}%`.grey] : []),
           ].join(' ')
-        ] : []),
-        `${(prob * 100).toFixed(2)}%`
+        ] : ['-']),
       ]
-      return parts.join(' - ')
+      const info = parts.join(' - ')
+      const number = i + 1
+      const color = actionNameColors[name] || 'white'
+      const text = `${number < 10 ? '0' : ''}${number}. ${name[color].bold} ${info}`
+      const probText =  `${(prob * 100).toFixed(1)}%`.white.bold
+      return { type, data, prob, number, name, color, info, text, probText }
     })
 
-  aiStatusState.statusLines = [
-    `Actions:`,
-    ...chunk(actionTextList, 2).map(items => items.join('\t')),
-  ]
+  aiStatusState.actionItems = actionItems
 }
 
 async function systemInfoPublishLoop() {
   const data = await getSystemInfoObject()
   rPublisher.publish('system-info-updates', JSON.stringify(data))
 
-  setTimeout(systemInfoPublishLoop, 15000)
+  setTimeout(systemInfoPublishLoop, SYSTEM_INFO_PUBLISH_INTERVAL)
 }
 
 /// Dashboard Drawing
 
 function getAiStatusStateLines() {
   const {
-    screenIndex, mostRecentAction, imageObjects, statusLines,
+    screenIndex, mostRecentAction, imageObjects,
     stepNum, reward, recentPolicyChoice, recentActionStepNums,
   } = aiStatusState
 
@@ -204,19 +217,16 @@ function getAiStatusStateLines() {
   }
 
   const recentActionStepKeys = Object.keys(recentActionStepNums)
-  const recentActionStepText = recentActionStepKeys.length === 0
-    ? '?' : recentActionStepKeys.map(k => `${k} - ${stepNum - recentActionStepNums[k]}`).join(' | ')
 
   return [
     '',
-    `Screen Index: ${screenIndex}`.red,
-    `Step: ${stepNum}\tReward: ${reward}`,
-    `Recent Policy - ${recentPolicyChoice}`,
-    `Recent Action - ${recentActionLabel}`,
-    `# Steps Since: ${recentActionStepText}`,
-    `# Image Objects: ${imageObjects ? imageObjects.length : '?'}`,
-    '',
-    ...statusLines,
+    `Screen Index`.bgRed.bold + ' - ' + `${screenIndex}`.red.bold,
+    `Step`.bgBlue.bold + ' - ' + `${stepNum}`.brightBlue.bold,
+    `Reward`.bgGreen.bold + ' - ' + ` ${reward}`.brightGreen.bold,
+    `Num Image Objects`.bgCyan.bold + ' - ' + `${imageObjects ? imageObjects.length : '?'}`.brightCyan.bold,
+    `Recent Policy`.bgWhite.black.bold + ` - ` + `${recentPolicyChoice}`.white.bold,
+    `Recent Action`.bgYellow.bold + ` - ` + `${recentActionLabel}`.yellow.bold,
+    ...recentActionStepKeys.map(k => `Num Steps Since ${k.green.underline}`.bgMagenta.bold + ` - ` + `${stepNum - recentActionStepNums[k]}`.brightMagenta.bold),
   ]
 }
 
@@ -231,6 +241,11 @@ function drawDashboard() {
   dashboardParts.timerLcd.setDisplay(startDiff)
 
   dashboardParts.aiStatusBox.content = getAiStatusStateLines().map(l => '  ' + l).join('\n')
+
+  dashboardParts.aiActionsTable.setData({
+    headers: [' Action'.bold, ' Prob'.bold],
+    data: aiStatusState.actionItems.map(({ text, probText }) => [text, probText]),
+  })
 
   screen.render()
 }
@@ -252,9 +267,24 @@ async function quit() {
   return process.exit(0)
 }
 
+function onResize() {
+  // genlog('resizing..')
+  screen.realloc()
+  kpManager.processes.forEach(p => p.logger.logger.emit('attach'))
+  resetDashboardTimer()
+  dashboardParts.mainDashboardLogger.logger.emit('attach')
+  dashboardParts.commandList.emit('attach')
+  dashboardParts.processStopLineGraph.emit('attach')
+  dashboardParts.processStopBarGraph.emit('attach')
+  dashboardParts.aiStatusBox.emit('attach')
+  dashboardParts.aiActionsTable.emit('attach')
+  drawDashboard()
+}
+
 async function setupScreenLoop() {
-  await setupProcessHubScreen(WIN_TITLE)
-  setTimeout(setupScreenLoop, 60000)
+  await setupVisibleWindows()
+  onResize()
+  setTimeout(setupScreenLoop, SCREEN_SETUP_INTERVAL)
 }
 
 async function main() {
@@ -284,6 +314,9 @@ async function main() {
   screen.key(['C-c'], function(ch, key) {
     return quit()
   })
+
+  // handle resize events
+  screen.on('resize', onResize)
 
   drawDashboardLoop()
   systemInfoPublishLoop()

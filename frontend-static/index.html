@@ -210,7 +210,45 @@
     vertical-align: top;
     /*transform: scale(1.5);*/
     /*transform-origin: top;*/
-  }  
+  }
+
+  #reset-cover {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url(startup.jpg);
+    background-size: contain;
+    transition: opacity 0.5s;
+    opacity: 0;
+    display: none;
+  }
+
+  @keyframes pulsating {
+    0% { opacity: 0 }
+    100% { opacity: 1 }
+  }
+
+  #reset-emojis {
+    display: none;
+    position: absolute;
+    top: 8%; left: 8%; width: 84%; height: 84%;
+    background-image: url(sheet_apple_32_indexed_256.png);
+    background-size: 100%;
+    animation: pulsating 1.5s infinite alternate linear;
+  }
+
+  @keyframes rotating-money {
+    0% { transform: scale(8) rotate(0deg); }
+    100% { transform: scale(8) rotate(360deg); }
+  }
+
+  .animating-money {
+    position: absolute;
+    top: 20px;
+    opacity: 0;
+    transition: top 5s, opacity 0.3s;
+    animation: rotating-money 1.5s infinite linear;
+    box-shadow: 0 19px 38px rgba(0,0,0,0.20), 0 15px 12px rgba(0,0,0,0.12);
+  }
 </style>
  </head>
  <body class="recording">
@@ -223,6 +261,8 @@
     <div id="state-actions"></div>
     <div id="gpus"></div>
     <div id="bar_graph"></div>
+    <div id="reset-cover"></div>
+    <div id="reset-emojis"></div>
   </div>
   <script src="https://d3js.org/d3.v4.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3-scale-radial.js"></script>

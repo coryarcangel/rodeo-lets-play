@@ -20,7 +20,7 @@ from config import REDIS_HOST, REDIS_PORT, TFNET_CONFIG, IMAGE_PROCESS_SCALE
 from config import VYSOR_CAP_AREA, NUM_MONITORS, MONITORS
 from kim_logs import get_kim_logger
 from ai_state import AIStateProcessor, CURRENT_IMG_CONFIG
-from window import setup_vysor_window
+from window_setup import setup_vysor_window
 
 
 def show_image_test(x=0, y=0, width=200, height=200):

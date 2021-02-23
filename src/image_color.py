@@ -82,7 +82,7 @@ def get_image_color_features(image, k=4, image_processing_size=None):
     image_sig = get_img_hash(image)
 
     return {
-        'dom_colors': dom_colors,
+        # 'dom_colors': dom_colors,
         'color_sig': color_sig,
         'image_sig': image_sig
     }

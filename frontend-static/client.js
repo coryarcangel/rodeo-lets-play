@@ -1,4 +1,5 @@
 var img = document.getElementById('liveImg');
+var screenEl = document.getElementById('screen');
 var fpsText = document.getElementById('fps');
 var frameNumText = document.getElementById('frameNum');
 var actionHistoryEl = document.getElementById('action-history');
@@ -7,6 +8,11 @@ var stateActionsEl = document.getElementById('state-actions');
 var objectAnnCanvas = document.getElementById('object-annotations');
 var stats = document.getElementById('stats');
 var titleEl = document.getElementById('rodeo');
+var resetCoverEl = document.getElementById('reset-cover')
+var resetEmojisEl = document.getElementById('reset-emojis')
+
+var SHOW_RESET_SCREEN = true;
+var SHOW_NEW_MONEY_ANIMATION = false;
 
 var target_fps = 20;
 
@@ -71,6 +77,8 @@ var renderState = {
   systemInfo: {},
   actionHistory: [],
   aiLogs: [],
+  showingResetScreen: false,
+  playingNewMoneyAnimation: false,
 };
 
 function readTextFile(file, callback) {
@@ -92,7 +100,8 @@ readTextFile("./emojimap.json", function(text){
       tap_location: emoji("point"),
       double_tap_location: emoji("point")+emoji("point"),
       swipe_right:  emoji("point")+emoji("right_arrow"),
-      swipe_left: emoji("left_arrow")+ emoji("point")
+      swipe_left: emoji("left_arrow")+ emoji("point"),
+      reset: emoji("siren"),
     }
 
     titleEl.innerHTML = `${emoji("goat")} ⋆ ${emoji("rabbit")}  ${emoji("ribbon")}  /𝓇${emoji("blueheart")}ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻${emoji("hearteyes")}𝐿𝐿𝒴𝒲${emoji("cookie")}❤𝒟 𝓋 𝟣.♡  ${emoji("ribbon")}  ${emoji("rabbit")} ⋆ ${emoji("goat")}`
@@ -118,7 +127,7 @@ function emoji(emojiName) {
   var mapData = emojiPositions[emojiName] || [[0,0]];
   //make sure we have an array of arrays, in case multiple emojis should be shown
   var emojis = (typeof mapData[0] === "object" ? mapData : [mapData]);
-  
+
   return emojis.map( emoj => `<span class='emoji' style="background-position: ${(emoj[0]*(emojiSize))} ${emoj[1]*emojiSize};"></span>`).join("");
 }
 
@@ -138,6 +147,17 @@ const labelColorsMap = {
   'tvmonitor': colors['black'],
   'laptop': colors['black'],
   'traffic light': colors['chartreuse'],
+  'chair': colors['saddlebrown'],
+  'cell phone': colors['darkgrey'],
+  'bicycle': colors['gold'],
+  'car': colors['royalblue'],
+  'skateboard': colors['orange'],
+  'sports ball': colors['maroon'],
+  'bottle': colors['beige'],
+  'banana': colors['yellow'],
+  'umbrella': colors['salmon'],
+  'frisbee': colors['sienna'],
+  'teddy bear': colors['brown']
 }
 
 function initSound(){
@@ -356,13 +376,13 @@ function stripParens(str){
   return str.replace(")","").replace("(","")
 }
 
-function transformAiLogs(log){ 
+function transformAiLogs(log){
   const el = document.createElement('div')
   var str = ""
   var split = log.split(" ")
   switch (split[0]){
-    case "Chose":  
-      str = 
+    case "Chose":
+      str =
         `<div class="ai-choice-label">${emoji("Chose")} ${emoji(split[1].toUpperCase())}</div></div>`
       break
     case "Sending":
@@ -372,7 +392,7 @@ function transformAiLogs(log){
       str += "<br>"+replaceWithEmojis("clock1 clock2 clock3")
       break
     case "Step":
-      str = emoji("Step")+" "+replaceWithEmojis(split[1])+ emoji("space") + 
+      str = emoji("Step")+" "+replaceWithEmojis(split[1])+ emoji("space") +
       emoji("right_arrow") +replaceWithEmojis(stripParens(split[2]))+ emoji("left_arrow") +"<br>" +
       emoji("Reward") + replaceWithEmojis(stripParens(split[5]))
 
@@ -419,6 +439,60 @@ function renderSystemInfo(systemInfo) {
   }
 }
 
+function showResetScreen() {
+  if (!SHOW_RESET_SCREEN || renderState.showingResetScreen) {
+    return
+  }
+
+  renderState.showingResetScreen = true
+  resetCoverEl.style.display = 'block'
+  setTimeout(function() { resetCoverEl.style.opacity = 0.9 }, 5)
+  setTimeout(function() { resetEmojisEl.style.display = 'block' }, 500)
+
+  var resetDelay = 11000
+  setTimeout(function() { resetCoverEl.style.opacity = 0 }, resetDelay - 500)
+  setTimeout(function() {
+    renderState.showingResetScreen = false
+    resetCoverEl.style.display = 'none'
+    resetEmojisEl.style.display = 'none'
+  }, resetDelay)
+}
+
+function playNewMoneyAnimation() {
+  if (!SHOW_NEW_MONEY_ANIMATION || renderState.playingNewMoneyAnimation) {
+    return
+  }
+
+  renderState.playingNewMoneyAnimation = true
+
+  var duration = 5000
+  var items = 5
+  var elements = []
+  for (var i = 0; i < items; i++) {
+    var el = document.createElement('div')
+    el.innerHTML = emoji('moneybag')
+    el.className = 'animating-money'
+    el.style.left = (5 + Math.random() * 90) + '%'
+    screenEl.appendChild(el)
+    elements.push(el)
+  }
+
+  setTimeout(function() {
+    elements.forEach(el => {
+      el.style.opacity = 1
+      el.style.top = (100 + Math.random() * 50) + '%';
+    })
+  }, 5)
+
+  setTimeout(function() {
+    elements.forEach(el => { el.style.opacity = 0 })
+  }, duration - 300)
+  setTimeout(function() {
+    elements.forEach(el => { el.parentNode.removeChild(el) })
+    renderState.playingNewMoneyAnimation = false
+  }, duration)
+}
+
 /// Image Handling
 
 function requestImage() {
@@ -460,6 +534,8 @@ function handleCurStateUpdate(data) {
     return
   }
 
+  var lastState = renderState.imageState
+
   renderState.frameNum = data.frameNum;
   renderState.imageState = parseMessageKey(data, 'imageState')
   renderState.systemInfo = parseMessageKey(data, 'systemInfo')
@@ -470,6 +546,10 @@ function handleCurStateUpdate(data) {
   renderState.aiStepNum = aiStatus.step_num || 0
   renderState.aiPolicyChoice = aiStatus.policy_choice
   renderState.aiRecentActionStepNums = aiStatus.recent_action_step_nums
+
+  if (lastState && lastState.money !== undefined && renderState.imageState && renderState.imageState.money > lastState.money) {
+    playNewMoneyAnimation()
+  }
 
   updateCurStateRender()
 }
@@ -492,6 +572,11 @@ function handleAIActionUpdate(data) {
     renderState.recentTouch = data
   } else {
     renderState.recentTouch = null
+  }
+
+
+  if (data.type === 'reset') {
+    showResetScreen()
   }
 
   pushToMaxLengthArray(renderState.actionHistory, data, 50)

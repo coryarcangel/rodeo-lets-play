@@ -113,13 +113,26 @@ def memory_test():
     print("size", size, "max", max_size, "free", free_size)
 
 
+def back_test():
+    print('Testing back...')
+    sleep(5)
+    device_manager.press_double_back_button()
+    print(device_manager.get_property('am.current.package'))
+    print(device_manager.get_property('am.current.action'))
+    print(device_manager.get_property('am.current.comp.class'))
+    print(device_manager.get_property('am.current.comp.package'))
+    print(device_manager.get_property('am.current.data'))
+    print(device_manager.get_property('am.current.categories'))
+
+
 def test():
     # measure_screenshot_performance()
     # browser_launch_and_restart()
     # hollywood_launch_and_restart()
     # hollywood_screenshot_loop_test()
     # hollywood_drag_and_tap()
-    memory_test()
+    # memory_test()
+    back_test()
 
 
 if __name__ == "__main__":
