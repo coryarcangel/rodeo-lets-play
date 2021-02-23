@@ -27,6 +27,8 @@
       left: 1px;
       width: 100%;
       text-align: center;
+      z-index: 111;
+      display: block;
     }
     #screen {
       width: 1760px;
@@ -49,6 +51,7 @@
       left: 0%;
       width: 1760px;
       height: 880px;
+      z-index: -2;
     }
     #action-history {
       position: absolute;
@@ -59,6 +62,7 @@
       top: 36vh;
       left: 2px;
       width: 450px;
+      z-index: 11;
     }
     #action-history pre {
       margin: 0;
@@ -77,17 +81,15 @@
     right: 0;
     background-color: rgba(0,0,0,0);
     background-color: none;
-    max-height: 880px;
+    max-height: 868px;
     text-align: right;
     overflow: hidden;
     width: 450px;
     top: 9px;
+    z-index: 11;
     }
     #ai-log > div {
-      line-height: 30px;
-    }
-    #ai-log > div:first-child {
-      display: none;
+      line-height: 28px;
     }
     .ai-choice {
       margin-top: 3em;
@@ -125,7 +127,7 @@
     }
     #object-annotations {
       position: absolute;
-      z-index: 10;
+      z-index: -1;
       top: 0%;
       left: 0%;
       /*transform: translate(-50%, -50%);*/
@@ -214,18 +216,11 @@
  <body class="recording">
   <div id="screen">
     <img id="liveImg" />
-    <div id="fps">
-      FPS: <span id="fps">0</span>
-      | Frame: <span id="frameNum">0</span>
-    </div>
+    <canvas id="object-annotations" width="1760" height="880"></canvas>
     <div id="rodeo">🐐 ⋆ 🐰  🎀  /𝓇💙ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻😍𝐿𝐿𝒴𝒲🍪❤𝒟 𝓋 𝟣.♡  🎀  🐰 ⋆ 🐐</div>
     <div id="action-history"></div>
     <div id="ai-log"></div>
     <div id="state-actions"></div>
-    <canvas id="object-annotations" width="1760" height="880"></canvas>
-    <div id="stats">
-      <div id="marquee"></div>
-    </div>
     <div id="gpus"></div>
     <div id="bar_graph"></div>
   </div>

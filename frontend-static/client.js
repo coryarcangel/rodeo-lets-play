@@ -14,7 +14,7 @@ var request_start_time = performance.now();
 var start_time = performance.now();
 var time = 0;
 var request_time = 0;
-var time_smoothing = 0.9; // larger=more smoothing
+var time_smoothing = 1.2; // larger=more smoothing
 var request_time_smoothing = 0.2; // larger=more smoothing
 var target_time = 1000 / target_fps;
 
@@ -37,9 +37,9 @@ var barSize = 20;
 var gaugeNeedles = {}
 
 var sounds = {
-  'tap_location': {src:'tap.mp3'},
-  'double_tap_location':{src:'tap.mp3'} ,
-  'reset': {src:'windows_startup.mp3', delay: 3500}
+  'tap_location': {src:'Rodeo-single-click.wav'},
+  'double_tap_location':{src:'Rodeo-double-click.wav'} ,
+  'reset': {src:'Rodeo-restart.wav', delay: 3500}
 };
 
 const Marquee = dynamicMarquee.Marquee;
@@ -96,14 +96,12 @@ readTextFile("./emojimap.json", function(text){
     }
 
     titleEl.innerHTML = `${emoji("goat")} ⋆ ${emoji("rabbit")}  ${emoji("ribbon")}  /𝓇${emoji("blueheart")}ʊˈ𝒹𝑒ɪ❤ʊ/ 𝐿𝑒𝓉𝓈 𝒫𝓁𝒶𝓎 𝐻${emoji("hearteyes")}𝐿𝐿𝒴𝒲${emoji("cookie")}❤𝒟 𝓋 𝟣.♡  ${emoji("ribbon")}  ${emoji("rabbit")} ⋆ ${emoji("goat")}`
-
+    titleEl.style.zIndex = "111"
 });
 
 function replaceWithEmojis(str){
     var re = new RegExp(Object.keys(emojiPositions).join("|"),"gi");
     return str.replace(re, function(matched){
-      if(matched.indexOf("tap")>-1)
-      console.log("matched",matched)
         return emoji(matched);
     });
 }
@@ -126,12 +124,10 @@ function emoji(emojiName) {
 
 function updateCurStateRender() {
   const { frameNum, fps, imageState, recentTouch, stateActions = [], systemInfo } = renderState;
-  fpsText.textContent = fps+" fps";
-  frameNumText.textContent = frameNum;
 
   renderImageState(imageState, recentTouch);
   //renderStateActions(stateActions);
-  renderSystemInfo(systemInfo);
+  // renderSystemInfo(systemInfo);
 }
 
 /// Image State Rendering
@@ -163,7 +159,6 @@ initSound();
 
 //to play a sound
 //playSound("tap");
-
 
 function getImageObjectColor(label, confidence) {
   if (labelColorsMap[label])    return labelColorsMap[label]
@@ -348,7 +343,6 @@ function parseActionLog(actionString){
   var split = actionString.split(" ");
   var actionNumber = split[1];
   var actionType = split[5].slice(1,-1).replace("(","")
-  console.log("oh yah",actionType)
   var actionJson = stripStrings(["{","}","\[","\]"],replaceWithEmojis(JSON.stringify(
         JSON.parse(actionString.slice(actionString.indexOf("{"),-1))
         ,{},'jsonemoji')))
@@ -366,7 +360,6 @@ function transformAiLogs(log){
   const el = document.createElement('div')
   var str = ""
   var split = log.split(" ")
-  //${replaceWithEmojis('DEEP_Q Heuristic RANDOM point')}
   switch (split[0]){
     case "Chose":  
       str = 
@@ -388,7 +381,7 @@ function transformAiLogs(log){
       str = replaceWithEmojis("received message:") + "<br>" + replaceWithEmojis(split[2].replaceAll("|","  "))
       break
     case "Safeguarded":
-      str = log
+      str = replaceWithEmojis(split.slice(0,2).join(" "))
       break
     }
     el.innerHTML = str
@@ -397,6 +390,7 @@ function transformAiLogs(log){
 
 function renderAiLogs(aiLogs) {
   //take out action logs and put in action-history div
+  
   const noActions = aiLogs.filter((log)=> {
     if(log.indexOf(" Action ")>-1){
       actionHistoryEl.innerHTML = `<pre>${parseActionLog(log)}</pre>`
@@ -405,15 +399,17 @@ function renderAiLogs(aiLogs) {
     return true
   })
   const logEls = []
+  console.log(noActions)
   for (let i = (noActions || []).length - 1; i >= 0; i--) {
     // const el = document.createElement('div')
     // el.innerHTML = replaceWithEmojis(noActions[i])
     // logEls.push(el)
     logEls.push(transformAiLogs(noActions[i]))
   }
-  console.log("appended")
-  aiLogEl.innerHTML = ``
-  aiLogEl.append(...logEls)
+  if(noActions[noActions.length-1].indexOf("Chose") > -1){
+    aiLogEl.innerHTML = ``
+    aiLogEl.append(...logEls)
+  }
 }
 
 function renderSystemInfo(systemInfo) {
@@ -498,16 +494,20 @@ function handleAIActionUpdate(data) {
     renderState.recentTouch = null
   }
 
-  pushToMaxLengthArray(renderState.actionHistory, data, 100)
+  pushToMaxLengthArray(renderState.actionHistory, data, 50)
   //renderActionHistory(renderState.actionHistory)
 }
 
+var minAiUpdateInterval = 100;
+var aiUpdateAllowed = true;
+var nextAiUpdate = minAiUpdateInterval;
 function handleAILogLineUpdate(line) {
   if (!playing) {
     return
   }
-  pushToMaxLengthArray(renderState.aiLogs, line, 100)
+  pushToMaxLengthArray(renderState.aiLogs, line, 50)
   renderAiLogs(renderState.aiLogs)
+
 }
 
 /// Websocket Events
