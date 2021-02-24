@@ -11,10 +11,14 @@ var titleEl = document.getElementById('rodeo');
 var resetCoverEl = document.getElementById('reset-cover')
 var resetEmojisEl = document.getElementById('reset-emojis')
 
-var SHOW_RESET_SCREEN = true;
+var SHOW_RESET_SCREEN = false;
 var SHOW_NEW_MONEY_ANIMATION = false;
+var MAX_AI_LOG_ELS = 28;
+var FILLED_RECTS = false;
+var FILL_OPACITY_HEX = '33';
 
 var target_fps = 13;
+var emojiSize = 28;
 
 var request_start_time = performance.now();
 var start_time = performance.now();
@@ -26,8 +30,8 @@ var target_time = 1000 / target_fps;
 
 var sounds = {
   'tap_location': {src:'Rodeo-single-click.wav'},
-  'double_tap_location':{src:'Rodeo-double-click.wav'} ,
-  'swipe':{src:'Rodeo-swipe.wav'} ,
+  'double_tap_location': {src:'Rodeo-double-click.wav'} ,
+  'swipe': {src:'Rodeo-swipe.wav'} ,
   'reset': {src:'Rodeo-restart.wav', delay: 3500}
 };
 
@@ -56,8 +60,8 @@ var renderState = {
   aiPolicyChoice: null,
   aiRecentActionStepNums: {},
   systemInfo: {},
-  actionHistory: [],
-  aiLogs: [],
+  // actionHistory: [],
+  // aiLogs: [],
   showingResetScreen: false,
   playingNewMoneyAnimation: false,
 };
@@ -73,10 +77,13 @@ function readTextFile(file, callback) {
     }
     rawFile.send(null);
 }
+
 var emojiPositions = actionEmoji = {}
-//usage:
+var emojiPositionsRegex = null
 readTextFile("./emojimap.json", function(text){
     emojiPositions = JSON.parse(text);
+    emojiPositionsRegex = new RegExp(Object.keys(emojiPositions).join("|"),"gi");
+
     actionEmoji = {
       tap_location: emoji("point"),
       double_tap_location: emoji("point")+emoji("point"),
@@ -90,19 +97,13 @@ readTextFile("./emojimap.json", function(text){
 });
 
 function replaceWithEmojis(str){
-    var re = new RegExp(Object.keys(emojiPositions).join("|"),"gi");
-    return str.replace(re, function(matched){
-        return emoji(matched);
-    });
+  return emojiPositionsRegex ? str.replace(emojiPositionsRegex, matched => emoji(matched)) : str
 }
 
-function stripStrings(substrings,str){
-    var re = new RegExp(substrings.join("|"),"gi");
-    return str.replace(re,"");
+function stripStrings(substrings, str) {
+  var re = new RegExp(substrings.join("|"),"gi");
+  return str.replace(re,"");
 }
-
-var emojiSize = 28;
-
 
 function emoji(emojiName) {
   var mapData = emojiPositions[emojiName] || [[0,0]];
@@ -110,11 +111,6 @@ function emoji(emojiName) {
   var emojis = (typeof mapData[0] === "object" ? mapData : [mapData]);
 
   return emojis.map( emoj => `<span class='emoji' style="background-position: ${(emoj[0]*(emojiSize))} ${emoj[1]*emojiSize};"></span>`).join("");
-}
-
-function updateCurStateRender() {
-  const { frameNum, fps, imageState, recentTouch, stateActions = [], systemInfo } = renderState;
-  renderImageState(imageState, recentTouch);
 }
 
 /// Image State Rendering
@@ -240,6 +236,10 @@ function renderImageState(imageState, recentTouch) {
     ctx.strokeStyle = style.color;
     ctx.lineWidth = 3;
     ctx.font = `normal ${style.fontWeight} ${style.fontSize}px Helvetica Neue Roman`;
+    if (FILLED_RECTS) {
+      ctx.fillStyle = style.color + FILL_OPACITY_HEX; // add opacity
+    }
+
     // Draw Image Shape
     let textPoint = { x: 0, y: 0 }
     if (circle) {
@@ -247,11 +247,17 @@ function renderImageState(imageState, recentTouch) {
       const [x, y] = translatePointToScreen(image_shape, xRaw, yRaw)
       textPoint = { x: x + r + 10, y: y + 5 }
       ctx.arc(x, y, r, 0, 2 * Math.PI);
+      if (FILLED_RECTS) {
+        ctx.fill()
+      }
     } else {
       const [xRaw, yRaw, wRaw, hRaw] = rect
       const [x, y, w, h] = translateRectToScreen(image_shape, xRaw, yRaw, wRaw, hRaw)
       textPoint = { x: x + w + 10, y: y + 10 }
       ctx.strokeRect(x, y, w, h);
+      if (FILLED_RECTS) {
+        ctx.fillRect(x, y, w, h);
+      }
     }
 
     // Draw Text
@@ -269,8 +275,6 @@ function renderImageState(imageState, recentTouch) {
     const color = type === 'double_tap_location' ? '#328eed' : '#ed3732'
 
     // draw crosshairs
-    // const [x, y] = p
-    // const [h, w] = image_shape
     const [x, y] = translatePointToScreen(image_shape, p[0], p[1])
     const [w, h] = getCanvasSize()
     const r = 3
@@ -309,14 +313,11 @@ function renderStateActions(stateActions) {
   stateActionsEl.append(...actionEls)
 }
 
-
 function parseActionLog(actionString){
   //actionString = `Step 85 (1803) - Action (double_tap_location, {"x": 824, "y": 466, "type": "object", "object_type": "Circle #7", "img_obj": {"rect": [785, 427, 78, 78], "label": "Circle #7", "confidence": null, "object_type": "circle"}})`
   var split = actionString.split(" ");
   var actionNumber = split[1];
   var actionType = split[5].slice(1,-1).replace("(","")
-  // if(actionType.indexOf("swipe")> -1)
-  //     playSound("swipe");
   var actionJson = stripStrings(["{","}","\[","\]"],replaceWithEmojis(JSON.stringify(
         JSON.parse(actionString.slice(actionString.indexOf("{"),-1))
         ,{},'jsonemoji')))
@@ -330,31 +331,45 @@ function stripParens(str){
   return str.replace(")","").replace("(","")
 }
 
-function renderAiLogs(aiLogs) {
-  //take out action logs and put in action-history div
-  
-  const noActions = aiLogs.filter((log)=> {
-    if(log.indexOf(" Action ")>-1){
-      actionHistoryEl.innerHTML = `<pre>${parseActionLog(log)}</pre>`
-      return false
-    }
-    return true
-  })
-  const logEls = []
-  for (let i = (noActions || []).length - 1; i >= 0; i--) {
-    logEls.push(transformAiLogs(noActions[i]))
-  }
-  if(noActions[noActions.length-1].indexOf("Chose") > -1){
-    aiLogEl.innerHTML = ``
-    aiLogEl.append(...logEls)
-  }
-}
+function getAiLogLineElements(log){
+  var lines = []
+  var split = log.split(" ")
+  switch (split[0]){
+    case "Chose":
+      lines = [`<div class="ai-choice-label">${emoji("Chose")} ${emoji(split[1].toUpperCase())}</div></div>`]
+      break
+    case "Sending":
+      var lastCommand = split[2].split("|")
+      lines = [
+        emoji("Sending message:"),
+        replaceWithEmojis(lastCommand.slice(0,4).join(" ").replaceAll("-","")) + (lastCommand[4] ? lastCommand[4] : ""),
+        replaceWithEmojis("clock1 clock2 clock3"),
+      ]
+      break
+    case "Step":
+      lines = [
+        emoji("Step") + " " + replaceWithEmojis(split[1])+ emoji("space") +
+        emoji("right_arrow") + replaceWithEmojis(stripParens(split[2])) + emoji("left_arrow"),
 
-function renderSystemInfo(systemInfo) {
-  // console.log('system info', systemInfo)
-  if (!systemInfo) {
-    return
-  }
+        emoji("Reward") + replaceWithEmojis(stripParens(split[5]))
+      ]
+      break
+    case "received":
+      lines = [
+        replaceWithEmojis("received message:"),
+        replaceWithEmojis(split[2].replaceAll("|","  ")),
+      ]
+      break
+    case "Safeguarded":
+      lines = [replaceWithEmojis(split.slice(0,2).join(" "))]
+      break
+    }
+
+  return lines.map(line => {
+    const el = document.createElement('div')
+    el.innerHTML = line
+    return el
+  })
 }
 
 function showResetScreen() {
@@ -469,7 +484,7 @@ function handleCurStateUpdate(data) {
     playNewMoneyAnimation()
   }
 
-  updateCurStateRender()
+  renderImageState(renderState.imageState, renderState.recentTouch);
 }
 
 function pushToMaxLengthArray(arr, item, maxLength) {
@@ -483,81 +498,44 @@ function handleAIActionUpdate(data) {
   if (!playing) {
     return
   }
-  if(sounds && sounds[data.type]){
-      playSound(data.type)
-  }
-  if (data.type === 'tap_location' || data.type === 'double_tap_location') {
-    renderState.recentTouch = data
-  } else {
-    renderState.recentTouch = null
+
+  if (sounds && sounds[data.type]) {
+    playSound(data.type)
   }
 
+  const isTouch = data.type === 'tap_location' || data.type === 'double_tap_location'
+  renderState.recentTouch = isTouch ? data : null
 
-  // if (data.type === 'reset') {
-  //   showResetScreen()
-  // }
-
-  pushToMaxLengthArray(renderState.actionHistory, data, 50)
+  if (data.type === 'reset') {
+    showResetScreen()
+  }
 }
-var aiLogChildren = 0;
-var logsString = ""
-var lineBuffer = [];
+
+var lineElBuffer = [];
 function handleAILogLineUpdate(line) {
   if (!playing) {
     return
   }
-  pushToMaxLengthArray(renderState.aiLogs, line, 50)
-  if(line.indexOf(" Action (swipe_")>-1)
-    playSound("swipe")
-  //renderAiLogs(renderState.aiLogs)
-  //renderAiLogLine(line)
 
-  if(line.indexOf(" Action ")>-1){
+  if (line.indexOf(" Action ") > -1) {
      actionHistoryEl.innerHTML = `<pre>${parseActionLog(line)}</pre>`;
-   }
-   else{
-    lineBuffer.push(transformAiLogs(line));
-    if(line.indexOf("Chose")>-1){
-      lineBuffer.map( ln => aiLogEl.prepend(ln));
-      lineBuffer = [] 
-    }
-    aiLogChildren++;
-    if(aiLogChildren > 20){
-      aiLogEl.removeChild(aiLogEl.lastChild);
-    }
-   }
-}
 
-function transformAiLogs(log){
-  const el = document.createElement('div')
-  var str = ""
-  var split = log.split(" ")
-  switch (split[0]){
-    case "Chose":
-      str =
-        `<div class="ai-choice-label">${emoji("Chose")} ${emoji(split[1].toUpperCase())}</div></div>`
-      break
-    case "Sending":
-      var lastCommand = split[2].split("|")
-      str += emoji("Sending message:")+"<br>"
-      str += replaceWithEmojis(lastCommand.slice(0,4).join(" ").replaceAll("-",""))+ (lastCommand[4] ? lastCommand[4] : "")
-      str += "<br>"+replaceWithEmojis("clock1 clock2 clock3")
-      break
-    case "Step":
-      str = emoji("Step")+" "+replaceWithEmojis(split[1])+ emoji("space") +
-      emoji("right_arrow") +replaceWithEmojis(stripParens(split[2]))+ emoji("left_arrow") +"<br>" +
-      emoji("Reward") + replaceWithEmojis(stripParens(split[5]))
+     if (line.indexOf(" Action (swipe_") > -1) {
+       playSound("swipe")
+     }
+  }
+   else {
+     const els = getAiLogLineElements(line)
+     lineElBuffer.push(...els)
+     if (line.indexOf("Chose") > -1) {
+       lineElBuffer.forEach(ln => aiLogEl.prepend(ln))
+       lineElBuffer = []
+     }
 
-      break
-    case "received":
-      str = replaceWithEmojis("received message:") + "<br>" + replaceWithEmojis(split[2].replaceAll("|","  "))
-      break
-    case "Safeguarded":
-      str = replaceWithEmojis(split.slice(0,2).join(" "))
-      break
-    }
-    el.innerHTML = str
-  return el
+     while (aiLogEl.childElementCount > MAX_AI_LOG_ELS) {
+       aiLogEl.removeChild(aiLogEl.lastChild)
+     }
+  }
 }
 
 /// Websocket Events

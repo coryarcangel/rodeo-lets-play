@@ -4,6 +4,7 @@ from time import sleep
 from random import randint
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from kim_logs import get_kim_logger
+from config import DELAY_BETWEEN_ACTIONS
 
 # Constants
 BROWSER_PACKAGE = 'com.android.chrome'
@@ -61,7 +62,7 @@ class DeviceManager(object):
             (start_pos, end_pos, duration, steps))
         self.device.drag(start_pos, end_pos, duration, steps)
         # always want to behave synchronously, so wait until action is complete
-        sleep(duration)
+        sleep(duration + 0.5)
 
     def drag_delta(self, start_pos=None, delta_x=0,
                    delta_y=0, duration=1, steps=100):
@@ -79,7 +80,7 @@ class DeviceManager(object):
         ''' Taps device at given location '''
         self.logger.debug('Tapping at (%d, %d)' % (x, y))
         self.touch(x, y)
-        sleep(1.2)  # Reasonable Down Time
+        sleep(DELAY_BETWEEN_ACTIONS)
 
     def double_tap(self, x, y):
         ''' Double Taps device at given location '''
@@ -87,7 +88,7 @@ class DeviceManager(object):
         self.touch(x, y)
         sleep(0.2)
         self.device.touch(x, y)
-        sleep(1.2)  # Reasonable Down Time
+        sleep(DELAY_BETWEEN_ACTIONS)
 
     def touch(self, x, y):
         ''' inputs tap at given location '''

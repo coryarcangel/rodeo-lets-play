@@ -7,6 +7,7 @@ import threading
 from asyncchat_kim import AsyncchatKim, KimCommand
 from config import CURRENT_PHONE_GAME_RECT, VYSOR_CAP_AREA
 from config import SAFEGUARD_MENU_RECTS, SAFEGUARD_MENU_CLICKS_DEFAULT
+from config import DELAY_BETWEEN_ACTIONS
 from util import is_in_rect, convert_point_between_rects
 from window_setup import setup_vysor_window
 from enums import Action
@@ -142,9 +143,13 @@ class DeviceClient(AsyncchatKim):
         nx, ny = self._img_point_to_device_point((x, y))
         if self._can_tap_device_point(nx, ny):
             self._send_command(KimCommand.TAP, nx, ny, type)
+        else:
+            time.sleep(DELAY_BETWEEN_ACTIONS)
 
     def send_double_tap_command(self, x, y, type):
         ''' Sends command to tap device at given location '''
         nx, ny = self._img_point_to_device_point((x, y))
         if self._can_tap_device_point(nx, ny):
             self._send_command(KimCommand.DOUBLE_TAP, nx, ny, type)
+        else:
+            time.sleep(DELAY_BETWEEN_ACTIONS)

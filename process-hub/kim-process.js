@@ -22,7 +22,7 @@ class KimProcess {
     this.logColor = logColors[index] || logColors[0]
 
     const isAI = abbrev === 'AI'
-    this.logger = getProcessLogger(name, index, isAI, this.logColor)
+    this.logger = getProcessLogger({ name, index, isMain: isAI, color: this.logColor })
 
     this.started = false
     this.running = false

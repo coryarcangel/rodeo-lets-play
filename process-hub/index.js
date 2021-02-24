@@ -3,42 +3,21 @@
 require('colors')
 const moment = require('moment')
 const redis = require('redis')
-const { argv } = require('yargs')
-const { chunk } = require('lodash')
+const { debounce } = require('lodash')
 const stripAnsi = require('strip-ansi')
 const { screen, grid, dashboardParts, resetDashboardTimer, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 const { getSystemInfoObject } = require('./system-info')
 const { setWindowTitle, setupVisibleWindows } = require('./util')
+const { OPTIONS, modes, mode, baseProcessConfigs } = require('./config')
 
 const rSubscriber = redis.createClient()
 const rPublisher = redis.createClient()
 
 /// Config
 
-const START_ALL = argv.startAll != 'f' && argv.startAll != 'false'
-const WIN_TITLE = 'AI_DASHBOARD'
-const KILL_ADB_ON_DEVICE_SERVER_EXIT = false
-const SYSTEM_INFO_PUBLISH_INTERVAL = 15000
-const SCREEN_SETUP_INTERVAL = 5 * 60000
-const DEVICE_SERVER_MAX_TIME_BETWEEN_LOGS = 30000
-const DELAY_BEFORE_MAIN_PROCESS = 10000
-
-const modes = {
-  DUMMY: 0,
-  TF_AGENTS: 1,
-  TF_AGENTS_TRAIN: 2,
-  OLD_AI: 3,
-}
-
-let mode = modes.TF_AGENTS
-if (argv.dummy !== undefined) {
-  mode = mode.DUMMY
-} else if (argv.train !== undefined) {
-  mode = modes.TF_AGENTS_TRAIN
-} else if (argv.old !== undefined) {
-  mode = modes.OLD_AI
-}
+const { START_ALL, WIN_TITLE, SYSTEM_INFO_PUBLISH_INTERVAL,
+        SCREEN_SETUP_INTERVAL, DRAW_DASHBOARD_INTERVAL } = OPTIONS
 
 const startTime = moment()
 
@@ -49,27 +28,12 @@ const getMainProcessConfig = () => {
 }
 
 const processConfigs = [
-  { abbrev: 'VY', name: 'Vysor', script: 'process-hub/run_vysor.js' },
-  {
-    abbrev: 'DS',
-    name: 'Device Server',
-    script: 'bin/start_device_server.sh',
-    maxTimeBetweenLogs: DEVICE_SERVER_MAX_TIME_BETWEEN_LOGS,
-    chainedRestarts: KILL_ADB_ON_DEVICE_SERVER_EXIT ? ['Vysor'] : []
-  },
-  {
-    abbrev: 'FS',
-    name: 'Frontend Server',
-    script: 'bin/start_frontend_server.sh',
-    chainedRestarts: ['Frontend Client']
-  },
-  { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
-  { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
+  ...baseProcessConfigs,
   {
     ...getMainProcessConfig(),
     abbrev: 'AI',
     main: true,
-    delayBefore: DELAY_BEFORE_MAIN_PROCESS,
+    delayBefore: OPTIONS.DELAY_BEFORE_MAIN_PROCESS,
     onLog: (logLines) => {
       logLines.forEach(line => rPublisher.publish('ai-log-lines', stripAnsi(line)))
     }
@@ -87,6 +51,94 @@ const getCurrentCommands = () => [
   ...kpManager.getProcessCommands(),
   { label: 'Xx Abort xX'.bgRed.white, fn: () => quit() },
 ]
+
+/// Dashboard Drawing
+
+function getAiStatusStateLines() {
+  const {
+    screenIndex, mostRecentAction, imageObjects,
+    stepNum, reward, recentPolicyChoice, recentActionStepNums,
+  } = aiStatusState
+
+  let recentActionLabel = 'None'
+  if (mostRecentAction) {
+    recentActionLabel = mostRecentAction.label || '?'
+    if (mostRecentAction.p) {
+      recentActionLabel += `: (${mostRecentAction.p[0]}, ${mostRecentAction.p[1]})`
+    }
+    if (mostRecentAction.prob !== undefined) {
+      recentActionLabel += ` | ${(mostRecentAction.prob * 100).toFixed(1)}%`
+    }
+  }
+
+  const recentActionStepKeys = Object.keys(recentActionStepNums)
+
+  return [
+    '',
+    `Screen Index`.bgRed.bold + ' - ' + `${screenIndex}`.red.bold,
+    `Step`.bgBlue.bold + ' - ' + `${stepNum}`.brightBlue.bold,
+    `Reward`.bgGreen.bold + ' - ' + ` ${reward}`.brightGreen.bold,
+    `Num Image Objects`.bgCyan.bold + ' - ' + `${imageObjects ? imageObjects.length : '?'}`.brightCyan.bold,
+    `Recent Policy`.bgWhite.black.bold + ` - ` + `${recentPolicyChoice}`.white.bold,
+    `Recent Action`.bgYellow.bold + ` - ` + `${recentActionLabel}`.yellow.bold,
+    ...recentActionStepKeys.map(k => `Num Steps Since ${k.green.underline}`.bgMagenta.bold + ` - ` + `${stepNum - recentActionStepNums[k]}`.brightMagenta.bold),
+  ]
+}
+
+function drawDashboard() {
+  dashboardParts.aiStatusBox.content = getAiStatusStateLines().map(l => '  ' + l).join('\n')
+
+  screen.render()
+}
+
+function _updateAIStatusBox() {
+  dashboardParts.aiStatusBox.content = getAiStatusStateLines().map(l => '  ' + l).join('\n')
+}
+
+const updateAIStatusBox = debounce(_updateAIStatusBox, 150)
+
+function _updateAIActionsTable() {
+  dashboardParts.aiActionsTable.setData({
+    headers: [' Action'.bold, ' Prob'.bold],
+    data: aiStatusState.actionItems.map(({ text, probText }) => [text, probText]),
+  })
+}
+
+const updateAIActionsTable = debounce(_updateAIActionsTable, 200)
+
+function _updateProcessDependentDashboardParts() {
+  commands = getCurrentCommands()
+  dashboardParts.commandList.setItems(commands.map(c => c.label))
+
+  dashboardParts.processStopLineGraph.setData(kpManager.getProcessStopLineGraphData(startTime))
+  dashboardParts.processStopBarGraph.setData(kpManager.getProcessStopBarGraphData())
+}
+
+const updateProcessDependentDashboardParts = debounce(_updateProcessDependentDashboardParts, 150)
+
+function updateTimerLCD() {
+  const startDiff = moment.utc(moment().diff(startTime)).format('HH:mm:ss')
+  dashboardParts.timerLcd.setDisplay(startDiff)
+}
+
+function updateTimerLCDLoop() {
+  updateTimerLCD()
+  setTimeout(updateTimerLCDLoop, 1000)
+}
+
+function updateAllDashboardPartsAndRender() {
+  _updateAIActionsTable()
+  _updateAIStatusBox()
+  _updateProcessDependentDashboardParts()
+  updateTimerLCD()
+
+  screen.render()
+}
+
+function renderScreenLoop() {
+  screen.render()
+  setTimeout(renderScreenLoop, DRAW_DASHBOARD_INTERVAL)
+}
 
 /// Redis
 
@@ -126,11 +178,13 @@ function handlePhoneImageStates(data) {
   const state = JSON.parse(stateJSON || "")
   aiStatusState.screenIndex = index
   aiStatusState.imageObjects = state && state.image_objects || []
+  updateAIStatusBox()
 }
 
 function handleAIActionStream(data) {
   if (data.type) {
     aiStatusState.mostRecentAction = data
+    updateAIStatusBox()
   }
 }
 
@@ -188,6 +242,9 @@ function handleAIStatusUpdates(data) {
     })
 
   aiStatusState.actionItems = actionItems
+
+  updateAIStatusBox()
+  updateAIActionsTable()
 }
 
 async function systemInfoPublishLoop() {
@@ -195,64 +252,6 @@ async function systemInfoPublishLoop() {
   rPublisher.publish('system-info-updates', JSON.stringify(data))
 
   setTimeout(systemInfoPublishLoop, SYSTEM_INFO_PUBLISH_INTERVAL)
-}
-
-/// Dashboard Drawing
-
-function getAiStatusStateLines() {
-  const {
-    screenIndex, mostRecentAction, imageObjects,
-    stepNum, reward, recentPolicyChoice, recentActionStepNums,
-  } = aiStatusState
-
-  let recentActionLabel = 'None'
-  if (mostRecentAction) {
-    recentActionLabel = mostRecentAction.label || '?'
-    if (mostRecentAction.p) {
-      recentActionLabel += `: (${mostRecentAction.p[0]}, ${mostRecentAction.p[1]})`
-    }
-    if (mostRecentAction.prob !== undefined) {
-      recentActionLabel += ` | ${(mostRecentAction.prob * 100).toFixed(1)}%`
-    }
-  }
-
-  const recentActionStepKeys = Object.keys(recentActionStepNums)
-
-  return [
-    '',
-    `Screen Index`.bgRed.bold + ' - ' + `${screenIndex}`.red.bold,
-    `Step`.bgBlue.bold + ' - ' + `${stepNum}`.brightBlue.bold,
-    `Reward`.bgGreen.bold + ' - ' + ` ${reward}`.brightGreen.bold,
-    `Num Image Objects`.bgCyan.bold + ' - ' + `${imageObjects ? imageObjects.length : '?'}`.brightCyan.bold,
-    `Recent Policy`.bgWhite.black.bold + ` - ` + `${recentPolicyChoice}`.white.bold,
-    `Recent Action`.bgYellow.bold + ` - ` + `${recentActionLabel}`.yellow.bold,
-    ...recentActionStepKeys.map(k => `Num Steps Since ${k.green.underline}`.bgMagenta.bold + ` - ` + `${stepNum - recentActionStepNums[k]}`.brightMagenta.bold),
-  ]
-}
-
-function drawDashboard() {
-  commands = getCurrentCommands()
-  dashboardParts.commandList.setItems(commands.map(c => c.label))
-
-  dashboardParts.processStopLineGraph.setData(kpManager.getProcessStopLineGraphData(startTime))
-  dashboardParts.processStopBarGraph.setData(kpManager.getProcessStopBarGraphData())
-
-  const startDiff = moment.utc(moment().diff(startTime)).format('HH:mm:ss')
-  dashboardParts.timerLcd.setDisplay(startDiff)
-
-  dashboardParts.aiStatusBox.content = getAiStatusStateLines().map(l => '  ' + l).join('\n')
-
-  dashboardParts.aiActionsTable.setData({
-    headers: [' Action'.bold, ' Prob'.bold],
-    data: aiStatusState.actionItems.map(({ text, probText }) => [text, probText]),
-  })
-
-  screen.render()
-}
-
-function drawDashboardLoop() {
-  drawDashboard()
-  setTimeout(drawDashboardLoop, 100)
 }
 
 /// Main
@@ -278,7 +277,7 @@ function onResize() {
   dashboardParts.processStopBarGraph.emit('attach')
   dashboardParts.aiStatusBox.emit('attach')
   dashboardParts.aiActionsTable.emit('attach')
-  drawDashboard()
+  updateAllDashboardPartsAndRender()
 }
 
 async function setupScreenLoop() {
@@ -290,6 +289,7 @@ async function setupScreenLoop() {
 async function main() {
   genlog('Hello, User. Starting KIM AI processes now...')
 
+  // setup window
   setWindowTitle(WIN_TITLE)
   await setupScreenLoop()
 
@@ -302,6 +302,9 @@ async function main() {
       command.fn()
     }
   })
+
+  // update process-dependent parts of dashboard only when process status changes
+  kpManager.onProcessesChange = updateProcessDependentDashboardParts
 
   // start all necessary background processes
   kpManager.initProcesses(START_ALL)
@@ -318,7 +321,9 @@ async function main() {
   // handle resize events
   screen.on('resize', onResize)
 
-  drawDashboardLoop()
+  // setup time-dependent loops
+  updateTimerLCDLoop()
+  renderScreenLoop()
   systemInfoPublishLoop()
 }
 

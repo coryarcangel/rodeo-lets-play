@@ -5,11 +5,14 @@ const moment = require('moment')
 const stripAnsi = require('strip-ansi')
 const fs = require('fs')
 const path = require('path')
+const { debounce } = require('lodash')
+const { OPTIONS } = require('./config')
 
 /// Config
 
 const ROWS = 48
 const COLS = 16
+const { DASHBOARD_LOG_BUFFER_LENGTH, IS_PROD } = OPTIONS
 
 /// Dashboard Setup
 
@@ -20,12 +23,14 @@ const grid = new contrib.grid({ rows: ROWS, cols: COLS, screen: screen, hideBord
 
 const allLoggerStreams = [] // maintain list for cleanup later
 
-const getLogger = (name, row, col, width, height, color) => {
+const getLogger = (ops) => {
+  const { name, row, col, width, height, color, logToFile = !IS_PROD } = ops
   const logger = grid.set(row, col, width, height, contrib.log, {
     label: `${name} Log`,
     fg: color,
     selectedFg: color,
     border: { type: 'line', fg: color },
+    bufferLength: DASHBOARD_LOG_BUFFER_LENGTH,
   })
 
   const filepath = `${__dirname}/../logs/${name.toLowerCase().replace(/ /g, '_')}.log`
@@ -38,17 +43,39 @@ const getLogger = (name, row, col, width, height, color) => {
   const stream = fs.createWriteStream(filepath, { flags: 'a' })
   allLoggerStreams.push(stream)
 
+  let bufferedLogLines = []
+  const logBufferedLines = debounce(() => {
+    bufferedLogLines.forEach(line => {
+      // here we implement our own log in the dashboard logger, to minimize scrolls
+      // logger.log(line)
+      logger.logLines.push(line)
+      if (logger.logLines.length > logger.options.bufferLength) {
+        logger.logLines.shift()
+      }
+
+      if (logToFile) {
+        stream.write(stripAnsi(line) + '\n')
+      }
+    })
+
+    logger.setItems(logger.logLines)
+    logger.scrollTo(logger.logLines.length)
+
+    bufferedLogLines = []
+  }, 250)
+
   const log = (line) => {
-    logger.log(line)
-    stream.write(stripAnsi(line) + '\n')
+    bufferedLogLines.push(line)
+    logBufferedLines() // debounced :)
   }
 
   return { name, filepath, stream, logger, log }
 }
 
 // give a process index, get a logger in the grid
-const getProcessLogger = (name, index, isMain, color) => {
-  return getLogger(name, ROWS / 6 + index * (ROWS / 8), 0, isMain ? 10 : ROWS / 8, COLS / 2, color)
+const getProcessLogger = (ops) => {
+  const { index, isMain } = ops
+  return getLogger({ ...ops, row: ROWS / 6 + index * (ROWS / 8), col: 0, width: isMain ? 10 : ROWS / 8, height: COLS / 2 })
 }
 
 const logToDashboard = (dashboardLogger, ...strings) => {
@@ -99,7 +126,7 @@ const resetDashboardTimer = () => {
 }
 
 const resetDashboardParts = () => {
-  dashboardParts.mainDashboardLogger = getLogger('Dashboard', 0, 0, ROWS / 6, COLS / 2, 'white')
+  dashboardParts.mainDashboardLogger = getLogger({ name: 'Dashboard', row: 0, col: 0, width: ROWS / 6, height: COLS / 2, color: 'white' })
 
   dashboardParts.commandList = grid.set(0, COLS / 2, ROWS / 4, COLS / 4, blessed.list, {
     label: 'Commands & Status',

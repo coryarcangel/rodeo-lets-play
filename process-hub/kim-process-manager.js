@@ -2,10 +2,14 @@ const moment = require('moment')
 const { range } = require('lodash')
 const { KimProcess } = require('./kim-process')
 const { delay } = require('./util')
+const { OPTIONS } = require('./config')
+
+const { DEFAULT_PROCESS_DELAY_BEFORE, DEFAULT_DELAY_BEFORE_CHAIN_PROCESS_RESTART } = OPTIONS
 
 class KimProcessManager {
-  constructor({ processConfigs, dummy, delayBeforeChainRestart = 2000 }) {
-    this.delayBeforeChainRestart = delayBeforeChainRestart
+  constructor({ processConfigs, dummy, onProcessesChange }) {
+    this.delayBeforeChainRestart = DEFAULT_DELAY_BEFORE_CHAIN_PROCESS_RESTART
+    this.onProcessesChange = onProcessesChange
 
     // normalize process config script locations
     processConfigs.forEach(c => {
@@ -29,7 +33,7 @@ class KimProcessManager {
   async initProcesses(startAll) {
     for (const kp of this.processes) {
       if (startAll || !kp.ops.main) {
-        const delayAmt = kp.ops.delayBefore || 3000
+        const delayAmt = kp.ops.delayBefore || DEFAULT_PROCESS_DELAY_BEFORE
         await delay(delayAmt)
 
         kp.startLoop()
@@ -46,6 +50,10 @@ class KimProcessManager {
         chainedProcess.startLoop()
       }
     })
+
+    if (this.onProcessesChange) {
+      this.onProcessesChange()
+    }
   }
 
   onKimProcessExit({ kimProcess, cancelled, err }) {
@@ -59,6 +67,10 @@ class KimProcessManager {
         chainedProcess.killChild()
       }
     })
+
+    if (this.onProcessesChange) {
+      this.onProcessesChange()
+    }
   }
 
   getProcessChainedRestarts(kimProcess) {

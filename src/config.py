@@ -27,6 +27,8 @@ VYSOR_WINDOW_NAME = 'VysorKim'
 BEHAVIOR
 """
 
+DELAY_BETWEEN_ACTIONS = 1.5  # in seconds
+
 KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 
 # Areas of the device that are not clickable if set to True (useful in training).
