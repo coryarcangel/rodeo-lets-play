@@ -33,7 +33,6 @@
     #screen {
       width: 1760px;
       height: 880px;
-      background: black;
       position: relative;
       overflow: hidden;
     }
@@ -44,6 +43,7 @@
       top: calc((100vh - 880px ) / 2);
       left: calc((100vw - 1760px) / 2);
       transform: scale(1.091);
+      background: black;
     }
     #liveImg {
       position: absolute;
@@ -87,6 +87,8 @@
     width: 450px;
     top: 9px;
     z-index: 11;
+    display: flex;
+    flex-direction: column-reverse;
     }
     #ai-log > div {
       line-height: 28px;
@@ -213,6 +215,7 @@
   }
 
   #reset-cover {
+    display: none;
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     background-image: url(startup.jpg);
@@ -251,7 +254,7 @@
   }
 </style>
  </head>
- <body class="recording">
+ <body class="recordingz">
   <div id="screen">
     <img id="liveImg" />
     <canvas id="object-annotations" width="1760" height="880"></canvas>

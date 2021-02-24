@@ -14,7 +14,7 @@ var resetEmojisEl = document.getElementById('reset-emojis')
 var SHOW_RESET_SCREEN = true;
 var SHOW_NEW_MONEY_ANIMATION = false;
 
-var target_fps = 20;
+var target_fps = 13;
 
 var request_start_time = performance.now();
 var start_time = performance.now();
@@ -24,31 +24,12 @@ var time_smoothing = 1.2; // larger=more smoothing
 var request_time_smoothing = 0.2; // larger=more smoothing
 var target_time = 1000 / target_fps;
 
-var barGraph, ridgeGraph;
-const radialOpt = {
-  margin: {top: 0, right: 100, bottom: 0, left: 0},
-    width: 320,
-    height: 400
-}
-const ridgeOpt = {
-   margin: {top: 50, right: 0, bottom: 0, left: 0},
-    width: document.getElementById("gpus").offsetWidth,
-    height: document.getElementById("gpus").offsetHeight
-}
-
-var gpuGraphData = {};
-
-var barSize = 20;
-
-var gaugeNeedles = {}
-
 var sounds = {
   'tap_location': {src:'Rodeo-single-click.wav'},
   'double_tap_location':{src:'Rodeo-double-click.wav'} ,
+  'swipe':{src:'Rodeo-swipe.wav'} ,
   'reset': {src:'Rodeo-restart.wav', delay: 3500}
 };
-
-const Marquee = dynamicMarquee.Marquee;
 
 var wsProtocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
 
@@ -133,10 +114,7 @@ function emoji(emojiName) {
 
 function updateCurStateRender() {
   const { frameNum, fps, imageState, recentTouch, stateActions = [], systemInfo } = renderState;
-
   renderImageState(imageState, recentTouch);
-  //renderStateActions(stateActions);
-  // renderSystemInfo(systemInfo);
 }
 
 /// Image State Rendering
@@ -171,14 +149,12 @@ function initSound(){
 
 function playSound(sound){
   setTimeout(function(){
+    sounds[sound].clip.stop();
     sounds[sound].clip.play();
   }, sounds[sound].delay || 0)
 }
 
 initSound();
-
-//to play a sound
-//playSound("tap");
 
 function getImageObjectColor(label, confidence) {
   if (labelColorsMap[label])    return labelColorsMap[label]
@@ -199,8 +175,6 @@ function drawLine(ctx, p1x, p1y, p2x, p2y) {
 }
 
 function getCanvasSize() {
-  // const w = window.innerWidth
-  // const h = window.innerHeight
   const { width: w, height: h } = objectAnnCanvas
   return [w, h]
 }
@@ -335,34 +309,14 @@ function renderStateActions(stateActions) {
   stateActionsEl.append(...actionEls)
 }
 
-function renderActionHistory(actionHistory) {
-  // reverse order because of the way we store the history ;p
-  const actionEls = []
-  for (let i = (actionHistory || []).length - 1; i >= 0; i--) {
-    const a = actionHistory[i]
-    const { type, label, p, prob } = a
-    const el = document.createElement('div')
-    const text = [
-      `History #${i + 1}:`,
-      type,
-      label !== type ? label : '',
-      p ? `(${p[0]}, ${p[1]})` : '',
-      prob !== undefined ? `- ${((prob || 0) * 100).toFixed(1)}% chance` : '',
-    ].join(' ')
-    el.textContent = text
-    actionEls.push(el)
-  }
-
-  actionHistoryEl.innerHTML = ``
-  actionHistoryEl.append(...actionEls)
-}
-
 
 function parseActionLog(actionString){
   //actionString = `Step 85 (1803) - Action (double_tap_location, {"x": 824, "y": 466, "type": "object", "object_type": "Circle #7", "img_obj": {"rect": [785, 427, 78, 78], "label": "Circle #7", "confidence": null, "object_type": "circle"}})`
   var split = actionString.split(" ");
   var actionNumber = split[1];
   var actionType = split[5].slice(1,-1).replace("(","")
+  // if(actionType.indexOf("swipe")> -1)
+  //     playSound("swipe");
   var actionJson = stripStrings(["{","}","\[","\]"],replaceWithEmojis(JSON.stringify(
         JSON.parse(actionString.slice(actionString.indexOf("{"),-1))
         ,{},'jsonemoji')))
@@ -419,11 +373,8 @@ function renderAiLogs(aiLogs) {
     return true
   })
   const logEls = []
-  console.log(noActions)
   for (let i = (noActions || []).length - 1; i >= 0; i--) {
-    // const el = document.createElement('div')
-    // el.innerHTML = replaceWithEmojis(noActions[i])
-    // logEls.push(el)
+  
     logEls.push(transformAiLogs(noActions[i]))
   }
   if(noActions[noActions.length-1].indexOf("Chose") > -1){
@@ -565,9 +516,9 @@ function handleAIActionUpdate(data) {
   if (!playing) {
     return
   }
-  if(sounds && sounds[data.type])
-    playSound(data.type)
-
+  if(sounds && sounds[data.type]){
+      playSound(data.type)
+  }
   if (data.type === 'tap_location' || data.type === 'double_tap_location') {
     renderState.recentTouch = data
   } else {
@@ -575,14 +526,13 @@ function handleAIActionUpdate(data) {
   }
 
 
-  if (data.type === 'reset') {
-    showResetScreen()
-  }
+  // if (data.type === 'reset') {
+  //   showResetScreen()
+  // }
 
   pushToMaxLengthArray(renderState.actionHistory, data, 50)
-  //renderActionHistory(renderState.actionHistory)
 }
-
+var countz = 0
 var minAiUpdateInterval = 100;
 var aiUpdateAllowed = true;
 var nextAiUpdate = minAiUpdateInterval;
@@ -591,6 +541,8 @@ function handleAILogLineUpdate(line) {
     return
   }
   pushToMaxLengthArray(renderState.aiLogs, line, 50)
+  if(line.indexOf(" Action (swipe_")>-1)
+    playSound("swipe")
   renderAiLogs(renderState.aiLogs)
 
 }
