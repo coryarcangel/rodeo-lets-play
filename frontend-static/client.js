@@ -330,38 +330,6 @@ function stripParens(str){
   return str.replace(")","").replace("(","")
 }
 
-function transformAiLogs(log){
-  const el = document.createElement('div')
-  var str = ""
-  var split = log.split(" ")
-  switch (split[0]){
-    case "Chose":
-      str =
-        `<div class="ai-choice-label">${emoji("Chose")} ${emoji(split[1].toUpperCase())}</div></div>`
-      break
-    case "Sending":
-      var lastCommand = split[2].split("|")
-      str += emoji("Sending message:")+"<br>"
-      str += replaceWithEmojis(lastCommand.slice(0,4).join(" ").replaceAll("-",""))+ (lastCommand[4] ? lastCommand[4] : "")
-      str += "<br>"+replaceWithEmojis("clock1 clock2 clock3")
-      break
-    case "Step":
-      str = emoji("Step")+" "+replaceWithEmojis(split[1])+ emoji("space") +
-      emoji("right_arrow") +replaceWithEmojis(stripParens(split[2]))+ emoji("left_arrow") +"<br>" +
-      emoji("Reward") + replaceWithEmojis(stripParens(split[5]))
-
-      break
-    case "received":
-      str = replaceWithEmojis("received message:") + "<br>" + replaceWithEmojis(split[2].replaceAll("|","  "))
-      break
-    case "Safeguarded":
-      str = replaceWithEmojis(split.slice(0,2).join(" "))
-      break
-    }
-    el.innerHTML = str
-  return el
-}
-
 function renderAiLogs(aiLogs) {
   //take out action logs and put in action-history div
   
@@ -374,7 +342,6 @@ function renderAiLogs(aiLogs) {
   })
   const logEls = []
   for (let i = (noActions || []).length - 1; i >= 0; i--) {
-  
     logEls.push(transformAiLogs(noActions[i]))
   }
   if(noActions[noActions.length-1].indexOf("Chose") > -1){
@@ -532,10 +499,9 @@ function handleAIActionUpdate(data) {
 
   pushToMaxLengthArray(renderState.actionHistory, data, 50)
 }
-var countz = 0
-var minAiUpdateInterval = 100;
-var aiUpdateAllowed = true;
-var nextAiUpdate = minAiUpdateInterval;
+var aiLogChildren = 0;
+var logsString = ""
+var lineBuffer = [];
 function handleAILogLineUpdate(line) {
   if (!playing) {
     return
@@ -543,8 +509,55 @@ function handleAILogLineUpdate(line) {
   pushToMaxLengthArray(renderState.aiLogs, line, 50)
   if(line.indexOf(" Action (swipe_")>-1)
     playSound("swipe")
-  renderAiLogs(renderState.aiLogs)
+  //renderAiLogs(renderState.aiLogs)
+  //renderAiLogLine(line)
 
+  if(line.indexOf(" Action ")>-1){
+     actionHistoryEl.innerHTML = `<pre>${parseActionLog(line)}</pre>`;
+   }
+   else{
+    lineBuffer.push(transformAiLogs(line));
+    if(line.indexOf("Chose")>-1){
+      lineBuffer.map( ln => aiLogEl.prepend(ln));
+      lineBuffer = [] 
+    }
+    aiLogChildren++;
+    if(aiLogChildren > 20){
+      aiLogEl.removeChild(aiLogEl.lastChild);
+    }
+   }
+}
+
+function transformAiLogs(log){
+  const el = document.createElement('div')
+  var str = ""
+  var split = log.split(" ")
+  switch (split[0]){
+    case "Chose":
+      str =
+        `<div class="ai-choice-label">${emoji("Chose")} ${emoji(split[1].toUpperCase())}</div></div>`
+      break
+    case "Sending":
+      var lastCommand = split[2].split("|")
+      str += emoji("Sending message:")+"<br>"
+      str += replaceWithEmojis(lastCommand.slice(0,4).join(" ").replaceAll("-",""))+ (lastCommand[4] ? lastCommand[4] : "")
+      str += "<br>"+replaceWithEmojis("clock1 clock2 clock3")
+      break
+    case "Step":
+      str = emoji("Step")+" "+replaceWithEmojis(split[1])+ emoji("space") +
+      emoji("right_arrow") +replaceWithEmojis(stripParens(split[2]))+ emoji("left_arrow") +"<br>" +
+      emoji("Reward") + replaceWithEmojis(stripParens(split[5]))
+
+      break
+    case "received":
+      str = replaceWithEmojis("received message:") + "<br>" + replaceWithEmojis(split[2].replaceAll("|","  "))
+      break
+    case "Safeguarded":
+      str = replaceWithEmojis(split.slice(0,2).join(" "))
+      break
+    }
+    el.innerHTML = str
+  return el
 }
 
 /// Websocket Events
