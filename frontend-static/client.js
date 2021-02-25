@@ -17,7 +17,7 @@ var MAX_AI_LOG_ELS = 28;
 var FILLED_RECTS = false;
 var FILL_OPACITY_HEX = '22';
 
-var target_fps = 13;
+var target_fps = 12;
 var emojiSize = 28;
 
 var request_start_time = performance.now();
@@ -131,6 +131,7 @@ const labelColorsMap = {
   'banana': colors['yellow'],
   'umbrella': colors['salmon'],
   'frisbee': colors['sienna'],
+  'stop sign': colors['red'],
   'teddy bear': colors['brown']
 }
 

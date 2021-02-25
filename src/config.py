@@ -60,14 +60,14 @@ HEN_OPTIONS = {
         'minDist': 30,  # min distance between circles
         'param1': 500,  # (confusing)
         'param2': 55,  # (smaller means more false circles)
-        'minRadius': 15,
-        'maxRadius': 100
+        'minRadius': 22,
+        'maxRadius': 75
     },
     'CENTER_Y_OFFSET': 105,
     'SAFEGUARD_MENU_RECTS': [
         Rect(0, 0, 3000, 120),  # the entire top bar is bad news
         Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
-        Rect(1895, 0, 1000, 345),
+        Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
     ]
 }
 
@@ -182,7 +182,7 @@ DARKNET_SPECIFIC_OBJECT_THRESHOLDS = {
     'person': 0.2,
     'bicycle': 0.07,
     'clock': 0.12,
-    'traffic light': 0.1
+    'traffic light': 0.15
 }
 
 # see heuristic_selector.py for documentation
@@ -213,8 +213,8 @@ HEURISTIC_CONFIG = {
 
     'action_shape_tap_weights': {
         ActionShape.MENU_EXIT: 10000,
-        ActionShape.CONFIRM_OK: 2000,
-        ActionShape.MONEY_CHOICE: 500,
+        ActionShape.CONFIRM_OK: 10000,
+        ActionShape.MONEY_CHOICE: 3000,
         ActionShape.TALK_CHOICE: 4000,
         ActionShape.COLLECTABLE: 4000,
         ActionShape.MAYBE_TALK_CHOICE: 1000,
@@ -230,14 +230,14 @@ ACTION_SHAPE_COLOR_RANGES = [
                     lower=(-2, 125, 200), upper=(1, 255, 255),
                     min_area=200, max_area=600, min_verts=4, max_verts=9, max_area_ratio=2),
     ShapeColorRange(ActionShape.ROOM_EXIT, 'Red',
-                    lower=(-2, 25, 200), upper=(1, 255, 255),
-                    min_area=1200, max_area=4500, min_verts=11, max_verts=30),
+                    lower=(-4, 25, 180), upper=(4, 255, 255),
+                    min_area=1200, max_area=4500, min_verts=9, max_verts=30, max_area_ratio=2),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Blue',  # most common action
-                    lower=(100, 160, 50), upper=(120, 255, 255),
+                    lower=(100, 200, 50), upper=(120, 255, 255),
                     min_area=600, max_area=9000, min_verts=4, max_verts=15),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure',
-                    lower=(102, 50, 200), upper=(105, 100, 255),
-                    min_area=3500, max_area=7500, min_verts=4, max_verts=15, max_area_ratio=1.2),  # deal with azure backgrounds
+                    lower=(104, 50, 200), upper=(107, 90, 255),
+                    min_area=3500, max_area=7500, min_verts=4, max_verts=15, max_area_ratio=1.25),  # deal with azure backgrounds
     ShapeColorRange(ActionShape.MONEY_CHOICE, 'Light Green',  # money green
                     lower=(40, 100, 50), upper=(65, 255, 255),
                     min_area=800, max_area=9000, min_verts=4, max_verts=15),
@@ -245,11 +245,11 @@ ACTION_SHAPE_COLOR_RANGES = [
                     lower=(0, 15, 170), upper=(255, 25, 195),
                     min_area=2500, max_area=8500, min_verts=4, max_verts=15),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Pink',  # flirting
-                    lower=(160, 20, 20), upper=(170, 255, 255),
+                    lower=(160, 120, 120), upper=(170, 255, 255),
                     min_area=600, max_area=9000, min_verts=4, max_verts=15, max_area_ratio=2.3),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Teal',
-                    lower=(90, 150, 50), upper=(95, 255, 200),
-                    min_area=320, max_area=9000, min_verts=4, max_verts=15, max_area_ratio=1.7),
+                    lower=(93, 175, 50), upper=(96, 255, 200),
+                    min_area=320, max_area=9000, min_verts=4, max_verts=25, max_area_ratio=1.9),
     ShapeColorRange(ActionShape.IMPORTANT_MARKER, 'Yellow',  # yellow exclamation marks
                     lower=(23, 100, 50), upper=(30, 255, 255),
                     min_area=300, max_area=2500, min_verts=4, max_verts=30),
@@ -257,29 +257,29 @@ ACTION_SHAPE_COLOR_RANGES = [
                     lower=(0, 0, 225), upper=(255, 5, 255),
                     min_area=1050, max_area=1500, min_verts=11, max_verts=20, max_area_ratio=2),
     ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White',  # huge white boxes
-                    lower=(0, 0, 235), upper=(255, 5, 255),
-                    min_area=12000, max_area=50000, min_verts=4, max_verts=25, max_area_ratio=1.2),
+                    lower=(0, 0, 240), upper=(255, 10, 255),
+                    min_area=12000, max_area=50000, min_verts=4, max_verts=25, max_area_ratio=1.65),
     ShapeColorRange(ActionShape.CONFIRM_OK, 'White',  # white rects with gold / silver perimeter
                     lower=(0, 0, 245), upper=(255, 2, 255),
-                    min_area=900, max_area=10000, min_verts=5, max_verts=18, max_area_ratio=1.25),
+                    min_area=900, max_area=10000, min_verts=5, max_verts=18, max_area_ratio=1.45),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Orange',
-                    lower=(14, 50, 200), upper=(15, 255, 255),
+                    lower=(14, 200, 200), upper=(15, 255, 255),
                     min_area=800, max_area=9000, min_verts=4, max_verts=15),
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet',  # TODO: need to Violet see in practice
-                    lower=(153, 180, 150), upper=(157, 205, 215),
-                    min_area=320, max_area=9000, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet',
+                    lower=(152, 175, 150), upper=(154, 255, 200),
+                    min_area=320, max_area=9000, min_verts=4, max_verts=25, max_area_ratio=1.9),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Green',  # clickable money
                     lower=(40, 100, 50), upper=(52, 255, 255),
                     min_area=100, max_area=500, min_verts=8, max_verts=20,
-                    min_y=275, min_area_ratio=1.2, max_area_ratio=2),
+                    min_y=240, min_area_ratio=1.2, max_area_ratio=2),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Aqua',  # clickable stars :)
                     lower=(87, 50, 50), upper=(95, 255, 255),
-                    min_area=380, max_area=800, min_verts=13, max_verts=25,
-                    min_y=275, min_area_ratio=1.5, max_area_ratio=3),
+                    min_area=260, max_area=800, min_verts=13, max_verts=25,
+                    min_y=240, min_area_ratio=1.5, max_area_ratio=3),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Khaki',  # clickable people :)
                     lower=(17, 50, 120), upper=(24, 150, 255),
-                    min_area=700, max_area=1100, min_verts=8, max_verts=30,
-                    min_y=275, min_area_ratio=1.2, max_area_ratio=3),
+                    min_area=610, max_area=1100, min_verts=8, max_verts=30,
+                    min_y=240, min_area_ratio=1.2, max_area_ratio=3),
 
     # ShapeColorRange(ActionShape.COLLECTABLE, 'PowderBlue',  # clickable lightning :)
     #                 lower=(70, 15, 150), upper=(100, 80, 255),
