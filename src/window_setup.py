@@ -4,14 +4,6 @@ from config import NUM_MONITORS, MONITORS, MON_NAMES, DASHBOARD_NAME
 import window
 
 
-def setup_vysor_window():
-    ''' Moves the Vysor window to fixed location for capture via mss '''
-    x, y, w, h = VYSOR_RECT
-    mon_name, _ = MONITORS[1 if NUM_MONITORS >= 2 else 0]
-    window.move_window_to_screen(VYSOR_WINDOW_NAME, x, y, w, h, mon_name)
-    window.activate_window_by_name(VYSOR_WINDOW_NAME)
-
-
 def setup_process_hub_window():
     win_name = DASHBOARD_NAME
     if NUM_MONITORS == 1:
@@ -32,6 +24,17 @@ def click_in_process_hub_window():
     dashboard_id = window.get_window_id(DASHBOARD_NAME)
     if dashboard_id:
         window.click_in_window(dashboard_id, 20, 20)
+
+
+def setup_vysor_window():
+    ''' Moves the Vysor window to fixed location for capture via mss '''
+    x, y, w, h = VYSOR_RECT
+    mon_name, _ = MONITORS[1 if NUM_MONITORS >= 2 else 0]
+    window.move_window_to_screen(VYSOR_WINDOW_NAME, x, y, w, h, mon_name)
+    window.activate_window_by_name(VYSOR_WINDOW_NAME)
+
+    # remove mouse from vysor
+    click_in_process_hub_window()
 
 
 def setup_frontend_window():

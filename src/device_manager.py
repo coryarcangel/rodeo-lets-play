@@ -87,7 +87,7 @@ class DeviceManager(object):
         self.logger.debug('Double Tapping at (%d, %d)' % (x, y))
         self.touch(x, y)
         sleep(0.2)
-        self.device.touch(x, y)
+        self.touch(x, y)
         sleep(DELAY_BETWEEN_ACTIONS)
 
     def touch(self, x, y):

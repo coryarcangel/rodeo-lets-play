@@ -5,7 +5,7 @@ const moment = require('moment')
 const stripAnsi = require('strip-ansi')
 const fs = require('fs')
 const path = require('path')
-const { debounce } = require('lodash')
+const { throttle } = require('lodash')
 const { OPTIONS } = require('./config')
 
 /// Config
@@ -44,7 +44,7 @@ const getLogger = (ops) => {
   allLoggerStreams.push(stream)
 
   let bufferedLogLines = []
-  const logBufferedLines = debounce(() => {
+  const logBufferedLines = throttle(() => {
     bufferedLogLines.forEach(line => {
       // here we implement our own log in the dashboard logger, to minimize scrolls
       // logger.log(line)
@@ -62,11 +62,11 @@ const getLogger = (ops) => {
     logger.scrollTo(logger.logLines.length)
 
     bufferedLogLines = []
-  }, 250)
+  }, 250, { leading: true, trailing: true })
 
   const log = (line) => {
     bufferedLogLines.push(line)
-    logBufferedLines() // debounced :)
+    logBufferedLines() // throttled :)
   }
 
   return { name, filepath, stream, logger, log }

@@ -15,7 +15,7 @@ var SHOW_RESET_SCREEN = false;
 var SHOW_NEW_MONEY_ANIMATION = false;
 var MAX_AI_LOG_ELS = 28;
 var FILLED_RECTS = false;
-var FILL_OPACITY_HEX = '33';
+var FILL_OPACITY_HEX = '22';
 
 var target_fps = 13;
 var emojiSize = 28;

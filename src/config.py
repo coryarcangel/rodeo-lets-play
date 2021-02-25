@@ -24,6 +24,123 @@ DASHBOARD_NAME = 'AI_DASHBOARD'
 VYSOR_WINDOW_NAME = 'VysorKim'
 
 """
+SYSTEM SPECIFIC CONFIG (PHONE, COMP, ETC)
+"""
+
+# Galaxy 10
+GALAXY10_RECT = Rect(0, 0, 2280, 1080)
+GALAXY10_GAME_RECT = Rect(112, 0, 2168, 1080)
+
+HEN_VYSOR_RECT = Rect(10, 10, 1665, 827)
+HEN_OPTIONS = {
+    'MONITORS': [
+        ('HDMI-1', (1920, 1080)),
+        ('DP-1', (1920, 1080)),
+        ('DP-3', (1920, 1080))
+    ],
+    'TFNET_CONFIG': {
+        'model': 'cfg/tiny-yolo.cfg',
+        'load': 'dfbin/tiny-yolo.weights',
+        'gpu': 0.75,
+        'threshold': 0.075
+    },
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
+    'TF_AI_POLICY_WEIGHTS': {
+        'deep_q': 0.5,
+        'heuristic': 0.4,
+        'random': 0.1
+    },
+    'VYSOR_RECT': HEN_VYSOR_RECT,
+    'PHONE_RECT': GALAXY10_RECT,
+    'PHONE_GAME_RECT': GALAXY10_GAME_RECT,
+    'PHONE_VYSOR_CAP_AREA': Rect(92, 71, HEN_VYSOR_RECT[-2] - 83, HEN_VYSOR_RECT[-1] - 37),
+    'IMAGE_PROCESS_SCALE': 0.75,
+    'HOUGH_CIRCLES_CONFIG': {
+        'dp': 0.25,  # (inverse ratio of accumulator resolution)
+        'minDist': 30,  # min distance between circles
+        'param1': 500,  # (confusing)
+        'param2': 55,  # (smaller means more false circles)
+        'minRadius': 15,
+        'maxRadius': 100
+    },
+    'CENTER_Y_OFFSET': 105,
+    'SAFEGUARD_MENU_RECTS': [
+        Rect(0, 0, 3000, 120),  # the entire top bar is bad news
+        Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
+        Rect(1895, 0, 1000, 345),
+    ]
+}
+
+# Galaxy 8
+GALAXY8_RECT = Rect(0, 0, 2220, 1080)  # Raw Phone Size
+GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)  # Account for black space
+
+KEV_VYSOR_RECT = Rect(0, 0, 776, 466)
+KEV_OPTIONS = {
+    'MONITORS': [
+        ('HDMI-1-1', (1920, 1080)),
+        ('DP-1', (1920, 1080)),
+    ],
+    'TFNET_CONFIG': {
+        'model': 'cfg/tiny-yolo.cfg',
+        'load': 'dfbin/tiny-yolo.weights',
+        'gpu': 0.5,
+        'threshold': 0.05
+    },
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
+    'TF_AI_POLICY_WEIGHTS': {
+        'deep_q': 0.5,
+        'heuristic': 0.4,
+        'random': 0.1
+    },
+    'VYSOR_RECT': KEV_VYSOR_RECT,
+    'PHONE_RECT': GALAXY8_RECT,
+    'PHONE_GAME_RECT': GALAXY8_GAME_RECT,
+    'PHONE_VYSOR_CAP_AREA': Rect(52, 68, KEV_VYSOR_RECT[-2] - 105, KEV_VYSOR_RECT[-1] - 82),
+    'IMAGE_PROCESS_SCALE': 1,
+    'HOUGH_CIRCLES_CONFIG': {
+        'dp': 0.25,  # (inverse ratio of accumulator resolution)
+        'minDist': 30,  # min distance between circles
+        'param1': 500,  # (confusing)
+        'param2': 40,  # (smaller means more false circles)
+        'minRadius': 2,
+        'maxRadius': 30
+    },
+    'CENTER_Y_OFFSET': 35,
+    'SAFEGUARD_MENU_RECTS': [
+        Rect(0, 0, 3000, 100),  # the entire top bar is bad news
+        Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
+        Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
+    ]
+}
+
+OPTIONS = HEN_OPTIONS
+
+# monitor config is system dependent
+MONITORS = OPTIONS['MONITORS']
+
+NUM_MONITORS = len(MONITORS)
+MON_NAMES = [s[0] for s in MONITORS]
+
+SCREEN_SIZES = {}
+for s in MONITORS:
+    SCREEN_SIZES[s[0]] = s[1]
+
+TFNET_CONFIG = OPTIONS['TFNET_CONFIG']
+
+TF_DEEPQ_POLICY_SAVE_DIR = OPTIONS['TF_DEEPQ_POLICY_SAVE_DIR']
+
+TF_AI_POLICY_WEIGHTS = OPTIONS['TF_AI_POLICY_WEIGHTS']
+
+# Where the Vysor Window Is Moved To
+VYSOR_RECT = OPTIONS['VYSOR_RECT']
+IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
+
+HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
+SAFEGUARD_MENU_RECTS = OPTIONS['SAFEGUARD_MENU_RECTS']
+CENTER_Y_OFFSET = OPTIONS['CENTER_Y_OFFSET']
+
+"""
 BEHAVIOR
 """
 
@@ -36,8 +153,8 @@ SAFEGUARD_MENU_CLICKS_DEFAULT = True
 
 ACTION_WEIGHTS = {
     Action.PASS: 50,
-    Action.SWIPE_LEFT: 1000,  # push forward more than back
-    Action.SWIPE_RIGHT: 700,
+    Action.SWIPE_LEFT: 2000,  # push forward more than back
+    Action.SWIPE_RIGHT: 1500,
     Action.TAP_LOCATION: 100,
     Action.DOUBLE_TAP_LOCATION: 10,
     Action.RESET: 0.01
@@ -46,7 +163,7 @@ ACTION_WEIGHTS = {
 TAP_TYPE_ACTION_WEIGHTS = {
     'menu': 1,
     'hot_region': 500,
-    'object': 100
+    'object': 50
 }
 
 TAP_OBJECT_ACTION_WEIGHTS = {
@@ -64,7 +181,8 @@ TAP_OBJECT_ACTION_WEIGHTS = {
 DARKNET_SPECIFIC_OBJECT_THRESHOLDS = {
     'person': 0.2,
     'bicycle': 0.07,
-    'clock': 0.07
+    'clock': 0.12,
+    'traffic light': 0.1
 }
 
 # see heuristic_selector.py for documentation
@@ -199,7 +317,7 @@ def GET_KNOWN_TAP_LOCATIONS(img_rect, img_rect_center):
     qh = int(h * 0.25)
     hot_regions = [
         # For pressing the "OK"
-        {'type': 'hot_region', 'x': cx, 'y': cy + 35},
+        {'type': 'hot_region', 'x': cx, 'y': cy + CENTER_Y_OFFSET},
 
         # quadrant regions to catch occassional big tappable boxes
         {'type': 'hot_region', 'x': cx + qw, 'y': cy + qh},
@@ -224,119 +342,6 @@ REWARD_PARAMS = {
     'object_tap_reward': 30,
 }
 
-"""
-SYSTEM SPECIFIC CONFIG (PHONE, COMP, ETC)
-"""
-
-# Galaxy 10
-GALAXY10_RECT = Rect(0, 0, 2280, 1080)
-GALAXY10_GAME_RECT = Rect(112, 0, 2168, 1080)
-
-HEN_VYSOR_RECT = Rect(10, 10, 1665, 827)
-HEN_OPTIONS = {
-    'MONITORS': [
-        ('HDMI-1-1', (1920, 1080)),
-        ('DP-1', (1920, 1080)),
-        ('DP-3', (1920, 1080))
-    ],
-    'TFNET_CONFIG': {
-        'model': 'cfg/tiny-yolo.cfg',
-        'load': 'dfbin/tiny-yolo.weights',
-        'gpu': 0.75,
-        'threshold': 0.075
-    },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
-    'TF_AI_POLICY_WEIGHTS': {
-        'deep_q': 0.5,
-        'heuristic': 0.4,
-        'random': 0.1
-    },
-    'VYSOR_RECT': HEN_VYSOR_RECT,
-    'PHONE_RECT': GALAXY10_RECT,
-    'PHONE_GAME_RECT': GALAXY10_GAME_RECT,
-    'PHONE_VYSOR_CAP_AREA': Rect(92, 71, HEN_VYSOR_RECT[-2] - 83, HEN_VYSOR_RECT[-1] - 37),
-    'IMAGE_PROCESS_SCALE': 0.75,
-    'HOUGH_CIRCLES_CONFIG': {
-        'dp': 0.25,  # (inverse ratio of accumulator resolution)
-        'minDist': 30,  # min distance between circles
-        'param1': 500,  # (confusing)
-        'param2': 40,  # (smaller means more false circles)
-        'minRadius': 3,
-        'maxRadius': 100
-    },
-    'SAFEGUARD_MENU_RECTS': [
-        Rect(0, 0, 3000, 120),  # the entire top bar is bad news
-        Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
-        Rect(1895, 0, 1000, 345),
-    ]
-}
-
-# Galaxy 8
-GALAXY8_RECT = Rect(0, 0, 2220, 1080)  # Raw Phone Size
-GALAXY8_GAME_RECT = Rect(146, 25, 1928, 1060)  # Account for black space
-
-KEV_VYSOR_RECT = Rect(0, 0, 776, 466)
-KEV_OPTIONS = {
-    'MONITORS': [
-        ('HDMI-1-1', (1920, 1080)),
-        ('DP-1', (1920, 1080)),
-    ],
-    'TFNET_CONFIG': {
-        'model': 'cfg/tiny-yolo.cfg',
-        'load': 'dfbin/tiny-yolo.weights',
-        'gpu': 0.5,
-        'threshold': 0.05
-    },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
-    'TF_AI_POLICY_WEIGHTS': {
-        'deep_q': 0.5,
-        'heuristic': 0.4,
-        'random': 0.1
-    },
-    'VYSOR_RECT': KEV_VYSOR_RECT,
-    'PHONE_RECT': GALAXY8_RECT,
-    'PHONE_GAME_RECT': GALAXY8_GAME_RECT,
-    'PHONE_VYSOR_CAP_AREA': Rect(52, 68, KEV_VYSOR_RECT[-2] - 105, KEV_VYSOR_RECT[-1] - 82),
-    'IMAGE_PROCESS_SCALE': 1,
-    'HOUGH_CIRCLES_CONFIG': {
-        'dp': 0.25,  # (inverse ratio of accumulator resolution)
-        'minDist': 30,  # min distance between circles
-        'param1': 500,  # (confusing)
-        'param2': 40,  # (smaller means more false circles)
-        'minRadius': 2,
-        'maxRadius': 30
-    },
-    'SAFEGUARD_MENU_RECTS': [
-        Rect(0, 0, 3000, 100),  # the entire top bar is bad news
-        Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
-        Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
-    ]
-}
-
-OPTIONS = HEN_OPTIONS
-
-# monitor config is system dependent
-MONITORS = OPTIONS['MONITORS']
-
-NUM_MONITORS = len(MONITORS)
-MON_NAMES = [s[0] for s in MONITORS]
-
-SCREEN_SIZES = {}
-for s in MONITORS:
-    SCREEN_SIZES[s[0]] = s[1]
-
-TFNET_CONFIG = OPTIONS['TFNET_CONFIG']
-
-TF_DEEPQ_POLICY_SAVE_DIR = OPTIONS['TF_DEEPQ_POLICY_SAVE_DIR']
-
-TF_AI_POLICY_WEIGHTS = OPTIONS['TF_AI_POLICY_WEIGHTS']
-
-# Where the Vysor Window Is Moved To
-VYSOR_RECT = OPTIONS['VYSOR_RECT']
-IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
-
-HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
-SAFEGUARD_MENU_RECTS = OPTIONS['SAFEGUARD_MENU_RECTS']
 
 """
 Phone Rect / Game Rect is about the raw phone size.

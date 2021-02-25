@@ -99,7 +99,7 @@ def move_window_to_screen(name, x, y, width, height, scr='DP-1'):
             # first move and resize the window, to make sure it fits completely
             # inside the targeted screen else the next command will fail...
             subprocess.Popen(["wmctrl", "-ir", w, "-e", "0," + str(int(pos[1]) + x) + "," + str(y) + ",300,300"])
-            time.sleep(0.1)
+            time.sleep(0.2)
             # maximize the window on its new screen
             subprocess.Popen(["xdotool", "windowsize", w, str(width), str(height)])
 
