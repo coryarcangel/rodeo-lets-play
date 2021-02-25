@@ -116,7 +116,7 @@ def get_image_colored_shapes(image, shape_color_ranges):
     selectable bubbles in the game are detected.
     '''
 
-    TESTING = True
+    TESTING = False
     SHOW_PRE_SHAPES = True
     if TESTING:
         shape_color_ranges = [s for s in shape_color_ranges if s.color_label in ('Violet')]
