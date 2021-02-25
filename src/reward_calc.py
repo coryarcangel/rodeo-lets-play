@@ -23,6 +23,7 @@ class RewardCalculator():
         self.recent_object_tap_threshold = recent_object_tap_threshold
         self.object_tap_reward = object_tap_reward
 
+        self.action_cum_reward = 0
         self.last_step_num_keys = ['swipe', 'pass', 'tap', 'double_tap', 'object_tap']
         self.mark_reset()
 
@@ -42,7 +43,7 @@ class RewardCalculator():
         # if we swipe and haven't swiped in a while, give a reward boost.
         if action_name in (Action.SWIPE_LEFT, Action.SWIPE_RIGHT):
             if step_num - self.last_step_nums['swipe'] >= self.recent_swipe_threshold:
-                reward += self.swipe_reward
+                self.action_cum_reward += self.swipe_reward
             self.last_step_nums['swipe'] = step_num
         elif action_name == Action.PASS:
             self.last_step_nums['pass'] = step_num
@@ -50,10 +51,12 @@ class RewardCalculator():
             self.last_step_nums['tap'] = step_num
             if 'object_type' in args and args['object_type'] != 'deep_q':
                 if step_num - self.last_step_nums['object_tap'] >= self.recent_object_tap_threshold:
-                    reward += self.object_tap_reward
+                    self.action_cum_reward += self.object_tap_reward
                 self.last_step_nums['object_tap'] = step_num
         elif action_name == Action.DOUBLE_TAP_LOCATION:
             self.last_step_nums['double_tap'] = step_num
+
+        reward += self.action_cum_reward
 
         return reward
 
