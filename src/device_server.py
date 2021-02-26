@@ -23,7 +23,7 @@ class DeviceMessageHandler(AsyncchatKim):
     def __init__(self,
                  device_manager,
                  sock,
-                 gc_memory_kill_limit=10000000,
+                 gc_memory_kill_limit=15000000,
                  gc_command_interval=20):
         AsyncchatKim.__init__(
             self,
