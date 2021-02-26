@@ -36,6 +36,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.reward_calculator = RewardCalculator()
 
         self.num_observation_objects = 100
+        self.step_num_obs_mod = 100
         self.obj_name_int_vals, self.obj_int_val_names, self.obj_name_int_max_val = get_object_name_int_values()
 
         grid_width = self.grid_width = 30
@@ -69,12 +70,12 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             shape=(), dtype=np.int32,
             minimum=0, maximum=self.max_action_vals_2, name='action')
 
-        # a list objects with type, confidence, x, y vals
+        # step num % step_num_obs_mod, follwed by a list objects with type, confidence, x, y vals
         self._observation_spec = array_spec.BoundedArraySpec(
-            shape=(self.num_observation_objects, 4),
+            shape=(self.num_observation_objects + 1, 4),
             dtype=np.int32,
             minimum=[(0, 0, 0, 0)],
-            maximum=[(self.obj_name_int_max_val, 100, grid_width, grid_height)],
+            maximum=[(max(self.step_num_obs_mod, self.obj_name_int_max_val), 100, grid_width, grid_height)],
             name='observation')
 
         self.total_step_num = 0
@@ -169,14 +170,16 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
                 vec = self._get_image_object_observation_vec(obj)
             obj_vectors.append(vec)
 
-        return np.array(obj_vectors, dtype=np.int32)
+        step_mod = self.step_num % self.step_num_obs_mod
+        step_num_vecs = [(step_mod, step_mod, step_mod, step_mod), ]
+        return np.array(step_num_vecs + obj_vectors, dtype=np.int32)
 
     def observation_to_ai_state(self, observation):
         # TODO: this is imperfect (money, stars, anything but image objects)
         # but do I need the reverse transformation?
 
         image_objects = []
-        for vec in observation:
+        for vec in observation[1:]:
             label_val, confidence_int, x_grid, y_grid = vec
             label = self.obj_int_val_names[label_val] if label_val in self.obj_int_val_names else 'none'
             confidence = float(confidence_int) / 100
