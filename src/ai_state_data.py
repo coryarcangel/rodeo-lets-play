@@ -82,7 +82,7 @@ class AIState(object):
 
         for idx, shape in enumerate(shapes):
             a, s, co, ashape, raw, v = [shape[k] for k in ('area', 'shape', 'color_label', 'action_shape', 'boundsArea', 'verts')]
-            shape_data = { k: shape[k] for k in ('area', 'verts', 'shape', 'color_label', 'action_shape') }
+            shape_data = { k: shape[k] for k in ('area', 'verts', 'shape', 'color_label', 'action_shape', 'boundsArea') }
             shape_data['shape_label'] = '%s (%s, %s, %d, %d)' % (ashape, s, co, v, raw)
             self.image_objects.append({
                 'label': '%s (%d) - %s' % (s, a, co),

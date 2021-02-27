@@ -67,6 +67,7 @@
   "space": [59,61],
   "DRAG_X": [46,31],
   "swipe_left": [46,31],
+  "swipe_right": [46,31],
   "Safeguarded point": [[22,28],[22,28],[22,28]],
   "siren": [24, 20]
 }

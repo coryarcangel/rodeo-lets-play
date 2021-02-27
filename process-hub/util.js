@@ -11,7 +11,9 @@ const setWindowTitle = (title) => {
 
 const setupVisibleWindows = async () => {
   const filepath = `${__dirname}/../src/window_setup.py`
-  childProcess.execSync(`python3 ${filepath}`)
+  try {
+	childProcess.execSync(`python3 ${filepath}`)
+  } catch (err) {}
   // await delay(100)
 }
 

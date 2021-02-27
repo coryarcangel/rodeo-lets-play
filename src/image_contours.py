@@ -105,7 +105,7 @@ def get_color_shape_data(shape_color_range, c, image, resized_image):
 
 def print_color_shapes(color_shapes):
     for s in color_shapes:
-        print(s['action_shape'], s['color_label'], s['verts'], s['rawRect'], s['boundsArea'], s['areaRatio'])
+        print(s['action_shape'], s['color_label'], 'verts:', s['verts'], s['rawRect'], 'area:', s['boundsArea'], s['areaRatio'])
 
 
 def get_image_colored_shapes(image, shape_color_ranges):
@@ -115,6 +115,11 @@ def get_image_colored_shapes(image, shape_color_ranges):
     We use contour detection to detect solid patches of color, which is how most
     selectable bubbles in the game are detected.
     '''
+
+    TESTING = False
+    SHOW_PRE_SHAPES = True
+    if TESTING:
+        shape_color_ranges = [s for s in shape_color_ranges if s.color_label in ('White')]
 
     # Resize for performance
     img = image
@@ -138,7 +143,7 @@ def get_image_colored_shapes(image, shape_color_ranges):
             else:
                 mask = cv2.addWeighted(mask, 1, range_mask, 1, 0)
         res = cv2.bitwise_and(img, img, mask=mask)
-        # cv2.imshow('Res', res); cv2.waitKey(0); cv2.destroyWindow('Res')
+        if TESTING: cv2.imshow('Res', res); cv2.waitKey(0); cv2.destroyWindow('Res')
 
         # Convert to grayscale and threshold
         res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
@@ -157,7 +162,7 @@ def get_image_colored_shapes(image, shape_color_ranges):
         color_shapes = [cs for cs in color_shapes if cs['boundsArea'] > 60 and cs['contourArea'] > 10]
 
         # filter for this ShapeColorRange
-        # print_color_shapes(color_shapes)
+        if TESTING and SHOW_PRE_SHAPES: print_color_shapes(color_shapes)
         color_shapes = [cs for cs in color_shapes if cs
                         and cs['boundsArea'] >= item.min_area
                         and cs['boundsArea'] <= item.max_area
@@ -166,7 +171,9 @@ def get_image_colored_shapes(image, shape_color_ranges):
                         and cs['areaRatio'] >= item.min_area_ratio
                         and cs['areaRatio'] <= item.max_area_ratio
                         and cs['rawRect'][1] >= item.min_y]
-        # print_color_shapes(color_shapes)
+        if TESTING:
+            print("Drawn Shapes:")
+            print_color_shapes(color_shapes)
         return color_shapes
 
     THREADED = False

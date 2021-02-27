@@ -114,7 +114,9 @@ class VysorDataStream(object):
                     'index': screen_num,
                     'state': ai_state.serialize()
                 }
-                self.r.publish('phone-image-states', json.dumps(message))
+                msg_json = json.dumps(message)
+                self.r.publish('phone-image-states', msg_json)
+                self.r.set('cur-phone-image-state', msg_json)
 
                 # Display
                 captured_rgb_image = cv2.cvtColor(captured_np_img, cv2.COLOR_BGR2RGB)

@@ -29,16 +29,19 @@ class ActionShape(object):
     CONFIRM_OK = 'confirm_ok'
     MONEY_CHOICE = 'money_choice'
     TALK_CHOICE = 'talk_choice'
+    STRONG_TALK_CHOICE = 'strong_talk_choice'
     MAYBE_TALK_CHOICE = 'maybe_talk_choice'
     IMPORTANT_MARKER = 'important_marker'
     COLLECTABLE = 'collectable'
     ROOM_EXIT = 'room_exit'
+    AREA_ENTRY = 'area_entry'
     UNKNOWN = 'unknown'
 
 
 all_action_shapes = [
     ActionShape.MENU_EXIT, ActionShape.CONFIRM_OK, ActionShape.MONEY_CHOICE,
-    ActionShape.TALK_CHOICE, ActionShape.MAYBE_TALK_CHOICE,
+    ActionShape.TALK_CHOICE, ActionShape.MAYBE_TALK_CHOICE, ActionShape.AREA_ENTRY,
+    ActionShape.STRONG_TALK_CHOICE,
     ActionShape.IMPORTANT_MARKER, ActionShape.COLLECTABLE,
     ActionShape.ROOM_EXIT, ActionShape.UNKNOWN
 ]

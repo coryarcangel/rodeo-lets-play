@@ -79,7 +79,7 @@ class DeviceClient(AsyncchatKim):
             self.start()
         pass
 
-    def _wait_for_ack(self, command_id, timeout=10):
+    def _wait_for_ack(self, command_id, timeout=15):
         now = time.time()
         while not self._has_received_cmd_ack(command_id):
             time.sleep(0.001)
@@ -121,7 +121,8 @@ class DeviceClient(AsyncchatKim):
         time.sleep(1)
 
     def _img_point_to_device_point(self, img_point):
-        return convert_point_between_rects(img_point, self.img_rect, self.phone_game_rect)
+        p = convert_point_between_rects(img_point, self.img_rect, self.phone_game_rect)
+        return (p)
 
     def _can_tap_device_point(self, x, y):
         if not self.safeguard_menu_clicks:
@@ -153,3 +154,9 @@ class DeviceClient(AsyncchatKim):
             self._send_command(KimCommand.DOUBLE_TAP, nx, ny, type)
         else:
             time.sleep(DELAY_BETWEEN_ACTIONS)
+
+    def send_back_button_command(self):
+        self._send_command(KimCommand.BACK_BUTTON)
+
+    def send_launch_hollywood_command(self):
+        self._send_command(KimCommand.LAUNCH_HOLLYWOOD)

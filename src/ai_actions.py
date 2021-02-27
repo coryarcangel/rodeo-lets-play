@@ -81,7 +81,8 @@ class ActionWeighter(object):
         self.TapObjectTypeWeights = TAP_OBJECT_ACTION_WEIGHTS
 
     def is_object_type_likely_exit(self, object_type):
-        return object_type == 'circle' or object_type == 'clock' or object_type == 'frisbee'
+        # return object_type == 'circle' or object_type == 'clock' or object_type == 'frisbee'
+        return object_type == 'stop sign'
 
     def get_tap_action_weight_ratio(self, action):
         return 1 if action == Action.TAP_LOCATION else self.double_tap_to_tap_ratio

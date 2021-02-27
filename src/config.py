@@ -23,6 +23,16 @@ DASHBOARD_NAME = 'AI_DASHBOARD'
 # Name of the phone in vysor (change in vysor settings)
 VYSOR_WINDOW_NAME = 'VysorKim'
 
+# Android app stuff
+KK_HOLLYWOOD_PACKAGE = 'com.glu.stardomkim'
+KK_HOLLYWOOD_COMPONENT = '%s/com.google.android.vending.expansion.downloader_impl.DownloaderActivity' % KK_HOLLYWOOD_PACKAGE
+
+RESET_PACKAGES_TO_KILL = [
+    'com.facebook.katana',
+    'com.google.android.gms',
+    'com.google.android.play.games',
+]
+
 """
 SYSTEM SPECIFIC CONFIG (PHONE, COMP, ETC)
 """
@@ -34,7 +44,7 @@ GALAXY10_GAME_RECT = Rect(112, 0, 2168, 1080)
 HEN_VYSOR_RECT = Rect(10, 10, 1665, 827)
 HEN_OPTIONS = {
     'MONITORS': [
-        ('HDMI-1', (1920, 1080)),
+        ('HDMI-0', (1920, 1080)),
         ('DP-1', (1920, 1080)),
         ('DP-3', (1920, 1080))
     ],
@@ -47,8 +57,8 @@ HEN_OPTIONS = {
     'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
     'TF_DEEPQ_POLICY_NAME': 'policy',
     'TF_AI_POLICY_WEIGHTS': {
-        'deep_q': 0.5,
-        'heuristic': 0.4,
+        'deep_q': 0.4,
+        'heuristic': 0.5,
         'random': 0.1
     },
     'VYSOR_RECT': HEN_VYSOR_RECT,
@@ -61,14 +71,14 @@ HEN_OPTIONS = {
         'minDist': 30,  # min distance between circles
         'param1': 500,  # (confusing)
         'param2': 55,  # (smaller means more false circles)
-        'minRadius': 15,
-        'maxRadius': 100
+        'minRadius': 22,
+        'maxRadius': 75
     },
     'CENTER_Y_OFFSET': 105,
     'SAFEGUARD_MENU_RECTS': [
         Rect(0, 0, 3000, 120),  # the entire top bar is bad news
         Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
-        Rect(1895, 0, 1000, 345),
+        Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
     ]
 }
 
@@ -147,20 +157,30 @@ CENTER_Y_OFFSET = OPTIONS['CENTER_Y_OFFSET']
 BEHAVIOR
 """
 
-DELAY_BETWEEN_ACTIONS = 1.5  # in seconds
+DELAY_BETWEEN_ACTIONS = 2  # in seconds
+
+SHELL_TAP_PROB = 0.7  # 0 -> 1, prob will choose between two tap types in device_manager
 
 KILL_ADB_ON_DEVICE_SERVER_EXIT = False
+
+MAX_NO_MONEY_READ_TIME = 30  # seconds
+MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS = 5
+MAX_NON_KIM_APP_TIME = 10  # seconds we can not be in the KK:H app. Fallback from no money fixes.
+
+SECONDS_BETWEEN_BACK_BUTTONS = 1.3
+
+CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
 # Areas of the device that are not clickable if set to True (useful in training).
 SAFEGUARD_MENU_CLICKS_DEFAULT = True
 
 ACTION_WEIGHTS = {
     Action.PASS: 50,
-    Action.SWIPE_LEFT: 2000,  # push forward more than back
-    Action.SWIPE_RIGHT: 1500,
+    Action.SWIPE_LEFT: 3000,  # push forward more than back
+    Action.SWIPE_RIGHT: 2500,
     Action.TAP_LOCATION: 100,
     Action.DOUBLE_TAP_LOCATION: 10,
-    Action.RESET: 0.01
+    Action.RESET: 40,
 }
 
 TAP_TYPE_ACTION_WEIGHTS = {
@@ -185,7 +205,7 @@ DARKNET_SPECIFIC_OBJECT_THRESHOLDS = {
     'person': 0.2,
     'bicycle': 0.07,
     'clock': 0.12,
-    'traffic light': 0.1
+    'traffic light': 0.15
 }
 
 # see heuristic_selector.py for documentation
@@ -203,26 +223,28 @@ HEURISTIC_CONFIG = {
     'image_sig_stag_limit': 60,
     'large_blob_threshold': 200,
     'large_blob_weight_mult': 2,
-    'recent_room_threshold': 1,
-    'same_room_threshold': 600,
-    'recent_room_exit_weight': 2500,
+    'recent_room_threshold': 3,
+    'same_room_threshold': 500,
+    'recent_room_exit_weight': 2000,
     'same_room_exit_weight': 2500,
-    'no_money_exit_weight': 100,
-    'default_exit_weight': 100,
+    'no_money_exit_weight': 800,
+    'default_exit_weight': 400,
 
     'blob_dom_color_weights': {
         'red': 300, 'green': 600, 'blue': 1000, 'black': 200, 'white': 1000, 'other': 80
     },
 
     'action_shape_tap_weights': {
-        ActionShape.MENU_EXIT: 10000,
-        ActionShape.CONFIRM_OK: 2000,
-        ActionShape.MONEY_CHOICE: 500,
+        ActionShape.MENU_EXIT: 100000,
+        ActionShape.CONFIRM_OK: 10000,
+        ActionShape.AREA_ENTRY: 500,
+        ActionShape.MONEY_CHOICE: 3000,
+        ActionShape.STRONG_TALK_CHOICE: 6000,
         ActionShape.TALK_CHOICE: 4000,
         ActionShape.COLLECTABLE: 4000,
-        ActionShape.MAYBE_TALK_CHOICE: 1000,
+        ActionShape.MAYBE_TALK_CHOICE: 3000,
         ActionShape.IMPORTANT_MARKER: 2000,
-        ActionShape.ROOM_EXIT: 100,
+        ActionShape.ROOM_EXIT: 500,
         ActionShape.UNKNOWN: 100
     }
 }
@@ -233,14 +255,17 @@ ACTION_SHAPE_COLOR_RANGES = [
                     lower=(-2, 125, 200), upper=(1, 255, 255),
                     min_area=200, max_area=600, min_verts=4, max_verts=9, max_area_ratio=2),
     ShapeColorRange(ActionShape.ROOM_EXIT, 'Red',
-                    lower=(-2, 25, 200), upper=(1, 255, 255),
-                    min_area=1200, max_area=4500, min_verts=11, max_verts=30),
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Blue',  # most common action
-                    lower=(100, 160, 50), upper=(120, 255, 255),
+                    lower=(-4, 25, 180), upper=(4, 255, 255),
+                    min_area=1200, max_area=4500, min_verts=9, max_verts=30, max_area_ratio=2),
+    ShapeColorRange(ActionShape.AREA_ENTRY, 'Gold',  # gold perimeters
+                    lower=(20, 25, 180), upper=(30, 255, 255),
+                    min_area=800, max_area=4500, min_verts=8, max_verts=30, min_area_ratio=1.4, max_area_ratio=6),
+    ShapeColorRange(ActionShape.STRONG_TALK_CHOICE, 'Light Blue',  # most common action
+                    lower=(100, 200, 50), upper=(120, 255, 255),
                     min_area=600, max_area=9000, min_verts=4, max_verts=15),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure',
-                    lower=(102, 50, 200), upper=(105, 100, 255),
-                    min_area=3500, max_area=7500, min_verts=4, max_verts=15, max_area_ratio=1.2),  # deal with azure backgrounds
+                    lower=(104, 50, 200), upper=(107, 90, 255),
+                    min_area=3500, max_area=7500, min_verts=4, max_verts=15, max_area_ratio=1.25),  # deal with azure backgrounds
     ShapeColorRange(ActionShape.MONEY_CHOICE, 'Light Green',  # money green
                     lower=(40, 100, 50), upper=(65, 255, 255),
                     min_area=800, max_area=9000, min_verts=4, max_verts=15),
@@ -248,11 +273,11 @@ ACTION_SHAPE_COLOR_RANGES = [
                     lower=(0, 15, 170), upper=(255, 25, 195),
                     min_area=2500, max_area=8500, min_verts=4, max_verts=15),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Pink',  # flirting
-                    lower=(160, 20, 20), upper=(170, 255, 255),
+                    lower=(160, 120, 120), upper=(170, 255, 255),
                     min_area=600, max_area=9000, min_verts=4, max_verts=15, max_area_ratio=2.3),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Teal',
-                    lower=(90, 150, 50), upper=(95, 255, 200),
-                    min_area=320, max_area=9000, min_verts=4, max_verts=15, max_area_ratio=1.7),
+                    lower=(93, 175, 50), upper=(96, 255, 200),
+                    min_area=320, max_area=9000, min_verts=4, max_verts=25, max_area_ratio=1.9),
     ShapeColorRange(ActionShape.IMPORTANT_MARKER, 'Yellow',  # yellow exclamation marks
                     lower=(23, 100, 50), upper=(30, 255, 255),
                     min_area=300, max_area=2500, min_verts=4, max_verts=30),
@@ -260,50 +285,48 @@ ACTION_SHAPE_COLOR_RANGES = [
                     lower=(0, 0, 225), upper=(255, 5, 255),
                     min_area=1050, max_area=1500, min_verts=11, max_verts=20, max_area_ratio=2),
     ShapeColorRange(ActionShape.MAYBE_TALK_CHOICE, 'White',  # huge white boxes
-                    lower=(0, 0, 235), upper=(255, 5, 255),
-                    min_area=12000, max_area=50000, min_verts=4, max_verts=25, max_area_ratio=1.2),
+                    lower=(0, 0, 240), upper=(255, 10, 255),
+                    min_area=12000, max_area=50000, min_verts=4, max_verts=25, max_area_ratio=1.65),
     ShapeColorRange(ActionShape.CONFIRM_OK, 'White',  # white rects with gold / silver perimeter
                     lower=(0, 0, 245), upper=(255, 2, 255),
-                    min_area=900, max_area=10000, min_verts=5, max_verts=18, max_area_ratio=1.25),
+                    min_area=900, max_area=3500, min_verts=5, max_verts=18, max_area_ratio=1.45),
     ShapeColorRange(ActionShape.TALK_CHOICE, 'Orange',
-                    lower=(14, 50, 200), upper=(15, 255, 255),
+                    lower=(14, 200, 200), upper=(15, 255, 255),
                     min_area=800, max_area=9000, min_verts=4, max_verts=15),
-    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet',  # TODO: need to Violet see in practice
-                    lower=(153, 180, 150), upper=(157, 205, 215),
-                    min_area=320, max_area=9000, min_verts=4, max_verts=15),
+    ShapeColorRange(ActionShape.TALK_CHOICE, 'Violet',
+                    lower=(152, 175, 150), upper=(154, 255, 200),
+                    min_area=320, max_area=9000, min_verts=4, max_verts=25, max_area_ratio=1.9),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Green',  # clickable money
                     lower=(40, 100, 50), upper=(52, 255, 255),
                     min_area=100, max_area=500, min_verts=8, max_verts=20,
-                    min_y=275, min_area_ratio=1.2, max_area_ratio=2),
+                    min_y=240, min_area_ratio=1.2, max_area_ratio=2),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Aqua',  # clickable stars :)
                     lower=(87, 50, 50), upper=(95, 255, 255),
-                    min_area=380, max_area=800, min_verts=13, max_verts=25,
-                    min_y=275, min_area_ratio=1.5, max_area_ratio=3),
+                    min_area=260, max_area=800, min_verts=13, max_verts=25,
+                    min_y=240, min_area_ratio=1.5, max_area_ratio=3),
     ShapeColorRange(ActionShape.COLLECTABLE, 'Khaki',  # clickable people :)
                     lower=(17, 50, 120), upper=(24, 150, 255),
-                    min_area=700, max_area=1100, min_verts=8, max_verts=30,
-                    min_y=275, min_area_ratio=1.2, max_area_ratio=3),
+                    min_area=610, max_area=1100, min_verts=8, max_verts=30,
+                    min_y=240, min_area_ratio=1.2, max_area_ratio=3),
 
     # ShapeColorRange(ActionShape.COLLECTABLE, 'PowderBlue',  # clickable lightning :)
     #                 lower=(70, 15, 150), upper=(100, 80, 255),
     #                 min_area=500, max_area=1100, min_verts=8, max_verts=30, min_area_ratio=1.5, max_area_ratio=2),
-    # ShapeColorRange(ActionShape.CONFIRM_OK, 'Gold',  # gold perimeters
-    #                 lower=(10, 75, 100), upper=(20, 255, 255),
-    #                 min_area=800, max_area=9000, min_verts=8, max_verts=20, min_area_ratio=3, max_area_ratio=8),
 ]
 
 
-MAX_NON_KIM_APP_TIME = 6  # seconds we can not be in the KK:H app
-CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
-
-
 def GET_OBJECT_TAP_POINT_NOISE(obj):
-    a_shape = obj['action_shape'] if 'action_shape' in obj else None
+    a_shape = obj['shape_data']['action_shape'] if 'shape_data' in obj else None
     color = obj['shape_data']['color_label'] if 'shape_data' in obj else None
+    area = obj['shape_data']['boundsArea'] if 'shape_data' in obj else None
 
     # allow yellow exclamation marks to be tapped around kind of randomly
     if a_shape == ActionShape.IMPORTANT_MARKER and color == 'Yellow':
         return 5.0
+
+    # "..." boxes should be clicked right in the center I guess
+    if a_shape == ActionShape.MAYBE_TALK_CHOICE and area <= 2000:
+        return 0.05
 
     # default to a 15% reasonable level of noise for variation around imperfect objects
     return 0.15

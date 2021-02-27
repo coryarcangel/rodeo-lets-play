@@ -51,6 +51,7 @@ def run_frontend_client():
 
     except (KeyboardInterrupt, SystemExit) as e:
         log("Caught closure exception")
+        log(e)
         if chrome_p:
             chrome_p.terminate()
 
