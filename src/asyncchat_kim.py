@@ -14,6 +14,8 @@ class KimCommand(object):
     DRAG_X = 'DRAG_X'
     TAP = 'TAP'
     DOUBLE_TAP = 'DOUBLE_TAP'
+    BACK_BUTTON = 'BACK_BUTTON'
+    LAUNCH_HOLLYWOOD = 'LAUNCH_HOLLYWOOD'
 
 
 class AsyncchatKim(asynchat.async_chat):

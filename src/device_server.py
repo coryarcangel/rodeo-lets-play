@@ -42,6 +42,8 @@ class DeviceMessageHandler(AsyncchatKim):
             KimCommand.DRAG_X: self._handle_drag_x,
             KimCommand.TAP: self._handle_tap,
             KimCommand.DOUBLE_TAP: self._handle_double_tap,
+            KimCommand.BACK_BUTTON: self._handle_back_button,
+            KimCommand.LAUNCH_HOLLYWOOD: self._handle_launch_hollywood,
         }
 
     def _clean_memory(self):
@@ -121,6 +123,14 @@ class DeviceMessageHandler(AsyncchatKim):
             y,
             type)
         self.device_manager.double_tap(x, y)
+
+    def _handle_back_button(self, data):
+        self.logger.debug('Handling back button command')
+        self.device_manager.press_back_button()
+
+    def _handle_launch_hollywood(self, data):
+        self.looger.debug('Handling launch hollywood command')
+        self.device_manager.launch_hollywood()
 
 
 class DeviceServer(asyncore.dispatcher):

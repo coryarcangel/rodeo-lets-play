@@ -11,10 +11,12 @@ def read_num_from_img(image):
     try:
         f = filter(str.isdigit, text.encode('ascii', 'ignore').decode('utf-8'))
         t = ''.join(f)
+        if len(t) == 0:
+            return -1
         val = int(t)
         return val
     except BaseException:
-        return 0
+        return -1
 
 
 class ImageOCRProcessor(object):

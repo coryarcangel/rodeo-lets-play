@@ -1,17 +1,15 @@
 """ DeviceManager class to control an Android emulator or phone """
 
 from time import sleep
-from random import randint
+from random import randint, random
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from kim_logs import get_kim_logger
-from config import DELAY_BETWEEN_ACTIONS
+from config import DELAY_BETWEEN_ACTIONS, SHELL_TAP_PROB
+from config import KK_HOLLYWOOD_PACKAGE, KK_HOLLYWOOD_COMPONENT, RESET_PACKAGES_TO_KILL
 
 # Constants
 BROWSER_PACKAGE = 'com.android.chrome'
 BROWSER_COMPONENT = '%s/com.google.android.apps.chrome.Main' % BROWSER_PACKAGE
-
-KK_HOLLYWOOD_PACKAGE = 'com.glu.stardomkim'
-KK_HOLLYWOOD_COMPONENT = '%s/com.google.android.vending.expansion.downloader_impl.DownloaderActivity' % KK_HOLLYWOOD_PACKAGE
 
 
 class DeviceManager(object):
@@ -43,7 +41,16 @@ class DeviceManager(object):
         # simulate home press to return to menu
         self.device.press('KEYCODE_HOME', MonkeyDevice.DOWN_AND_UP)
 
-        # kill the package
+        # kill extra packages
+        for pkg in RESET_PACKAGES_TO_KILL:
+            self.device.shell('am force-stop %s' % pkg)
+
+        # kill current package
+        cur_pkg = self.get_cur_app_name()
+        if cur_pkg and len(cur_pkg) > 0:
+            self.device.shell('am force-stop %s' % cur_pkg)
+
+        # kill this package
         self.device.shell('am force-stop %s' % package)
 
         # launch the app
@@ -92,7 +99,15 @@ class DeviceManager(object):
 
     def touch(self, x, y):
         ''' inputs tap at given location '''
-        self.device.shell('input tap %d %d' % (x, y))
+
+        # have to do this because these work on the device
+        shell_tap = random() <= SHELL_TAP_PROB
+        if shell_tap:
+            self.device.shell('input tap %d %d' % (x, y))
+        else:
+            self.device.touch(x, y, MonkeyDevice.DOWN)
+            sleep(0.1)
+            self.device.touch(x, y, MonkeyDevice.UP)
 
     def press_back_button(self):
         self.device.press('KEYCODE_BACK', MonkeyDevice.DOWN_AND_UP)
