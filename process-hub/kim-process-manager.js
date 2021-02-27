@@ -52,7 +52,7 @@ class KimProcessManager {
     })
 
     if (this.onProcessesChange) {
-      this.onProcessesChange()
+      this.onProcessesChange(kimProcess, 'start')
     }
   }
 
@@ -69,7 +69,7 @@ class KimProcessManager {
     })
 
     if (this.onProcessesChange) {
-      this.onProcessesChange()
+      this.onProcessesChange(kimProcess, 'end')
     }
   }
 

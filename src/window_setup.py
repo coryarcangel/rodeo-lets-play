@@ -1,4 +1,4 @@
-
+import sys
 from config import VYSOR_WINDOW_NAME, VYSOR_RECT, FRONTEND_NAME
 from config import NUM_MONITORS, MONITORS, MON_NAMES, DASHBOARD_NAME
 import window
@@ -54,10 +54,13 @@ def setup_frontend_window():
         window.click_in_window(win_id, size[0] - 50, 95)
 
 
-def setup_all_visible_windows():
-    setup_vysor_window()
-    setup_process_hub_window()
-    setup_frontend_window()
+def setup_visible_windows(arg):
+    if arg == 'all' or arg == 'vysor':
+        setup_vysor_window()
+    if arg == 'all' or arg == 'process_hub':
+        setup_process_hub_window()
+    if arg == 'all' or arg == 'frontend':
+        setup_frontend_window()
 
     # click in dashboard to hide mouse from frontend
     click_in_process_hub_window()
@@ -65,4 +68,5 @@ def setup_all_visible_windows():
 
 
 if __name__ == "__main__":
-    setup_all_visible_windows()
+    arg = sys.argv[1] if len(sys.argv) > 1 else 'all'
+    setup_visible_windows(arg)

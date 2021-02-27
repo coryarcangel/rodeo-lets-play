@@ -9,12 +9,16 @@ const setWindowTitle = (title) => {
   )
 }
 
-const setupVisibleWindows = async () => {
+const runWindowSetep = async (arg) => {
   const filepath = `${__dirname}/../src/window_setup.py`
   try {
-	childProcess.execSync(`python3 ${filepath}`)
+    childProcess.execSync(`python3 ${filepath} ${arg}`)
   } catch (err) {}
   // await delay(100)
 }
 
-module.exports = { delay, setWindowTitle, setupVisibleWindows }
+const setupVisibleWindows = () => runWindowSetep('all')
+
+const setupVysorWindow = () => runWindowSetep('vysor')
+
+module.exports = { delay, setWindowTitle, setupVisibleWindows, setupVysorWindow }

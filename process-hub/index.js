@@ -8,7 +8,7 @@ const stripAnsi = require('strip-ansi')
 const { screen, grid, dashboardParts, resetDashboardTimer, genlog, endLogWriteStreams } = require('./dashboard')
 const { KimProcessManager } = require('./kim-process-manager')
 const { getSystemInfoObject } = require('./system-info')
-const { setWindowTitle, setupVisibleWindows } = require('./util')
+const { setWindowTitle, setupVisibleWindows, setupVysorWindow } = require('./util')
 const { OPTIONS, modes, mode, baseProcessConfigs } = require('./config')
 
 const rSubscriber = redis.createClient()
@@ -304,7 +304,13 @@ async function main() {
   })
 
   // update process-dependent parts of dashboard only when process status changes
-  kpManager.onProcessesChange = updateProcessDependentDashboardParts
+  kpManager.onProcessesChange = (kimProcess, action) => {
+    updateProcessDependentDashboardParts()
+
+    if ((kimProcess.name === 'Vysor' || kimProcess.name === 'Phone Image Stream') && action === 'start') {
+      setTimeout(setupVysorWindow, 20000)
+    }
+  }
 
   // start all necessary background processes
   kpManager.initProcesses(START_ALL)
