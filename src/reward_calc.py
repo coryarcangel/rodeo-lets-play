@@ -1,6 +1,8 @@
 
+from collections import deque
 from enums import Action
 from config import REWARD_PARAMS
+from util import get_dist
 
 
 class RewardCalculator():
@@ -9,19 +11,15 @@ class RewardCalculator():
     May encourage an agent to swipe more, etc.
     """
 
-    def __init__(self,
-                 money_mult=REWARD_PARAMS['money_mult'],
-                 stars_mult=REWARD_PARAMS['stars_mult'],
-                 recent_swipe_threshold=REWARD_PARAMS['recent_swipe_threshold'],
-                 swipe_reward=REWARD_PARAMS['swipe_reward'],
-                 recent_object_tap_threshold=REWARD_PARAMS['recent_object_tap_threshold'],
-                 object_tap_reward=REWARD_PARAMS['object_tap_reward']):
-        self.money_mult = money_mult
-        self.stars_mult = stars_mult
-        self.recent_swipe_threshold = recent_swipe_threshold
-        self.swipe_reward = swipe_reward
-        self.recent_object_tap_threshold = recent_object_tap_threshold
-        self.object_tap_reward = object_tap_reward
+    def __init__(self, params=REWARD_PARAMS):
+        self.money_mult = params['money_mult']
+        self.stars_mult = params['stars_mult']
+        self.action_memory = params['action_memory']
+        self.max_repeat_swipes_in_memory = params['max_repeat_swipes_in_memory']
+        self.max_repeat_object_taps_in_memory = params['max_repeat_object_taps_in_memory']
+        self.repeat_tap_distance_threshold = params['repeat_tap_distance_threshold']
+        self.swipe_reward = params['swipe_reward']
+        self.object_type_tap_rewards = params['object_type_tap_rewards']
 
         self.action_cum_reward = 0
         self.last_step_num_keys = ['swipe', 'pass', 'tap', 'double_tap', 'object_tap']
@@ -30,7 +28,30 @@ class RewardCalculator():
     def mark_reset(self):
         self.last_step_nums = {}
         for k in self.last_step_num_keys:
-            self.last_step_nums[k] = -self.recent_swipe_threshold
+            self.last_step_nums[k] = -1
+
+        self.action_history = deque(maxlen=self.action_memory)
+
+    def get_swipe_reward(self, step_num, a_name):
+        swipes_in_memory = [a for a in self.action_history if a[0] == a_name]
+        if len(swipes_in_memory) < self.max_repeat_swipes_in_memory:
+            return self.swipe_reward
+        return 0
+
+    def get_tap_reward(self, step_num, type, a_name, args):
+        type_rewards = [r for r in self.object_type_tap_rewards if r[0] == type]
+        if len(type_rewards) == 0:
+            return 0
+
+        # get nearby taps in memory
+        p = (args['x'], args['y'])
+        th = self.repeat_tap_distance_threshold
+        taps_in_memory = [a for a in self.action_history
+                          if a[0] == a_name
+                          and get_dist(p, (a[1]['x'], a[1]['y'])) <= th]
+        if len(taps_in_memory) < self.max_repeat_object_taps_in_memory:
+            return type_rewards[0][1]
+        return 0
 
     def get_step_reward(self, step_num, ai_state, action_name, args):
         if ai_state is None:
@@ -42,21 +63,23 @@ class RewardCalculator():
 
         # if we swipe and haven't swiped in a while, give a reward boost.
         if action_name in (Action.SWIPE_LEFT, Action.SWIPE_RIGHT):
-            if step_num - self.last_step_nums['swipe'] >= self.recent_swipe_threshold:
-                self.action_cum_reward += self.swipe_reward
             self.last_step_nums['swipe'] = step_num
+            self.action_cum_reward += self.get_swipe_reward(step_num, action_name)
+        elif action_name in (Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION):
+            name = 'tap' if action_name == Action.TAP_LOCATION else 'double_tap'
+            self.last_step_nums[name] = step_num
+
+            type = args['object_type'] if 'object_type' in args else 'unknown'
+            if type != 'unknown':
+                self.last_step_nums['object_tap'] = step_num
+
+            self.action_cum_reward += self.get_tap_reward(step_num, type, action_name, args)
         elif action_name == Action.PASS:
             self.last_step_nums['pass'] = step_num
-        elif action_name == Action.TAP_LOCATION:
-            self.last_step_nums['tap'] = step_num
-            if 'object_type' in args and args['object_type'] != 'deep_q':
-                if step_num - self.last_step_nums['object_tap'] >= self.recent_object_tap_threshold:
-                    self.action_cum_reward += self.object_tap_reward
-                self.last_step_nums['object_tap'] = step_num
-        elif action_name == Action.DOUBLE_TAP_LOCATION:
-            self.last_step_nums['double_tap'] = step_num
 
         reward += self.action_cum_reward
+
+        self.action_history.append((action_name, args))
 
         return reward
 

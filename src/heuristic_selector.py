@@ -41,13 +41,13 @@ class HeuristicConfig(object):
 
         self.max_room_history_len = HC['max_room_history_len']
 
-        # What is the maximum number of times I might expect to select the same action in a given room?
-        self.object_tap_action_max_sel_count = HC['object_tap_action_max_sel_count']
-        self.other_action_max_sel_count = HC['other_action_max_sel_count']
+        # What is the maximum percent that an action's weight can decrease after repeating?
+        self.action_shape_tap_max_depression = HC['action_shape_tap_max_depression']
+        self.object_tap_max_depression = HC['object_tap_max_depression']
+        self.other_action_max_depression = HC['other_action_max_depression']
 
-        # What should the denominator be when determining a_sel_count depression mult?
-        self.object_tap_action_sel_denom = HC['object_tap_action_sel_denom']
-        self.other_action_sel_denom = HC['other_action_sel_denom']
+        # How many repeats of an action until it reaches its max depression?
+        self.num_repeats_to_max_action_depression = HC['num_repeats_to_max_action_depression']
 
         # How aggressively should I depress repeated actions (lower is more aggressive)
         self.action_sel_depress_exp = HC['action_sel_depress_exp']
@@ -124,8 +124,8 @@ class HeuristicRoom(object):
         if type != 'object':
             return name + '_' + type
 
-        rough_x = int(args['x'] * 0.1)
-        rough_y = int(args['y'] * 0.1)
+        rough_x = int(args['x'] * 0.02)
+        rough_y = int(args['y'] * 0.02)
         return name + '_object_{}_x{}_y{}'.format(args['object_type'].lower(), rough_x, rough_y)
 
     def _have_recently_been_here(self):
@@ -185,23 +185,27 @@ class HeuristicRoom(object):
         action_type, args = a_tup
         is_tap = action_type == Action.TAP_LOCATION or action_type == Action.DOUBLE_TAP_LOCATION
         is_object_tap = is_tap and 'type' in args and args['type'] == 'object'
+        is_action_shape_tap = is_object_tap and args['object_type'] == 'action_shape'
 
         # The more we select an action, the less likely we are to pick it again in this room
         depression_mult = 1
         if self.config.REPEAT_ACTION_DEPRESS:
+            # get number of times we have selected this action
             rep = self._get_action_rep(a_tup)
             a_sel_counts = self.action_selection_counts
             sel_count = a_sel_counts[rep] if rep in a_sel_counts else 0
+            max_repeats = self.config.num_repeats_to_max_action_depression
+            sel_mult = min(sel_count, max_repeats) / float(max_repeats)
 
-            sel_p = 1
-            if is_object_tap:
-                c = min(sel_count, self.config.object_tap_action_max_sel_count)
-                sel_p = c / self.config.object_tap_action_sel_denom
-            else:
-                c = min(sel_count, self.config.other_action_max_sel_count)
-                sel_p = c / self.config.other_action_sel_denom
+            # get max depression for this action type
+            max_depression = self.config.other_action_max_depression
+            if is_action_shape_tap:
+                max_depression = self.config.action_shape_tap_max_depression
+            elif is_object_tap:
+                max_depression = self.config.object_tap_max_depression
 
-            depression_mult = (1 - pow(sel_p, self.config.action_sel_depress_exp))
+            depression = sel_mult * max_depression
+            depression_mult = (1 - pow(depression, self.config.action_sel_depress_exp))
 
         # Get unique weight for type of object tap
         default_weight = 0

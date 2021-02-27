@@ -36,7 +36,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.reward_calculator = RewardCalculator()
 
         self.num_observation_objects = 100
-        self.step_num_obs_mod = 100
+        self.step_num_obs_mod = 110
         self.obj_name_int_vals, self.obj_int_val_names, self.obj_name_int_max_val = get_object_name_int_values()
 
         grid_width = self.grid_width = 30
@@ -48,7 +48,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.client_width_factor = float(client_width) / float(grid_width)
         self.client_height_factor = float(client_height) / float(grid_height)
 
-        # 5 actions
+        # 6 actions
         self.max_action_vals_1 = [5, grid_width - 1, grid_height - 1]
 
         # allow more than just two swipe actions so the algo can easily
@@ -229,13 +229,13 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     def _get_tap_action(self, action_name, x_grid, y_grid):
         x, y = self._grid_point_to_client_point(x_grid, y_grid)
         ai_state = self.get_cur_ai_state()
-        img_obj, obj_dist = ai_state.find_nearest_object(x, y, 10000) if ai_state else (None, 10000)
+        img_obj, obj_dist = ai_state.find_nearest_object(x, y, 60) if ai_state else (None, 0)
 
         action_data = get_object_action_data(img_obj) if img_obj else {
             'x': x,
             'y': y,
             'type': 'object',
-            'object_type': 'deep_q',
+            'object_type': 'unknown',
             'img_obj': {'confidence': 0.1}
         }
         return (action_name, action_data)

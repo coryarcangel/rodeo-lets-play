@@ -6,6 +6,7 @@ import numpy as np
 # import tensorflow as tf
 from kim_logs import get_kim_logger
 from enums import all_action_shapes
+from util import get_rect_center, get_dist
 
 
 def get_random_object_type():
@@ -163,13 +164,21 @@ class AIState(object):
         return np.array([1, self.money, self.stars])
 
     def find_nearest_object(self, x, y, dist_threshold):
-        min_dist, min_obj = (1000000, None)
+        below_thresh_objs = []
         for obj in self.image_objects:
-            x1, y1, _, _ = obj['rect']
-            xd, yd = (x - x1, y - y1)
-            dist = (xd * xd) + (yd * yd)
-            if dist < min_dist:
-                min_dist = dist
-                min_obj = obj
+            rc = get_rect_center(obj['rect'])
+            dist = get_dist((x, y), rc)
+            if dist < dist_threshold:
+                below_thresh_objs.append((obj, dist))
 
-        return (min_obj, min_dist) if min_dist < dist_threshold else (None, dist_threshold)
+        if len(below_thresh_objs) == 0:
+            return (None, dist_threshold)
+        elif len(below_thresh_objs) == 1:
+            return below_thresh_objs[0]
+        else:
+            # weighted choice between objects where closer ones get more weight
+            dist_divs = [1 / float(o[1]) for o in below_thresh_objs]
+            total_dist_div = sum(dist_divs)
+            obj_probs = [v / total_dist_div for v in dist_divs]
+            obj_idx = np.random.choice(len(below_thresh_objs), p=obj_probs)
+            return below_thresh_objs[obj_idx]

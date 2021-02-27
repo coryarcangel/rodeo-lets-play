@@ -51,9 +51,10 @@ class TfAgentDeepQManager(object):
 
         # Saving / Loading Params
         save_dir = self.save_dir = p_val('save_dir', os.getcwd() + '/deep_q_save')
-        max_checkpoints = p_val('max_checkpoints', 1)
+        max_checkpoints = p_val('max_checkpoints', 4)
         self.policy_save_interval = p_val('policy_save_interval', 0)
         self.checkpoint_save_interval = p_val('checkpoint_save_interval', 0)
+        self.assumed_start_steps = p_val('assumed_start_steps', 0)
 
         self.q_net = q_network.QNetwork(
             self.tf_env.observation_spec(),
@@ -141,6 +142,9 @@ class TfAgentDeepQManager(object):
         returns = [self.avg_return_metric.result()]
 
         for _ in range(num_iterations):
+            # Reset env in case something bad has happened.
+            self.env.reset()
+
             # Collect a few steps, save to the replay buffer
             self.collect_driver.run()
 
@@ -167,6 +171,11 @@ class TfAgentDeepQManager(object):
 
             if self.policy_save_interval > 0:
                 if step % self.policy_save_interval == 0:
+                    collect_steps = self.assumed_start_steps + (step + 1) * self.collect_steps_per_iteration
+                    policy_name = 'policy_%02d_%d' % (step, collect_steps)
+                    self.save_policy(name=policy_name)
+
+                    # also save under default name
                     self.save_policy()
 
     def save_policy(self, name='policy'):

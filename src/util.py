@@ -5,6 +5,7 @@ import os
 import signal
 import random
 from datetime import datetime
+from math import sqrt
 
 Point = collections.namedtuple("Point", ['x', 'y'])
 Rect = collections.namedtuple("Rect", ['x', 'y', 'w', 'h'])
@@ -44,6 +45,17 @@ def get_noisy_rect_center(rect, noise):
     x_var = (-noise * w) + (random.random() * 2 * w * noise)
     y_var = (-noise * h) + (random.random() * 2 * h * noise)
     return Point(c[0] + x_var, c[1] + y_var)
+
+
+def get_dist_squared(p0, p1):
+    x0, y0 = p0
+    x1, y1 = p1
+    xd, yd = (x0 - x1, y0 - y1)
+    return (xd * xd) + (yd * yd)
+
+
+def get_dist(p0, p1):
+    return sqrt(get_dist_squared(p0, p1))
 
 
 def is_in_rect(point, rect):

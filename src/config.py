@@ -45,6 +45,7 @@ HEN_OPTIONS = {
         'threshold': 0.075
     },
     'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
+    'TF_DEEPQ_POLICY_NAME': 'policy',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.5,
         'heuristic': 0.4,
@@ -79,7 +80,7 @@ KEV_VYSOR_RECT = Rect(0, 0, 776, 466)
 KEV_OPTIONS = {
     'MONITORS': [
         ('HDMI-1-1', (1920, 1080)),
-        ('DP-1', (1920, 1080)),
+        # ('DP-1', (1920, 1080)),
     ],
     'TFNET_CONFIG': {
         'model': 'cfg/tiny-yolo.cfg',
@@ -87,7 +88,8 @@ KEV_OPTIONS = {
         'gpu': 0.5,
         'threshold': 0.05
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'stepnum_cum_reward_2021_02_26',
+    'TF_DEEPQ_POLICY_NAME': 'policy_40_19100',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.5,
         'heuristic': 0.4,
@@ -129,6 +131,7 @@ for s in MONITORS:
 TFNET_CONFIG = OPTIONS['TFNET_CONFIG']
 
 TF_DEEPQ_POLICY_SAVE_DIR = OPTIONS['TF_DEEPQ_POLICY_SAVE_DIR']
+TF_DEEPQ_POLICY_NAME = OPTIONS['TF_DEEPQ_POLICY_NAME']
 
 TF_AI_POLICY_WEIGHTS = OPTIONS['TF_AI_POLICY_WEIGHTS']
 
@@ -191,11 +194,11 @@ HEURISTIC_CONFIG = {
     'RECENT_ROOM_MEMORY': True,
     'COLOR_ACTION_DETECT': True,
 
-    'max_room_history_len': 100,
-    'object_tap_action_max_sel_count': 7,
-    'other_action_max_sel_count': 2,
-    'object_tap_action_sel_denom': 18,
-    'other_action_sel_denom': 100,
+    'max_room_history_len': 20,
+    'action_shape_tap_max_depression': 0.2,
+    'object_tap_max_depression': 0.38,
+    'other_action_max_depression': 0.02,
+    'num_repeats_to_max_action_depression': 6,
     'action_sel_depress_exp': 1.0,
     'image_sig_stag_limit': 60,
     'large_blob_threshold': 200,
@@ -336,12 +339,13 @@ REWARD CALCULATION
 REWARD_PARAMS = {
     'money_mult': 1.0,
     'stars_mult': 1.0,
-    'recent_swipe_threshold': 20,
-    'swipe_reward': 150,
-    'recent_object_tap_threshold': 5,
-    'object_tap_reward': 30,
+    'action_memory': 80,
+    'max_repeat_swipes_in_memory': 4,
+    'max_repeat_object_taps_in_memory': 5,
+    'repeat_tap_distance_threshold': 60,
+    'swipe_reward': 5,
+    'object_type_tap_rewards': [('action_shape', 5), ('circle', 2)],
 }
-
 
 """
 Phone Rect / Game Rect is about the raw phone size.

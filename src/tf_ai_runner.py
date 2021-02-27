@@ -3,7 +3,7 @@ import traceback
 
 from tf_agents.environments import tf_py_environment
 
-from config import TF_AI_POLICY_WEIGHTS, TF_DEEPQ_POLICY_SAVE_DIR
+from config import TF_AI_POLICY_WEIGHTS, TF_DEEPQ_POLICY_SAVE_DIR, TF_DEEPQ_POLICY_NAME
 from util import kill_process
 from device_client import DeviceClient
 from tf_ai_env import DeviceClientTfEnv
@@ -54,7 +54,7 @@ def run_ai_with_heuristic_policy():
     run_ai_with_policy(env, policy, get_status=policy.get_status)
 
 
-def run_ai_with_saved_blended_policy(policy_name='policy',
+def run_ai_with_saved_blended_policy(policy_name=TF_DEEPQ_POLICY_NAME,
                                      save_dir=TF_DEEPQ_POLICY_SAVE_DIR,
                                      weights=TF_AI_POLICY_WEIGHTS):
     env = create_tf_ai_env()
