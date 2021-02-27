@@ -1,8 +1,12 @@
 """ Code to transform images from KK:Hollywood into numerical state """
 
 import tesserocr
+import time
 from PIL import Image, ImageEnhance
 from concurrent import futures
+
+
+TESTING = False
 
 
 def read_num_from_img(image):
@@ -34,6 +38,10 @@ class ImageOCRProcessor(object):
         hud_image = ImageEnhance.Contrast(hud_image).enhance(2)
         hud_image = hud_image.resize((162, 100), Image.ANTIALIAS)
         value = read_num_from_img(hud_image)
+        if TESTING:
+            hud_image.show()
+            print(value)
+            time.sleep(5)
         return value
 
     def process_image(self, image):
