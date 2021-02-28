@@ -21,6 +21,7 @@ class RewardCalculator():
         self.swipe_reward = params['swipe_reward']
         self.object_type_tap_rewards = params['object_type_tap_rewards']
         self.color_sig_change_reward = params['color_sig_change_reward']
+        self.repeat_tap_penalty = params['repeat_tap_penalty']
 
         self.action_cum_reward = 0
         self.last_step_num_keys = ['swipe', 'pass', 'tap', 'double_tap', 'object_tap']
@@ -41,19 +42,22 @@ class RewardCalculator():
         return 0
 
     def get_tap_reward(self, step_num, type, a_name, args):
-        type_rewards = [r for r in self.object_type_tap_rewards if r[0] == type]
-        if len(type_rewards) == 0:
-            return 0
-
         # get nearby taps in memory
         p = (args['x'], args['y'])
         th = self.repeat_tap_distance_threshold
         taps_in_memory = [a for a in self.action_history
                           if a[0] == a_name
                           and get_dist(p, (a[1]['x'], a[1]['y'])) <= th]
-        if len(taps_in_memory) < self.max_repeat_object_taps_in_memory:
-            return type_rewards[0][1]
-        return 0
+
+        # penalize for too many taps in same place
+        if len(taps_in_memory) >= self.max_repeat_object_taps_in_memory:
+            return self.repeat_tap_penalty
+
+        # give reward for clicking given type
+        type_rewards = [r for r in self.object_type_tap_rewards if r[0] == type]
+        if len(type_rewards) == 0:
+            return 0
+        return type_rewards[0][1]
 
     def get_step_reward(self, step_num, ai_state, action_name, args):
         if ai_state is None:

@@ -23,7 +23,8 @@ def run_and_train_deep_q_policy(num_iterations=100,
         'collect_steps_per_iteration': collect_steps_per_iteration,
         'checkpoint_save_interval': 10,
         'policy_save_interval': 5,
-        'assumed_start_steps': 0
+        'epsilon_greedy': 0.65,
+        'assumed_start_steps': 2100
     })
 
     if load_from_checkpoint:

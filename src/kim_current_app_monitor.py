@@ -41,7 +41,14 @@ class KimCurrentAppMonitor(object):
 
     def _get_app_is_kim(self):
         # check if current app is kim
-        app_name = self.client.get_cur_process_command()
+        app_name = ''
+        try:
+            app_name = self.client.get_cur_process_command()
+        except (IndexError) as e:
+            # handle deque indexerror in asyncchat
+            self.logger.debug(e)
+            pass
+
         is_kim = app_name is None or app_name == '' or app_name == KK_HOLLYWOOD_PACKAGE
         is_launcher = app_name == LAUNCHER_PACKAGE
         return (is_kim, is_launcher)

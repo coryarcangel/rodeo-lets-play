@@ -51,7 +51,7 @@ def setup_frontend_window():
     win_id = window.get_window_id(FRONTEND_NAME)
     if win_id:
         size = window.get_window_size(win_id)
-        window.click_in_window(win_id, size[0] - 50, 95)
+        window.click_in_window(win_id, size[0] - 30, 95)
 
 
 def setup_visible_windows(arg):

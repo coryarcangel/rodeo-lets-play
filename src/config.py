@@ -433,6 +433,7 @@ REWARD_PARAMS = {
     'swipe_reward': 2,
     'object_type_tap_rewards': [('action_shape', 4), ('circle', 1)],
     'color_sig_change_reward': 2,
+    'repeat_tap_penalty': -4,
 }
 
 """
