@@ -282,7 +282,7 @@ BEHAVIOR
 # NOTE: areas configured to CONTOUR_PROCESS_HEIGHT at 400. Should eventually make this ratio based..
 ACTION_SHAPE_COLOR_RANGES = OPTIONS['ACTION_SHAPE_COLOR_RANGES']
 
-DELAY_BETWEEN_ACTIONS = 2  # in seconds
+DELAY_BETWEEN_ACTIONS = 2.2  # in seconds
 
 SHELL_TAP_PROB = 0.7  # 0 -> 1, prob will choose between two tap types in device_manager
 
@@ -292,7 +292,7 @@ MAX_NO_MONEY_READ_TIME = 30  # seconds
 MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS = 5
 MAX_NON_KIM_APP_TIME = 10  # seconds we can not be in the KK:H app. Fallback from no money fixes.
 
-SECONDS_BETWEEN_BACK_BUTTONS = 1.3
+SECONDS_BETWEEN_BACK_BUTTONS = 1.5
 
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
