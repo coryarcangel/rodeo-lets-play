@@ -68,7 +68,7 @@ def open_chrome_url(url, fullscreen=True, bg=True):
 
 
 def kill_chrome():
-    run_cmd('pkill google-chrome')
+    run_cmd('pkill chrome')
 
 
 def move_window_to_screen(name, x, y, width, height, scr='DP-1'):

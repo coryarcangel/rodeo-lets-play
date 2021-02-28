@@ -54,8 +54,8 @@ HEN_OPTIONS = {
         'gpu': 0.75,
         'threshold': 0.075
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'grid_deep_q_1',
-    'TF_DEEPQ_POLICY_NAME': 'policy',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'new_tap_swipe_rewards',
+    'TF_DEEPQ_POLICY_NAME': 'policy_2021_02_27_18_21_05_600',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.4,
         'heuristic': 0.5,

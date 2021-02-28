@@ -59,7 +59,6 @@ class KimCurrentAppMonitor(object):
         self.logger.info('read money: %d' % money)
         return money
 
-
     def run_monitor_loop(self):
         now = datetime.now()
 

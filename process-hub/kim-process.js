@@ -123,11 +123,11 @@ class KimProcess {
     this.started = true
     this.cancelled = false
 
-    if (this.onStart) {
-      this.onStart({ kimProcess: this })
-    }
-
     while (!this.cancelled) {
+      if (this.onStart) {
+        this.onStart({ kimProcess: this })
+      }
+
       await this.runScript()
         .then(() => {
           this.stopTimes.push({ err: null, when: moment() })
