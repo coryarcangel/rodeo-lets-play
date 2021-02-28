@@ -21,15 +21,15 @@ def run_and_train_deep_q_policy(num_iterations=100,
     deep_q_manager = TfAgentDeepQManager(env, {
         'save_dir': save_dir,
         'collect_steps_per_iteration': collect_steps_per_iteration,
-        'checkpoint_save_interval': 20,
-        'policy_save_interval': 10,
-        'assumed_start_steps': 15000
+        'checkpoint_save_interval': 10,
+        'policy_save_interval': 5,
+        'assumed_start_steps': 0
     })
 
     if load_from_checkpoint:
         deep_q_manager.restore_checkpoint()
 
-    env.reset()
+    # env.reset()
     deep_q_manager.train(num_iterations)
     deep_q_manager.save_checkpoint()
     deep_q_manager.save_policy()

@@ -1,5 +1,7 @@
 import os
 import tensorflow as tf
+from datetime import datetime
+from random import randint
 
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
@@ -145,6 +147,13 @@ class TfAgentDeepQManager(object):
             # Reset env in case something bad has happened.
             self.env.reset()
 
+            # swipe around a bit so that we don't always start in same location
+            for _ in range(randint(1, 28)):
+                if randint(0, 100) <= 90:
+                    self.env.action_state_manager.perform_swipe_left_action({})
+                else:
+                    self.env.action_state_manager.perform_swipe_right_action({})
+
             # Collect a few steps, save to the replay buffer
             self.collect_driver.run()
 
@@ -171,8 +180,10 @@ class TfAgentDeepQManager(object):
 
             if self.policy_save_interval > 0:
                 if step % self.policy_save_interval == 0:
+                    d = datetime.now()
+                    date = d.strftime('%Y_%m_%d_%H_%M')
                     collect_steps = self.assumed_start_steps + (step + 1) * self.collect_steps_per_iteration
-                    policy_name = 'policy_%02d_%d' % (step, collect_steps)
+                    policy_name = 'policy_%s_%02d_%d' % (date, step, collect_steps)
                     self.save_policy(name=policy_name)
 
                     # also save under default name

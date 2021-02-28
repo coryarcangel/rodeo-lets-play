@@ -157,8 +157,8 @@ KEV_OPTIONS = {
         'gpu': 0.5,
         'threshold': 0.05
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'stepnum_cum_reward_2021_02_26',
-    'TF_DEEPQ_POLICY_NAME': 'policy_40_19100',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'new_tap_swipe_rewards',
+    'TF_DEEPQ_POLICY_NAME': 'policy',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.5,
         'heuristic': 0.4,
@@ -296,6 +296,10 @@ SECONDS_BETWEEN_BACK_BUTTONS = 1.3
 
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
+COLOR_SIG_K = 3
+COLOR_SIG_PCT_FACTOR = 0.05
+COLOR_SIG_SQUASH_FACTOR = 0.03
+
 # Areas of the device that are not clickable if set to True (useful in training).
 SAFEGUARD_MENU_CLICKS_DEFAULT = True
 
@@ -339,7 +343,7 @@ HEURISTIC_CONFIG = {
     'RECENT_ROOM_MEMORY': True,
     'COLOR_ACTION_DETECT': True,
 
-    'max_room_history_len': 20,
+    'max_room_history_len': 50,
     'action_shape_tap_max_depression': 0.2,
     'object_tap_max_depression': 0.38,
     'other_action_max_depression': 0.02,
@@ -422,12 +426,13 @@ REWARD CALCULATION
 REWARD_PARAMS = {
     'money_mult': 1.0,
     'stars_mult': 1.0,
-    'action_memory': 80,
-    'max_repeat_swipes_in_memory': 4,
+    'action_memory': 120,
+    'max_repeat_swipes_in_memory': 6,
     'max_repeat_object_taps_in_memory': 5,
     'repeat_tap_distance_threshold': 60,
-    'swipe_reward': 5,
-    'object_type_tap_rewards': [('action_shape', 5), ('circle', 2)],
+    'swipe_reward': 2,
+    'object_type_tap_rewards': [('action_shape', 4), ('circle', 1)],
+    'color_sig_change_reward': 2,
 }
 
 """

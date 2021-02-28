@@ -2,6 +2,7 @@
 from sklearn.cluster import KMeans
 from collections import Counter
 import cv2
+from config import COLOR_SIG_K, COLOR_SIG_PCT_FACTOR, COLOR_SIG_SQUASH_FACTOR
 
 
 def get_img_hash(image, hash_size=8):
@@ -61,14 +62,17 @@ def get_img_dom_colors(image, k=3, image_processing_size=None):
     return color_counts
 
 
-def get_image_color_sig_component(color, pct, pct_factor=0.1, squash_factor=0.1 * 255):
+def get_image_color_sig_component(color,
+                                  pct,
+                                  pct_factor=COLOR_SIG_PCT_FACTOR,
+                                  squash_factor=COLOR_SIG_SQUASH_FACTOR):
     spct = int(pct * pct_factor * 100)  # get simplified version of pct
-    squashed = [int(f / squash_factor) for f in color]  # get simplified version of r,g,b
+    squashed = [int(f * squash_factor) for f in color]  # get simplified version of r,g,b
     sig_comp = '-'.join([str(f) for f in squashed] + [str(spct)])
     return sig_comp
 
 
-def get_image_color_features(image, k=4, image_processing_size=None):
+def get_image_color_features(image, k=COLOR_SIG_K, image_processing_size=None):
     """
     get color features !!
     """

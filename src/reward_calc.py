@@ -20,6 +20,7 @@ class RewardCalculator():
         self.repeat_tap_distance_threshold = params['repeat_tap_distance_threshold']
         self.swipe_reward = params['swipe_reward']
         self.object_type_tap_rewards = params['object_type_tap_rewards']
+        self.color_sig_change_reward = params['color_sig_change_reward']
 
         self.action_cum_reward = 0
         self.last_step_num_keys = ['swipe', 'pass', 'tap', 'double_tap', 'object_tap']
@@ -31,6 +32,7 @@ class RewardCalculator():
             self.last_step_nums[k] = -1
 
         self.action_history = deque(maxlen=self.action_memory)
+        self.last_color_sig = None
 
     def get_swipe_reward(self, step_num, a_name):
         swipes_in_memory = [a for a in self.action_history if a[0] == a_name]
@@ -61,7 +63,11 @@ class RewardCalculator():
         reward += (ai_state.money * self.money_mult)
         reward += (ai_state.stars * self.stars_mult)
 
-        # if we swipe and haven't swiped in a while, give a reward boost.
+        # add reward for color sig change
+        if self.last_color_sig is not None and ai_state.color_sig != self.last_color_sig:
+            self.action_cum_reward += self.color_sig_change_reward
+
+        # add rewards for swipes / taps based on memory
         if action_name in (Action.SWIPE_LEFT, Action.SWIPE_RIGHT):
             self.last_step_nums['swipe'] = step_num
             self.action_cum_reward += self.get_swipe_reward(step_num, action_name)
@@ -80,6 +86,7 @@ class RewardCalculator():
         reward += self.action_cum_reward
 
         self.action_history.append((action_name, args))
+        self.last_color_sig = ai_state.color_sig
 
         return reward
 
