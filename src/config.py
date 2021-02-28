@@ -157,7 +157,7 @@ KEV_OPTIONS = {
         'gpu': 0.5,
         'threshold': 0.05
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'new_tap_swipe_rewards',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'new2_qnn_and_rewards',
     'TF_DEEPQ_POLICY_NAME': 'policy',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.5,
@@ -424,16 +424,21 @@ REWARD CALCULATION
 """
 
 REWARD_PARAMS = {
-    'money_mult': 1.0,
-    'stars_mult': 1.0,
-    'action_memory': 120,
-    'max_repeat_swipes_in_memory': 6,
+    'money_mult': 50,
+    'stars_mult': 100,
+    'money_memory': 25,
+    'stars_memory': 25,
+    'action_memory': 150,
+    'max_repeat_swipes_in_memory': 8,
     'max_repeat_object_taps_in_memory': 5,
-    'repeat_tap_distance_threshold': 60,
+    'repeat_tap_distance_threshold': 30,
     'swipe_reward': 2,
     'object_type_tap_rewards': [('action_shape', 4), ('circle', 1)],
     'color_sig_change_reward': 2,
     'repeat_tap_penalty': -4,
+    'repeat_swipe_penalty': -2.5,
+    'do_nothing_penalty': -1,
+    'reset_penalty': 10,
 }
 
 """

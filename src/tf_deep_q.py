@@ -26,6 +26,11 @@ class TfAgentDeepQManager(object):
     https://www.tensorflow.org/agents/tutorials/10_checkpointer_policysaver_tutorial
     https://www.tensorflow.org/agents/api_docs/python/tf_agents/agents/DqnAgent
     https://towardsdatascience.com/understanding-and-calculating-the-number-of-parameters-in-convolution-neural-networks-cnns-fc88790d530d
+    https://machinelearningmastery.com/learning-rate-for-deep-learning-neural-networks/
+    https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf
+    https://www.arconsis.com/unternehmen/blog/reinforcement-learning-doom-with-tf-agents-and-ppo
+    https://github.com/arconsis/blog-playing-doom-with-tf-agents/blob/master/ppo_train_eval_doom_extended.py
+    https://www.oreilly.com/radar/reinforcement-learning-explained/
     """
 
     def __init__(self, env, params={}):
@@ -37,10 +42,12 @@ class TfAgentDeepQManager(object):
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
 
         # Agent Params
-        fc_layer_params = p_val('fc_layer_params', (1000, 50))
-        learning_rate = p_val('learning_rate', 1e-3)
-        epsilon_greedy = p_val('epsilon_greedy', 0.9)
-        gamma = p_val('gamma', 1.0)
+        fc_layer_params = p_val('fc_layer_params', (256, 40))
+        # conv_layer_params = p_val('conv_layer_params', [(16, 8, 4), (32, 4, 2)])
+        conv_layer_params = p_val('conv_layer_params', None)
+        learning_rate = p_val('learning_rate', 0.01)
+        epsilon_greedy = p_val('epsilon_greedy', 0.1)
+        gamma = p_val('gamma', 0.9)
         errors_loss_fn = p_val('errors_loss_fn', common.element_wise_squared_loss)
 
         # Training Params
@@ -50,6 +57,7 @@ class TfAgentDeepQManager(object):
         self.train_log_interval = p_val('train_log_interval', 1)
         self.train_eval_interval = p_val('train_eval_interval', 1000)
         num_eval_steps = p_val('num_eval_steps', 100)
+        adam_epsilon = p_val('adam_epsilon', 1e-5)
 
         # Saving / Loading Params
         save_dir = self.save_dir = p_val('save_dir', os.getcwd() + '/deep_q_save')
@@ -61,9 +69,10 @@ class TfAgentDeepQManager(object):
         self.q_net = q_network.QNetwork(
             self.tf_env.observation_spec(),
             self.tf_env.action_spec(),
+            conv_layer_params=conv_layer_params,
             fc_layer_params=fc_layer_params)
 
-        self.optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate, epsilon=adam_epsilon)
 
         global_step = tf.compat.v1.train.get_or_create_global_step()
         self.train_step_counter = global_step

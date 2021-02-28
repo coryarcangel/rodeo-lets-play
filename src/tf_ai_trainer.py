@@ -9,7 +9,7 @@ from tf_ai_env import DeviceClientTfEnv
 from tf_deep_q import TfAgentDeepQManager
 
 
-def run_and_train_deep_q_policy(num_iterations=100,
+def run_and_train_deep_q_policy(num_iterations=1000,
                                 save_dir=TF_DEEPQ_POLICY_SAVE_DIR,
                                 load_from_checkpoint=True,
                                 collect_steps_per_iteration=100):
@@ -21,10 +21,10 @@ def run_and_train_deep_q_policy(num_iterations=100,
     deep_q_manager = TfAgentDeepQManager(env, {
         'save_dir': save_dir,
         'collect_steps_per_iteration': collect_steps_per_iteration,
-        'checkpoint_save_interval': 10,
-        'policy_save_interval': 5,
-        'epsilon_greedy': 0.65,
-        'assumed_start_steps': 2100
+        'checkpoint_save_interval': 20,
+        'policy_save_interval': 20,
+        'epsilon_greedy': 0.2,
+        'assumed_start_steps': 0
     })
 
     if load_from_checkpoint:
