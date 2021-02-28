@@ -4,6 +4,8 @@ the window to the proper place
 '''
 
 import time
+import traceback
+import signal
 import sys
 
 from config import FRONTEND_WEB_URL, NUM_MONITORS
@@ -11,6 +13,7 @@ import window
 from window_setup import setup_frontend_window
 from kim_logs import get_kim_logger
 from kim_current_app_monitor import KimCurrentAppMonitor
+from util import kill_process
 
 
 def run_frontend_client():
@@ -21,12 +24,27 @@ def run_frontend_client():
     """
 
     logger = get_kim_logger('FrontendClient')
+    chrome_p = None
 
     def log(text):
         logger.info(text)
 
-    chrome_p = None
+    def graceful_exit():
+        log('Gracefully exiting...')
+        if chrome_p:
+            chrome_p.terminate()
+        window.kill_chrome()
+        sys.exit(0)
+
+    def signal_handler(sig, frame):
+        graceful_exit()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
+        window.kill_chrome()
+
         log('Opening Chrome to Frontend at {}'.format(FRONTEND_WEB_URL))
         fullscreen = NUM_MONITORS >= 2
         chrome_p = window.open_chrome_url(FRONTEND_WEB_URL, fullscreen=fullscreen, bg=True)
@@ -49,12 +67,15 @@ def run_frontend_client():
 
             time.sleep(5)
 
-    except (KeyboardInterrupt, SystemExit) as e:
+    except (KeyboardInterrupt, SystemExit, Exception) as e:
         log("Caught closure exception")
         log(e)
-        if chrome_p:
-            chrome_p.terminate()
+        graceful_exit()
 
 
 if __name__ == '__main__':
-    run_frontend_client()
+    try:
+        run_frontend_client()
+    except Exception:
+        traceback.print_exc()
+        kill_process()

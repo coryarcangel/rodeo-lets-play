@@ -67,6 +67,10 @@ def open_chrome_url(url, fullscreen=True, bg=True):
     return run_cmd_bg(cmd) if bg else run_cmd(cmd)
 
 
+def kill_chrome():
+    run_cmd('pkill google-chrome')
+
+
 def move_window_to_screen(name, x, y, width, height, scr='DP-1'):
     '''
     moves window to given size on given monitor
