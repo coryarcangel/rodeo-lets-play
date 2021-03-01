@@ -6,7 +6,7 @@ from kim_logs import get_kim_logger
 from enums import Action
 from ai_state_data import AIState
 from ai_info_publisher import get_ai_info_publisher
-from config import REDIS_HOST, REDIS_PORT
+from config import REDIS_HOST, REDIS_PORT, SWIPE_DURATION
 
 
 class DeviceClientEnvActionStateManager(object):
@@ -58,11 +58,11 @@ class DeviceClientEnvActionStateManager(object):
 
     def perform_swipe_left_action(self, args):
         distance = args['distance'] if 'distance' in args else 200
-        self.client.send_drag_x_command(distance=-distance)
+        self.client.send_drag_x_command(distance=-distance, duration=SWIPE_DURATION)
 
     def perform_swipe_right_action(self, args):
         distance = args['distance'] if 'distance' in args else 200
-        self.client.send_drag_x_command(distance=distance)
+        self.client.send_drag_x_command(distance=distance, duration=SWIPE_DURATION)
 
     def perform_tap_action(self, args):
         x, y, type = [args[k] for k in ['x', 'y', 'type']]

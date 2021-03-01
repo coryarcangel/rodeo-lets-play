@@ -17,7 +17,7 @@ from env_action_state_manager import DeviceClientEnvActionStateManager
 from reward_calc import RewardCalculator
 from object_name_values import get_object_name_int_values
 from config import REDIS_HOST, REDIS_PORT, ACTION_WEIGHTS
-from util import Rect, get_rect_center
+from util import get_rect_center
 
 
 class DeviceClientTfEnv(py_environment.PyEnvironment):
@@ -35,7 +35,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
         # [0,1] domain, lower makes next step reward less important
         self.std_discount = 0.5
-        self.reward_calculator = RewardCalculator()
+        self.reward_calculator = RewardCalculator(client=client)
 
         self.num_observation_objects = 100
         self.step_num_obs_mod = 110

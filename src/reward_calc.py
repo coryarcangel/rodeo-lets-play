@@ -12,7 +12,9 @@ class RewardCalculator():
     Helpful: https://www.oreilly.com/radar/reinforcement-learning-explained/
     """
 
-    def __init__(self, params=REWARD_PARAMS):
+    def __init__(self, client, params=REWARD_PARAMS):
+        self.client = client
+
         self.money_mult = params['money_mult']
         self.stars_mult = params['stars_mult']
         self.money_memory = params['money_memory']
@@ -27,6 +29,7 @@ class RewardCalculator():
         self.repeat_tap_penalty = params['repeat_tap_penalty']
         self.repeat_swipe_penalty = params['repeat_swipe_penalty']
         self.do_nothing_penalty = params['do_nothing_penalty']
+        self.tap_safeguard_penalty = params['tap_safeguard_penalty']
         self.reset_penalty = params['reset_penalty']
 
         self.last_step_num_keys = ['swipe', 'pass', 'tap', 'double_tap', 'object_tap']
@@ -51,15 +54,19 @@ class RewardCalculator():
 
     def get_tap_reward(self, step_num, type, a_name, args):
         # get nearby taps in memory
-        p = (args['x'], args['y'])
+        x, y = (args['x'], args['y'])
         th = self.repeat_tap_distance_threshold
         taps_in_memory = [a for a in self.action_history
                           if a[0] == a_name
-                          and get_dist(p, (a[1]['x'], a[1]['y'])) <= th]
+                          and get_dist((x, y), (a[1]['x'], a[1]['y'])) <= th]
 
         # penalize for too many taps in same place
         if len(taps_in_memory) >= self.max_repeat_object_taps_in_memory:
             return self.repeat_tap_penalty
+
+        # penalize tapping in safeguarded region
+        if self.client.should_safeguard_point(x, y):
+            return self.tap_safeguard_penalty
 
         # penalize tapping nothing
         if type == 'unknown':

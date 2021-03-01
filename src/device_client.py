@@ -124,15 +124,20 @@ class DeviceClient(AsyncchatKim):
         p = convert_point_between_rects(img_point, self.img_rect, self.phone_game_rect)
         return (p)
 
-    def _can_tap_device_point(self, x, y):
+    def should_safeguard_point(self, x, y):
         if not self.safeguard_menu_clicks:
-            return True
+            return False
 
         for rect in SAFEGUARD_MENU_RECTS:
             if is_in_rect((x, y), rect):
-                self.logger.info('Safeguarded point ({}, {})'.format(x, y))
-                return False
+                return True
 
+        return False
+
+    def _can_tap_device_point(self, x, y):
+        if self.should_safeguard_point(x, y):
+            self.logger.info('Safeguarded point ({}, {})'.format(x, y))
+            return False
         return True
 
     def send_drag_x_command(self, distance=100, duration=1):
