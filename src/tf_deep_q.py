@@ -42,10 +42,10 @@ class TfAgentDeepQManager(object):
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
 
         # Agent Params
-        fc_layer_params = p_val('fc_layer_params', (256, 40))
+        fc_layer_params = p_val('fc_layer_params', (200, 40))
         # conv_layer_params = p_val('conv_layer_params', [(16, 8, 4), (32, 4, 2)])
         conv_layer_params = p_val('conv_layer_params', None)
-        learning_rate = p_val('learning_rate', 0.01)
+        learning_rate = p_val('learning_rate', 0.02)
         epsilon_greedy = p_val('epsilon_greedy', 0.1)
         gamma = p_val('gamma', 0.9)
         errors_loss_fn = p_val('errors_loss_fn', common.element_wise_squared_loss)
@@ -157,8 +157,8 @@ class TfAgentDeepQManager(object):
             self.env.reset()
 
             # swipe around a bit so that we don't always start in same location
-            for _ in range(randint(1, 28)):
-                if randint(0, 100) <= 90:
+            for _ in range(randint(1, 20)):
+                if randint(0, 100) < 70:
                     self.env.action_state_manager.perform_swipe_left_action({})
                 else:
                     self.env.action_state_manager.perform_swipe_right_action({})

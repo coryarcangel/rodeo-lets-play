@@ -4,6 +4,7 @@ Contains KimEnv class for controlling the game via the learning algorithm.
 
 import json
 import numpy as np
+import random
 from tf_agents.environments import py_environment
 from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step
@@ -15,8 +16,8 @@ from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from reward_calc import RewardCalculator
 from object_name_values import get_object_name_int_values
-from config import REDIS_HOST, REDIS_PORT
-from util import Rect
+from config import REDIS_HOST, REDIS_PORT, ACTION_WEIGHTS
+from util import Rect, get_rect_center
 
 
 class DeviceClientTfEnv(py_environment.PyEnvironment):
@@ -29,7 +30,8 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.client = client
         self.action_state_manager = DeviceClientEnvActionStateManager(
             client, host, port)
-        self.action_spec_mode = 2  # either 1 (matrix) or 2 (vector)
+        self.action_spec_mode = 3  # 1 (matrix) or 2 (vector) or 3 (vector, just single tap)
+        self.obs_spec_mode = 2  # 1 for list of objects, 2 for grid with obj int
 
         # [0,1] domain, lower makes next step reward less important
         self.std_discount = 0.5
@@ -43,6 +45,12 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         grid_height = self.grid_height = 20
         grid_area = self.grid_area = grid_width * grid_height
 
+        self.os2_overwrite_prob = 0.5
+
+        tap_weight = float(ACTION_WEIGHTS[Action.TAP_LOCATION])
+        dtap_weight = float(ACTION_WEIGHTS[Action.DOUBLE_TAP_LOCATION])
+        self.as3_dtap_prob = dtap_weight / (tap_weight + dtap_weight)
+
         client_width = self.client_width = client.img_rect[2]
         client_height = self.client_height = client.img_rect[3]
         self.client_width_factor = float(client_width) / float(grid_width)
@@ -55,10 +63,13 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         # discover value of swiping
         self.num_as2_actions_per_swipe = 50
         self.total_as2_swipe_actions = self.num_as2_actions_per_swipe * 2
+        self.num_as3_actions_per_swipe = 10
+        self.total_as3_swipe_actions = self.num_as3_actions_per_swipe * 2
 
         # 1 is for reset and pass, then count swipes, then grid_area * 2
         # is for tap and double_tap in each space
         self.max_action_vals_2 = 1 + self.total_as2_swipe_actions + (grid_area * 2)
+        self.max_action_vals_3 = 1 + self.total_as3_swipe_actions + grid_area
 
         # Type 1 - (action, x, y)
         self._action_spec_1 = array_spec.BoundedArraySpec(
@@ -70,12 +81,24 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             shape=(), dtype=np.int32,
             minimum=0, maximum=self.max_action_vals_2, name='action')
 
+        self._action_spec_3 = array_spec.BoundedArraySpec(
+            shape=(), dtype=np.int32,
+            minimum=0, maximum=self.max_action_vals_3, name='action')
+
         # step num % step_num_obs_mod, follwed by a list objects with type, confidence, x, y vals
-        self._observation_spec = array_spec.BoundedArraySpec(
+        self._observation_spec_1 = array_spec.BoundedArraySpec(
             shape=(self.num_observation_objects + 1, 4),
             dtype=np.int32,
             minimum=[(0, 0, 0, 0)],
             maximum=[(max(self.step_num_obs_mod, self.obj_name_int_max_val), 100, grid_width, grid_height)],
+            name='observation')
+
+        # grid_x by grid_y, each with object type and confidence vals
+        self._observation_spec_2 = array_spec.BoundedArraySpec(
+            shape=(self.grid_width, self.grid_height, 2),
+            dtype=np.int32,
+            minimum=[0, 0],
+            maximum=[(max(150, self.obj_name_int_max_val), 100)],
             name='observation')
 
         self.total_step_num = 0
@@ -85,10 +108,22 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     """ Implementing TF-Agent PyEnvironment Abstract Methods """
 
     def action_spec(self):
-        return self._action_spec_1 if self.action_spec_mode == 1 else self._action_spec_2
+        if self.action_spec_mode == 1:
+            return self._action_spec_1
+        elif self.action_spec_mode == 2:
+            return self._action_spec_2
+        elif self.action_spec_mode == 3:
+            return self._action_spec_3
+        else:
+            return None
 
     def observation_spec(self):
-        return self._observation_spec
+        if self.obs_spec_mode == 1:
+            return self._observation_spec_1
+        elif self.obs_spec_mode == 2:
+            return self._observation_spec_2
+        else:
+            return None
 
     def _reset(self):
         self.logger.debug('Reset AI Environment')
@@ -133,8 +168,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
 
     """ Transforming AIStateData to TF-Agent Observation """
 
-    def _get_image_object_observation_vec(self, obj):
-        """Transform image_object from AIState to vector"""
+    def _get_image_object_info(self, obj):
         label = 'unknown'
         if 'shape_data' in obj:
             if obj['shape_data']['shape_label'] is not None:
@@ -151,16 +185,20 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             label_val = self.obj_name_int_vals['unknown']
 
         rect = obj['rect']
-        client_x_center = int(rect[0] + rect[2] * 0.5)
-        client_y_center = int(rect[1] + rect[3] * 0.5)
-        x_grid, y_grid = self._client_point_to_grid_point(client_x_center, client_y_center)
+        client_x, client_y = get_rect_center(rect)
+        x_grid, y_grid = self._client_point_to_grid_point(client_x, client_y)
 
         confidence = int(obj['confidence'] * 100) if obj['confidence'] is not None else 10
 
+        return label_val, confidence, x_grid, y_grid
+
+    def _get_image_object_observation_vec(self, obj):
+        """Transform image_object from AIState to vector"""
+        label_val, confidence, x_grid, y_grid = self._get_image_object_info(obj)
         return np.array((label_val, confidence, x_grid, y_grid), dtype=np.int32)
 
-    def ai_state_to_observation(self, state):
-        """Transform AIState to numpy array following observation_spec"""
+    def _ai_state_to_observation1(self, state):
+        """Transform AIState to numpy array following observation_spec_1"""
         num_img_objs = len(state.image_objects)
         obj_vectors = []
         for i in range(self.num_observation_objects):
@@ -174,24 +212,50 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         step_num_vecs = [(step_mod, step_mod, step_mod, step_mod), ]
         return np.array(step_num_vecs + obj_vectors, dtype=np.int32)
 
-    def observation_to_ai_state(self, observation):
-        # TODO: this is imperfect (money, stars, anything but image objects)
-        # but do I need the reverse transformation?
+    def _ai_state_to_observation2(self, state):
+        """Transform AIState to numpy array following observation_spec_2"""
 
-        image_objects = []
-        for vec in observation[1:]:
-            label_val, confidence_int, x_grid, y_grid = vec
-            label = self.obj_int_val_names[label_val] if label_val in self.obj_int_val_names else 'none'
-            confidence = float(confidence_int) / 100
-            x, y = self._grid_point_to_client_point(x_grid, y_grid)
-            w, h = (80, 80)
-            obj = {'label': label, 'confidence': confidence, 'rect': Rect(x - w / 2, y - h / 2, w, h)}
-            image_objects.append(obj)
+        # get zero-valued observation
+        obs = np.zeros((self.grid_width, self.grid_height, 2), dtype=np.int32)
 
-        return AIState(
-            image_shape=(self.client_width, self.client_height, 3),
-            image_objects=image_objects,
-        )
+        # fill in image objects
+        for obj in state.image_objects:
+            label_val, confidence, x_grid, y_grid = self._get_image_object_info(obj)
+
+            # insert if nothing there or we should overwrite anyway
+            should_insert = obs[x_grid][y_grid][0] == 0 \
+                or random.random() < self.os2_overwrite_prob
+            if should_insert:
+                obs[x_grid][y_grid][0] = label_val
+                obs[x_grid][y_grid][1] = confidence
+
+        return obs
+
+    def ai_state_to_observation(self, state):
+        """Transform AIState to numpy array following observation_spec"""
+        if self.obs_spec_mode == 1:
+            return self._ai_state_to_observation1(state)
+        else:
+            return self._ai_state_to_observation2(state)
+
+    # def observation_to_ai_state(self, observation):
+    #     # TODO: this is imperfect (money, stars, anything but image objects)
+    #     # but do I need the reverse transformation?
+    #
+    #     image_objects = []
+    #     for vec in observation[1:]:
+    #         label_val, confidence_int, x_grid, y_grid = vec
+    #         label = self.obj_int_val_names[label_val] if label_val in self.obj_int_val_names else 'none'
+    #         confidence = float(confidence_int) / 100
+    #         x, y = self._grid_point_to_client_point(x_grid, y_grid)
+    #         w, h = (80, 80)
+    #         obj = {'label': label, 'confidence': confidence, 'rect': Rect(x - w / 2, y - h / 2, w, h)}
+    #         image_objects.append(obj)
+    #
+    #     return AIState(
+    #         image_shape=(self.client_width, self.client_height, 3),
+    #         image_objects=image_objects,
+    #     )
 
     def get_cur_ai_state(self):
         return self.action_state_manager.get_cur_screen_state()
@@ -212,15 +276,19 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
     def tf_action_to_ai_action(self, tf_action):
         if self.action_spec_mode == 1:
             return self._tf_action1_to_ai_action(tf_action)
-        else:
+        elif self.action_spec_mode == 2:
             return self._tf_action2_to_ai_action(tf_action)
+        else:
+            return self._tf_action3_to_ai_action(tf_action)
 
     def ai_action_to_tf_action(self, ai_action_tup):
         action, args = ai_action_tup
         if self.action_spec_mode == 1:
             return self._ai_action_to_tf_action1(action, args)
-        else:
+        elif self.action_spec_mode == 2:
             return self._ai_action_to_tf_action2(action, args)
+        else:
+            return self._ai_action_to_tf_action3(action, args)
 
     def _grid_point_to_client_point(self, x_grid, y_grid):
         x, y = (x_grid * self.client_width_factor, y_grid * self.client_height_factor)
@@ -278,6 +346,26 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         x_grid = grid_val % gw
         return self._get_tap_action(action_name, x_grid, y_grid)
 
+    def _tf_action3_to_ai_action(self, tf_action3):
+        action_int = int(tf_action3)
+
+        # pass, reset
+        if action_int <= Action.RESET:
+            return (action_int, {})
+
+        val = action_int - 2
+        if val < self.total_as3_swipe_actions:
+            name = Action.SWIPE_LEFT if val % 2 == 0 else Action.SWIPE_RIGHT
+            return self._get_swipe_action(name)
+
+        # convert single digit to coded action, x, y value (see above docs)
+        grid_val = action_int - 2 - self.total_as3_swipe_actions
+        action_name = Action.DOUBLE_TAP_LOCATION \
+            if random.random() < self.as3_dtap_prob else Action.TAP_LOCATION
+        y_grid = int(grid_val / self.grid_width)
+        x_grid = grid_val % self.grid_width
+        return self._get_tap_action(action_name, x_grid, y_grid)
+
     def _client_point_to_grid_point(self, x, y):
         x_grid = int(x / self.client_width_factor)
         y_grid = int(y / self.client_height_factor)
@@ -301,6 +389,15 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         val = (2 + self.total_as2_swipe_actions) + grid_val
         if action_val == Action.DOUBLE_TAP_LOCATION:
             val += self.grid_area
+        return val
+
+    def _ai_action_to_tf_action3(self, action_val, args):
+        if action_val not in[Action.TAP_LOCATION, Action.DOUBLE_TAP_LOCATION]:
+            return action_val
+
+        x_grid, y_grid = self._get_ai_action_grid_point(action_val, args)
+        grid_val = (y_grid * self.grid_width) + x_grid
+        val = (2 + self.total_as3_swipe_actions) + grid_val
         return val
 
     def _take_ai_action(self, action, args):

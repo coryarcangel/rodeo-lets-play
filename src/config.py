@@ -276,6 +276,53 @@ SAFEGUARD_MENU_RECTS = OPTIONS['SAFEGUARD_MENU_RECTS']
 CENTER_Y_OFFSET = OPTIONS['CENTER_Y_OFFSET']
 
 """
+REWARD CALCULATION
+"""
+
+REWARD_PARAMS = {
+    'money_mult': 50,
+    'stars_mult': 100,
+    'money_memory': 25,
+    'stars_memory': 25,
+    'action_memory': 25,
+    'max_repeat_swipes_in_memory': 2,
+    'max_repeat_object_taps_in_memory': 2,
+    'repeat_tap_distance_threshold': 24,
+    'swipe_reward': 1.2,
+    'object_type_tap_rewards': [('action_shape', 4), ('circle', 1)],
+    'color_sig_change_reward': 2,
+    'repeat_tap_penalty': -4.5,
+    'repeat_swipe_penalty': -4,
+    'do_nothing_penalty': -0.5,
+    'reset_penalty': 10,
+}
+
+"""
+TRAINING PARAMS
+"""
+
+TRAINING_PARAMS = {
+    'save_dir': 'new4_obs2_tfa3_qnn',
+    'num_iterations': 1000,
+    'collect_steps_per_iteration': 100,
+    'checkpoint_save_interval': 20,
+    'policy_save_interval': 20,
+    'max_checkpoints': 4,
+    'learning_rate': 0.02,
+    'epsilon_greedy': 0.25,
+    'fc_layer_params': (200, 40),
+    'conv_layer_params': None,
+    'gamma': 0.9,
+    'replay_buffer_capacity': 100000,
+    'train_log_interval': 1,
+    'replay_batch_size': 64,
+    'train_eval_interval': 100,
+    'num_eval_steps': 50,
+    'adam_epsilon': 1e-5,
+    'assumed_start_steps': 0
+}
+
+"""
 BEHAVIOR
 """
 
@@ -418,28 +465,6 @@ def GET_KNOWN_TAP_LOCATIONS(img_rect, img_rect_center):
 
     return bottom_menu_regions + hot_regions
 
-
-"""
-REWARD CALCULATION
-"""
-
-REWARD_PARAMS = {
-    'money_mult': 50,
-    'stars_mult': 100,
-    'money_memory': 25,
-    'stars_memory': 25,
-    'action_memory': 150,
-    'max_repeat_swipes_in_memory': 8,
-    'max_repeat_object_taps_in_memory': 5,
-    'repeat_tap_distance_threshold': 30,
-    'swipe_reward': 2,
-    'object_type_tap_rewards': [('action_shape', 4), ('circle', 1)],
-    'color_sig_change_reward': 2,
-    'repeat_tap_penalty': -4,
-    'repeat_swipe_penalty': -2.5,
-    'do_nothing_penalty': -1,
-    'reset_penalty': 10,
-}
 
 """
 Phone Rect / Game Rect is about the raw phone size.
