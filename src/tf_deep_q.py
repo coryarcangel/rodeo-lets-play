@@ -6,7 +6,7 @@ from random import randint
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import tf_py_environment
-from tf_agents.metrics import py_metrics
+from tf_agents.metrics import tf_metrics
 from tf_agents.networks import q_network
 from tf_agents.policies import policy_saver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
@@ -102,8 +102,9 @@ class TfAgentDeepQManager(object):
             observers=[self.replay_buffer.add_batch],
             num_steps=self.collect_steps_per_iteration)
 
-        self.avg_return_metric = py_metrics.AverageReturnMetric(
-            buffer_size=num_eval_steps)
+        self.avg_return_metric = tf_metrics.AverageReturnMetric(
+            buffer_size=num_eval_steps,
+            batch_size=1)
 
         self.eval_driver = dynamic_step_driver.DynamicStepDriver(
             self.tf_env,

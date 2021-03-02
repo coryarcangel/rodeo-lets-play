@@ -317,10 +317,10 @@ TRAINING_PARAMS = {
     'replay_buffer_capacity': 100000,
     'train_log_interval': 1,
     'replay_batch_size': 64,
-    'train_eval_interval': 100,
+    'train_eval_interval': 40,
     'num_eval_steps': 50,
     'adam_epsilon': 1e-5,
-    'assumed_start_steps': 34400
+    'assumed_start_steps': 42500
 }
 
 """

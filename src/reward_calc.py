@@ -65,7 +65,7 @@ class RewardCalculator():
             return self.repeat_tap_penalty
 
         # penalize tapping in safeguarded region
-        if self.client.should_safeguard_point(x, y):
+        if self.client.should_safeguard_img_point(x, y):
             return self.tap_safeguard_penalty
 
         # penalize tapping nothing

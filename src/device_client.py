@@ -120,11 +120,11 @@ class DeviceClient(AsyncchatKim):
         setup_vysor_window()
         time.sleep(1)
 
-    def _img_point_to_device_point(self, img_point):
+    def get_device_point(self, img_point):
         p = convert_point_between_rects(img_point, self.img_rect, self.phone_game_rect)
-        return (p)
+        return p
 
-    def should_safeguard_point(self, x, y):
+    def should_safeguard_device_point(self, x, y):
         if not self.safeguard_menu_clicks:
             return False
 
@@ -134,10 +134,15 @@ class DeviceClient(AsyncchatKim):
 
         return False
 
+    def should_safeguard_img_point(self, x, y):
+        dx, dy = self.get_device_point((x, y))
+        return self.should_safeguard_device_point(dx, dy)
+
     def _can_tap_device_point(self, x, y):
-        if self.should_safeguard_point(x, y):
+        if self.should_safeguard_device_point(x, y):
             self.logger.info('Safeguarded point ({}, {})'.format(x, y))
             return False
+        # self.logger.info('POINT IS SAFE ({}, {})'.format(x, y))
         return True
 
     def send_drag_x_command(self, distance=100, duration=1):
@@ -146,7 +151,7 @@ class DeviceClient(AsyncchatKim):
 
     def send_tap_command(self, x, y, type):
         ''' Sends command to tap device at given location '''
-        nx, ny = self._img_point_to_device_point((x, y))
+        nx, ny = self.get_device_point((x, y))
         if self._can_tap_device_point(nx, ny):
             self._send_command(KimCommand.TAP, nx, ny, type)
         else:
@@ -154,7 +159,7 @@ class DeviceClient(AsyncchatKim):
 
     def send_double_tap_command(self, x, y, type):
         ''' Sends command to tap device at given location '''
-        nx, ny = self._img_point_to_device_point((x, y))
+        nx, ny = self.get_device_point((x, y))
         if self._can_tap_device_point(nx, ny):
             self._send_command(KimCommand.DOUBLE_TAP, nx, ny, type)
         else:
