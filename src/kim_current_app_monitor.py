@@ -4,7 +4,7 @@ from datetime import datetime
 from time import sleep
 from config import REDIS_HOST, REDIS_PORT, SECONDS_BETWEEN_BACK_BUTTONS
 from config import MAX_NON_KIM_APP_TIME, KK_HOLLYWOOD_PACKAGE
-from config import MAX_NO_MONEY_READ_TIME, MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS
+from config import MAX_NO_MONEY_READ_TIME, MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS, MAX_BLACK_SCREEN_TIME
 from kim_logs import get_kim_logger
 from device_client import DeviceClient
 
@@ -29,9 +29,11 @@ class KimCurrentAppMonitor(object):
         self.last_ping_time = datetime.now()
         self.last_kim_process_time = datetime.now()
         self.last_money_time = datetime.now()
+        self.last_non_black_screen_time = datetime.now()
         self.max_non_kim_time = MAX_NON_KIM_APP_TIME
         self.max_no_money_time = MAX_NO_MONEY_READ_TIME
         self.max_back_attempts = MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS
+        self.max_black_screen_time = MAX_BLACK_SCREEN_TIME
 
         self.r = redis.StrictRedis(
             host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
@@ -64,14 +66,22 @@ class KimCurrentAppMonitor(object):
 
         money = image_state['money']
         self.logger.info('read money: %d' % money)
-        return money
+
+        color_sig = image_state['color_features']['color_sig']
+        black_color_sig_str = '0-0-0'
+        black_is_dom_color = black_color_sig_str in color_sig and color_sig.index(black_color_sig_str) == 0
+        self.logger.info('read color_sig: %s' % color_sig)
+
+        return (money, color_sig, black_is_dom_color)
 
     def run_monitor_loop(self):
         now = datetime.now()
 
-        money = self._get_money()
+        money, color_sig, black_is_dom_color = self._get_money()
         if money >= 0:
             self.last_money_time = now
+        if not black_is_dom_color:
+            self.last_non_black_screen_time = now
 
         is_kim, is_launcher = self._get_app_is_kim()
         if is_kim:
@@ -82,6 +92,11 @@ class KimCurrentAppMonitor(object):
         if money_diff > 0:
             self.logger.info('Seconds without money: %d' % money_diff)
 
+        black_screen_diff = (now - self.last_non_black_screen_time).seconds
+        black_screen_too_long = black_screen_diff >= self.max_black_screen_time
+        if black_screen_diff > 0:
+            self.logger.info('Seconds on unknown screen: %d' % black_screen_diff)
+
         kim_app_diff = (now - self.last_kim_process_time).seconds
         kim_too_long = kim_app_diff >= self.max_non_kim_time
         if kim_app_diff > 0:
@@ -90,6 +105,9 @@ class KimCurrentAppMonitor(object):
         if is_launcher:
             self.logger.info('IN LAUNCHER: GOING TO HOLLYWOOD.')
             self.client.reset_game()
+        elif black_screen_too_long:
+            self.logger.info('ON UNKNOWN SCREEN: GOING TO HOLLYWOOD.')
+            self.client.reset_game()
         elif money_too_long or kim_too_long:
             # press back N times. if still no money, reset
             back_attempts = 0
@@ -97,7 +115,7 @@ class KimCurrentAppMonitor(object):
                 self.logger.info('NO MONEY: Pressing back button x%d' % (back_attempts + 1))
                 self.client.send_back_button_command()
                 sleep(SECONDS_BETWEEN_BACK_BUTTONS)
-                money = self._get_money()
+                money, _, _ = self._get_money()
                 back_attempts += 1
 
             if money < 0:
@@ -107,6 +125,7 @@ class KimCurrentAppMonitor(object):
             # restart counter
             self.last_money_time = now
             self.last_kim_process_time = now
+            self.last_non_black_screen_time = now
 
         # set last ping time
         self.last_ping_time = now

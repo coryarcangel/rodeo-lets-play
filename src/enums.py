@@ -61,7 +61,9 @@ class ShapeColorRange(object):
                  max_verts=15,  # Maximum number of recognized vertices
                  min_area_ratio=0.0,  # Minimum ratio of bounds area to contour area (how "filled in" is the shape)
                  max_area_ratio=5.0,  # Maximum ratio of bounds area to contour area (how "filled in" is the shape)
-                 min_y=0):
+                 min_y=0,
+                 min_wh_ratio=0.0,
+                 max_wh_ratio=100.0):
         self.action_shape = action_shape
         self.color_label = color_label
         self.lower = lower
@@ -73,6 +75,8 @@ class ShapeColorRange(object):
         self.min_area_ratio = min_area_ratio
         self.max_area_ratio = max_area_ratio
         self.min_y = min_y
+        self.min_wh_ratio = min_wh_ratio
+        self.max_wh_ratio = max_wh_ratio
 
     def get_color_ranges(self):
         # allow user to input negative hue values

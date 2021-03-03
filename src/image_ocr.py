@@ -41,7 +41,7 @@ class ImageOCRProcessor(object):
         if TESTING:
             hud_image.show()
             print(value)
-            time.sleep(5)
+            time.sleep(10)
         return value
 
     def process_image(self, image):

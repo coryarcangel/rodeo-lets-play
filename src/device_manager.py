@@ -4,7 +4,7 @@ from time import sleep
 from random import randint, random
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from kim_logs import get_kim_logger
-from config import DELAY_BETWEEN_ACTIONS, SHELL_TAP_PROB, DELAY_AFTER_SWIPE
+from config import DELAY_BETWEEN_ACTIONS, SHELL_TAP_PROB, DELAY_AFTER_SWIPE, DELAY_BETWEEN_DOUBLE_TAPS
 from config import KK_HOLLYWOOD_PACKAGE, KK_HOLLYWOOD_COMPONENT, RESET_PACKAGES_TO_KILL
 
 # Constants
@@ -93,7 +93,7 @@ class DeviceManager(object):
         ''' Double Taps device at given location '''
         self.logger.debug('Double Tapping at (%d, %d)' % (x, y))
         self.touch(x, y)
-        sleep(0.2)
+        sleep(DELAY_BETWEEN_DOUBLE_TAPS)
         self.touch(x, y)
         sleep(DELAY_BETWEEN_ACTIONS)
 
