@@ -4,7 +4,7 @@ from time import sleep
 from random import randint, random
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from kim_logs import get_kim_logger
-from config import DELAY_BETWEEN_ACTIONS, SHELL_TAP_PROB
+from config import DELAY_BETWEEN_ACTIONS, SHELL_TAP_PROB, DELAY_AFTER_SWIPE
 from config import KK_HOLLYWOOD_PACKAGE, KK_HOLLYWOOD_COMPONENT, RESET_PACKAGES_TO_KILL
 
 # Constants
@@ -69,7 +69,7 @@ class DeviceManager(object):
             (start_pos, end_pos, duration, steps))
         self.device.drag(start_pos, end_pos, duration, steps)
         # always want to behave synchronously, so wait until action is complete
-        sleep(duration + 0.5)
+        sleep(duration + DELAY_AFTER_SWIPE)
 
     def drag_delta(self, start_pos=None, delta_x=0,
                    delta_y=0, duration=1, steps=100):

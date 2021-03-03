@@ -6,7 +6,7 @@ from random import randint
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.drivers import dynamic_step_driver
 from tf_agents.environments import tf_py_environment
-from tf_agents.metrics import py_metrics
+from tf_agents.metrics import tf_metrics
 from tf_agents.networks import q_network
 from tf_agents.policies import policy_saver
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
@@ -26,6 +26,11 @@ class TfAgentDeepQManager(object):
     https://www.tensorflow.org/agents/tutorials/10_checkpointer_policysaver_tutorial
     https://www.tensorflow.org/agents/api_docs/python/tf_agents/agents/DqnAgent
     https://towardsdatascience.com/understanding-and-calculating-the-number-of-parameters-in-convolution-neural-networks-cnns-fc88790d530d
+    https://machinelearningmastery.com/learning-rate-for-deep-learning-neural-networks/
+    https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf
+    https://www.arconsis.com/unternehmen/blog/reinforcement-learning-doom-with-tf-agents-and-ppo
+    https://github.com/arconsis/blog-playing-doom-with-tf-agents/blob/master/ppo_train_eval_doom_extended.py
+    https://www.oreilly.com/radar/reinforcement-learning-explained/
     """
 
     def __init__(self, env, params={}):
@@ -37,10 +42,12 @@ class TfAgentDeepQManager(object):
         self.tf_env = tf_py_environment.TFPyEnvironment(env)
 
         # Agent Params
-        fc_layer_params = p_val('fc_layer_params', (1000, 50))
-        learning_rate = p_val('learning_rate', 1e-3)
-        epsilon_greedy = p_val('epsilon_greedy', 0.9)
-        gamma = p_val('gamma', 1.0)
+        fc_layer_params = p_val('fc_layer_params', (200, 40))
+        # conv_layer_params = p_val('conv_layer_params', [(16, 8, 4), (32, 4, 2)])
+        conv_layer_params = p_val('conv_layer_params', None)
+        learning_rate = p_val('learning_rate', 0.02)
+        epsilon_greedy = p_val('epsilon_greedy', 0.1)
+        gamma = p_val('gamma', 0.9)
         errors_loss_fn = p_val('errors_loss_fn', common.element_wise_squared_loss)
 
         # Training Params
@@ -49,7 +56,9 @@ class TfAgentDeepQManager(object):
         self.replay_batch_size = p_val('replay_batch_size', 64)
         self.train_log_interval = p_val('train_log_interval', 1)
         self.train_eval_interval = p_val('train_eval_interval', 1000)
+        self.train_reset_interval = p_val('train_reset_interval', 1)
         num_eval_steps = p_val('num_eval_steps', 100)
+        adam_epsilon = p_val('adam_epsilon', 1e-5)
 
         # Saving / Loading Params
         save_dir = self.save_dir = p_val('save_dir', os.getcwd() + '/deep_q_save')
@@ -61,9 +70,10 @@ class TfAgentDeepQManager(object):
         self.q_net = q_network.QNetwork(
             self.tf_env.observation_spec(),
             self.tf_env.action_spec(),
+            conv_layer_params=conv_layer_params,
             fc_layer_params=fc_layer_params)
 
-        self.optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate, epsilon=adam_epsilon)
 
         global_step = tf.compat.v1.train.get_or_create_global_step()
         self.train_step_counter = global_step
@@ -93,8 +103,9 @@ class TfAgentDeepQManager(object):
             observers=[self.replay_buffer.add_batch],
             num_steps=self.collect_steps_per_iteration)
 
-        self.avg_return_metric = py_metrics.AverageReturnMetric(
-            buffer_size=num_eval_steps)
+        self.avg_return_metric = tf_metrics.AverageReturnMetric(
+            buffer_size=num_eval_steps,
+            batch_size=1)
 
         self.eval_driver = dynamic_step_driver.DynamicStepDriver(
             self.tf_env,
@@ -143,13 +154,14 @@ class TfAgentDeepQManager(object):
         # Evaluate the agent's policy once before training
         returns = [self.avg_return_metric.result()]
 
-        for _ in range(num_iterations):
+        for i_num in range(num_iterations):
             # Reset env in case something bad has happened.
-            self.env.reset()
+            if i_num % self.train_reset_interval == 0:
+                self.env.reset()
 
             # swipe around a bit so that we don't always start in same location
-            for _ in range(randint(1, 28)):
-                if randint(0, 100) <= 90:
+            for _ in range(randint(1, 20)):
+                if randint(0, 100) < 70:
                     self.env.action_state_manager.perform_swipe_left_action({})
                 else:
                     self.env.action_state_manager.perform_swipe_right_action({})

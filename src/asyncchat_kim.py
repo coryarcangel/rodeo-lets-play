@@ -60,8 +60,12 @@ class AsyncchatKim(asynchat.async_chat):
         # self.logger.debug('Received ACK for %s', command_id)
         self.command_ack_map[command_id] = True
         self.command_res_queue.append((command_id, data))
+
+        # remove old ack / response data to save on memory
         if len(self.command_res_queue) > 10:
-            self.command_res_queue.pop(0)
+            old_id, _ = self.command_res_queue.pop(0)
+            if old_id in self.command_ack_map:
+                del self.command_ack_map[old_id]
 
     def _handle_command(self, command_id, command, data):
         self.logger.debug('need to handle %s' % command)

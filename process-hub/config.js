@@ -8,6 +8,7 @@ const OPTIONS = {
   SYSTEM_INFO_PUBLISH_INTERVAL: 15000,
   SCREEN_SETUP_INTERVAL: 5 * 60000,
   DEVICE_SERVER_MAX_TIME_BETWEEN_LOGS: 30000,
+  IMAGE_STREAM_MAX_TIME_BETWEEN_LOGS: 30000,
   DELAY_BEFORE_MAIN_PROCESS: 10000,
   DRAW_DASHBOARD_INTERVAL: 500,
   DASHBOARD_LOG_BUFFER_LENGTH: 15,
@@ -47,7 +48,12 @@ const baseProcessConfigs = [
     chainedRestarts: ['Frontend Client']
   },
   { abbrev: 'FC', name: 'Frontend Client', script: 'bin/start_frontend_client.sh' },
-  { abbrev: 'PH', name: 'Phone Image Stream', script: 'bin/start_phone_stream.sh' },
+  {
+    abbrev: 'PH',
+    name: 'Phone Image Stream',
+    script: 'bin/start_phone_stream.sh',
+    maxTimeBetweenLogs: OPTIONS.IMAGE_STREAM_MAX_TIME_BETWEEN_LOGS,
+  },
 ]
 
 module.exports = { OPTIONS, modes, mode, baseProcessConfigs }
