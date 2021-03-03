@@ -56,6 +56,7 @@ class TfAgentDeepQManager(object):
         self.replay_batch_size = p_val('replay_batch_size', 64)
         self.train_log_interval = p_val('train_log_interval', 1)
         self.train_eval_interval = p_val('train_eval_interval', 1000)
+        self.train_reset_interval = p_val('train_reset_interval', 1)
         num_eval_steps = p_val('num_eval_steps', 100)
         adam_epsilon = p_val('adam_epsilon', 1e-5)
 
@@ -153,9 +154,10 @@ class TfAgentDeepQManager(object):
         # Evaluate the agent's policy once before training
         returns = [self.avg_return_metric.result()]
 
-        for _ in range(num_iterations):
+        for i_num in range(num_iterations):
             # Reset env in case something bad has happened.
-            self.env.reset()
+            if i_num % self.train_reset_interval == 0:
+                self.env.reset()
 
             # swipe around a bit so that we don't always start in same location
             for _ in range(randint(1, 20)):

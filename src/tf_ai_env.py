@@ -16,7 +16,7 @@ from ai_state_data import AIState
 from env_action_state_manager import DeviceClientEnvActionStateManager
 from reward_calc import RewardCalculator
 from object_name_values import get_object_name_int_values
-from config import REDIS_HOST, REDIS_PORT, ACTION_WEIGHTS
+from config import REDIS_HOST, REDIS_PORT, ACTION_WEIGHTS, ALLOW_RESET_ACTION
 from util import get_rect_center
 
 
@@ -150,9 +150,11 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
             get_action_type_str(action_name), json.dumps(args))
 
         if action_name == Action.RESET:
-            return self.reset()
+            if ALLOW_RESET_ACTION:
+                return self.reset()
 
-        self._take_ai_action(action_name, args)
+        if action_name != Action.RESET:
+            self._take_ai_action(action_name, args)
 
         observation = self._get_current_tf_obs()
 

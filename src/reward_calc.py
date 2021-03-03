@@ -20,11 +20,13 @@ class RewardCalculator():
         self.money_memory = params['money_memory']
         self.stars_memory = params['stars_memory']
         self.action_memory = params['action_memory']
+        self.color_sig_memory = params['color_sig_memory']
         self.max_repeat_swipes_in_memory = params['max_repeat_swipes_in_memory']
         self.max_repeat_object_taps_in_memory = params['max_repeat_object_taps_in_memory']
         self.repeat_tap_distance_threshold = params['repeat_tap_distance_threshold']
         self.swipe_reward = params['swipe_reward']
         self.object_type_tap_rewards = params['object_type_tap_rewards']
+        self.default_object_tap_reward = params['default_object_tap_reward']
         self.color_sig_change_reward = params['color_sig_change_reward']
         self.repeat_tap_penalty = params['repeat_tap_penalty']
         self.repeat_swipe_penalty = params['repeat_swipe_penalty']
@@ -39,7 +41,7 @@ class RewardCalculator():
         self.money_history = deque(maxlen=self.money_memory)
         self.stars_history = deque(maxlen=self.stars_memory)
         self.action_history = deque(maxlen=self.action_memory)
-        self.last_color_sig = None
+        self.color_sig_history = deque(maxlen=self.color_sig_memory)
 
         self.last_step_nums = {}
         for k in self.last_step_num_keys:
@@ -75,7 +77,7 @@ class RewardCalculator():
         # give reward for clicking given type
         type_rewards = [r for r in self.object_type_tap_rewards if r[0] == type]
         if len(type_rewards) == 0:
-            return 0
+            return self.default_object_tap_reward
         return type_rewards[0][1]
 
     def _get_long_term_value_delta(self, value, history):
@@ -107,10 +109,12 @@ class RewardCalculator():
             reward += (stars_delta * self.stars_mult)
             self.stars_history.append(ai_state.stars)
 
-        # add reward for color sig change
-        if self.last_color_sig is not None and ai_state.color_sig != self.last_color_sig:
-            reward += self.color_sig_change_reward
-        self.last_color_sig = ai_state.color_sig
+        # add reward for color sig not seen in history
+        if len(self.color_sig_history) > 0:
+            color_sig_in_memory = [v for v in self.color_sig_history if v == ai_state.color_sig]
+            if len(color_sig_in_memory) == 0:
+                reward += self.color_sig_change_reward
+        self.color_sig_history.append(ai_state.color_sig)
 
         # add rewards for actions based on memory
         if action_name in (Action.SWIPE_LEFT, Action.SWIPE_RIGHT):

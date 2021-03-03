@@ -54,11 +54,11 @@ HEN_OPTIONS = {
         'gpu': 0.75,
         'threshold': 0.075
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'new4_obs2_tfa3_qnn',
-    'TF_DEEPQ_POLICY_NAME': 'policy_2021_03_03_02_34_60_135500',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'new_tap_swipe_rewards',
+    'TF_DEEPQ_POLICY_NAME': 'policy_2021_02_27_18_21_05_600',
     'TF_AI_POLICY_WEIGHTS': {
-        'deep_q': 0.3,
-        'heuristic': 0.6,
+        'deep_q': 0.4,
+        'heuristic': 0.5,
         'random': 0.1
     },
     'VYSOR_RECT': HEN_VYSOR_RECT,
@@ -157,10 +157,10 @@ KEV_OPTIONS = {
         'gpu': 0.5,
         'threshold': 0.05
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'new4_obs2_tfa3_qnn',
-    'TF_DEEPQ_POLICY_NAME': 'policy_2021_03_03_02_34_60_135500',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'new3_tfa3_qnn',
+    'TF_DEEPQ_POLICY_NAME': 'policy',
     'TF_AI_POLICY_WEIGHTS': {
-        'deep_q': 0.5,
+        'deep_q': 5,
         'heuristic': 0.4,
         'random': 0.1
     },
@@ -180,7 +180,7 @@ KEV_OPTIONS = {
     'CENTER_Y_OFFSET': 35,
     'SAFEGUARD_MENU_RECTS': [
         Rect(0, 0, 3000, 100),  # the entire top bar is bad news
-        Rect(1300, 940, 600, 200),  # all the buttons in bottom right except checkmark
+        Rect(1350, 940, 550, 200),  # all the buttons in bottom right except checkmark
         Rect(1895, 0, 1000, 345),  # the special E / fans / etc thing in the top right
     ],
     'ACTION_SHAPE_COLOR_RANGES': [
@@ -248,7 +248,7 @@ KEV_OPTIONS = {
     ]
 }
 
-OPTIONS = HEN_OPTIONS
+OPTIONS = KEV_OPTIONS
 
 # monitor config is system dependent
 MONITORS = OPTIONS['MONITORS']
@@ -284,20 +284,17 @@ REWARD_PARAMS = {
     'stars_mult': 100,
     'money_memory': 25,
     'stars_memory': 25,
-    'action_memory': 50,
-    'color_sig_memory': 10,
-    'max_repeat_swipes_in_memory': 4,
-    'max_repeat_object_taps_in_memory': 3,
+    'action_memory': 25,
+    'max_repeat_swipes_in_memory': 2,
+    'max_repeat_object_taps_in_memory': 2,
     'repeat_tap_distance_threshold': 24,
-    'swipe_reward': 3,
-    'object_type_tap_rewards': [('action_shape', 4), ('circle', 1.5)],
-    'default_object_tap_reward': 0.05,
-    'color_sig_change_reward': 3,
-    'repeat_tap_penalty': -25,
+    'swipe_reward': 1.2,
+    'object_type_tap_rewards': [('action_shape', 4), ('circle', 1)],
+    'color_sig_change_reward': 2,
+    'repeat_tap_penalty': -4.5,
     'repeat_swipe_penalty': -4,
-    'tap_safeguard_penalty': -1,
     'do_nothing_penalty': -0.5,
-    'reset_penalty': -100,
+    'reset_penalty': 10,
 }
 
 """
@@ -306,9 +303,9 @@ TRAINING PARAMS
 
 TRAINING_PARAMS = {
     'save_dir': 'new4_obs2_tfa3_qnn',
-    'num_iterations': 10000,
+    'num_iterations': 1000,
     'collect_steps_per_iteration': 100,
-    'checkpoint_save_interval': 5,
+    'checkpoint_save_interval': 20,
     'policy_save_interval': 20,
     'max_checkpoints': 4,
     'learning_rate': 0.02,
@@ -319,11 +316,10 @@ TRAINING_PARAMS = {
     'replay_buffer_capacity': 100000,
     'train_log_interval': 1,
     'replay_batch_size': 64,
-    'train_eval_interval': 40,
-    'train_reset_interval': 2,
+    'train_eval_interval': 100,
     'num_eval_steps': 50,
     'adam_epsilon': 1e-5,
-    'assumed_start_steps': 129400
+    'assumed_start_steps': 0
 }
 
 """
@@ -333,15 +329,7 @@ BEHAVIOR
 # NOTE: areas configured to CONTOUR_PROCESS_HEIGHT at 400. Should eventually make this ratio based..
 ACTION_SHAPE_COLOR_RANGES = OPTIONS['ACTION_SHAPE_COLOR_RANGES']
 
-# DELAY_BETWEEN_ACTIONS = 0.2  # in seconds
-# SWIPE_DURATION = 0.15
-# DELAY_AFTER_SWIPE = 0.1
-# ALLOW_RESET_ACTION = False
-
-DELAY_BETWEEN_ACTIONS = 2.2
-SWIPE_DURATION = 1.0
-DELAY_AFTER_SWIPE = 0.5
-ALLOW_RESET_ACTION = True
+DELAY_BETWEEN_ACTIONS = 0.4  # in seconds
 
 SHELL_TAP_PROB = 0.7  # 0 -> 1, prob will choose between two tap types in device_manager
 
@@ -351,7 +339,7 @@ MAX_NO_MONEY_READ_TIME = 30  # seconds
 MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS = 5
 MAX_NON_KIM_APP_TIME = 10  # seconds we can not be in the KK:H app. Fallback from no money fixes.
 
-SECONDS_BETWEEN_BACK_BUTTONS = 1.5
+SECONDS_BETWEEN_BACK_BUTTONS = 1.3
 
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
@@ -545,4 +533,4 @@ IMG_CONFIG_GALAXY10 = ImageConfig(
     top_menu_item_width=120
 )
 
-CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY10
+CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY8
