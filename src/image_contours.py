@@ -14,7 +14,7 @@ def get_contour_shape(c):
         approx = cv2.approxPolyDP(c, 0.01 * peri, True)
     except Exception as e:
         print(e)
-        return None
+        return None, 0
 
     vert_names = {
         '3': 'triangle',
@@ -60,7 +60,7 @@ def get_contour_shape_data(c, image, resized_image):
             'contourArea': contour_area,
             'areaRatio': float(bounding_area) / contour_area,
             'rect': rect,
-            'whRatio': rect[2] / float(rect[3]),
+            'whRatio': rect[2] / float(rect[3]) if rect[3] > 0 else 0,
             'rawRect': bounding_rect,
             'contour': (c.astype('float') * ratio).astype('int')  # mult by ratio
         }
