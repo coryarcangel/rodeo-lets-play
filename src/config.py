@@ -304,13 +304,21 @@ REWARD_PARAMS = {
 TRAINING PARAMS
 """
 
+TFENV_ACTION_SPEC_MODE = 3  # 1 (matrix) or 2 (vector) or 3 (vector, just single tap)
+TFENV_OBS_SPEC_MODE = 2  # 1 for list of objects, 2 for grid with obj int
+TFENV_GRID_WIDTH = 30
+TFENV_GRID_HEIGHT = 20
+TFENV_REWARD_DISCOUNT = 0.9
+TFENV_OBS2_OVERWRITE_PROB = 0.5
+TFENV_AS3_ACTIONS_PER_SWIPE = 10
+
 TRAINING_PARAMS = {
-    'save_dir': 'new4_obs2_tfa3_qnn',
+    'save_dir': 'new5_obs2_tfa3_qnn',
     'num_iterations': 10000,
     'collect_steps_per_iteration': 100,
-    'checkpoint_save_interval': 5,
-    'policy_save_interval': 20,
-    'max_checkpoints': 4,
+    'checkpoint_save_interval': 50,
+    'policy_save_interval': 50,
+    'max_checkpoints': 8,
     'learning_rate': 0.02,
     'epsilon_greedy': 0.25,
     'fc_layer_params': (200, 40),
@@ -323,7 +331,7 @@ TRAINING_PARAMS = {
     'train_reset_interval': 2,
     'num_eval_steps': 50,
     'adam_epsilon': 1e-5,
-    'assumed_start_steps': 129400
+    'assumed_start_steps': 25100
 }
 
 """
