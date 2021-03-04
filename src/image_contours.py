@@ -60,6 +60,7 @@ def get_contour_shape_data(c, image, resized_image):
             'contourArea': contour_area,
             'areaRatio': float(bounding_area) / contour_area,
             'rect': rect,
+            'whRatio': rect[2] / float(rect[3]),
             'rawRect': bounding_rect,
             'contour': (c.astype('float') * ratio).astype('int')  # mult by ratio
         }
@@ -118,8 +119,9 @@ def get_image_colored_shapes(image, shape_color_ranges):
 
     TESTING = False
     SHOW_PRE_SHAPES = True
+    SHOW_THRESH_IMG = False
     if TESTING:
-        shape_color_ranges = [s for s in shape_color_ranges if s.color_label in ('White')]
+        shape_color_ranges = [s for s in shape_color_ranges if s.color_label in ('White') and s.action_shape == 'confirm_ok']
 
     # Resize for performance
     img = image
@@ -143,7 +145,7 @@ def get_image_colored_shapes(image, shape_color_ranges):
             else:
                 mask = cv2.addWeighted(mask, 1, range_mask, 1, 0)
         res = cv2.bitwise_and(img, img, mask=mask)
-        if TESTING: cv2.imshow('Res', res); cv2.waitKey(0); cv2.destroyWindow('Res')
+        if TESTING and SHOW_THRESH_IMG: cv2.imshow('Res', res); cv2.waitKey(0); cv2.destroyWindow('Res')
 
         # Convert to grayscale and threshold
         res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
@@ -170,7 +172,9 @@ def get_image_colored_shapes(image, shape_color_ranges):
                         and cs['verts'] <= item.max_verts
                         and cs['areaRatio'] >= item.min_area_ratio
                         and cs['areaRatio'] <= item.max_area_ratio
-                        and cs['rawRect'][1] >= item.min_y]
+                        and cs['rawRect'][1] >= item.min_y
+                        and cs['whRatio'] >= item.min_wh_ratio
+                        and cs['whRatio'] <= item.max_wh_ratio]
         if TESTING:
             print("Drawn Shapes:")
             print_color_shapes(color_shapes)

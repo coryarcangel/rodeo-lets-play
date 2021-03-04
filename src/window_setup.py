@@ -1,5 +1,5 @@
 import sys
-from config import VYSOR_WINDOW_NAME, VYSOR_RECT, FRONTEND_NAME
+from config import VYSOR_WINDOW_NAME, VYSOR_RECT, FRONTEND_NAME, CHROME_ERROR_X_OFFSET
 from config import NUM_MONITORS, MONITORS, MON_NAMES, DASHBOARD_NAME
 import window
 
@@ -51,7 +51,8 @@ def setup_frontend_window():
     win_id = window.get_window_id(FRONTEND_NAME)
     if win_id:
         size = window.get_window_size(win_id)
-        window.click_in_window(win_id, size[0] - 30, 95)
+        x, y = CHROME_ERROR_X_OFFSET
+        window.click_in_window(win_id, size[0] - x, y)
 
 
 def setup_visible_windows(arg):

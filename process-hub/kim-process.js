@@ -89,6 +89,10 @@ class KimProcess {
 
       this.lastLogTime = Date.now()
       const monitorInterval = setInterval(() => {
+        if (!this.running) {
+          return
+        }
+
         const { maxTimeBetweenLogs } = this.ops
         if (maxTimeBetweenLogs && Date.now() - this.lastLogTime > maxTimeBetweenLogs) {
           if (monitorInterval) {

@@ -54,6 +54,7 @@ def run_frontend_client():
 
         setup_frontend_window()
 
+        time.sleep(20)
         kim_monitor = KimCurrentAppMonitor()
 
         while True:
@@ -70,6 +71,7 @@ def run_frontend_client():
     except (KeyboardInterrupt, SystemExit, Exception) as e:
         log("Caught closure exception")
         log(e)
+        traceback.print_exc()
         graceful_exit()
 
 

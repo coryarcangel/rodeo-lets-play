@@ -75,6 +75,7 @@ HEN_OPTIONS = {
         'maxRadius': 75
     },
     'CENTER_Y_OFFSET': 105,
+    'CHROME_ERROR_X_OFFSET': (22, 54),
     'SAFEGUARD_MENU_RECTS': [
         Rect(0, 0, 3000, 120),  # the entire top bar is bad news
         Rect(1600, 940, 550, 200),  # all the buttons in bottom right except checkmark
@@ -92,16 +93,16 @@ HEN_OPTIONS = {
                         min_area=800, max_area=4500, min_verts=8, max_verts=30, min_area_ratio=1.4, max_area_ratio=6),
         ShapeColorRange(ActionShape.STRONG_TALK_CHOICE, 'Light Blue',  # most common action
                         lower=(100, 200, 50), upper=(120, 255, 255),
-                        min_area=600, max_area=9000, min_verts=4, max_verts=15),
+                        min_area=600, max_area=9000, min_verts=4, max_verts=15, min_wh_ratio=1),
         ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure',
                         lower=(104, 50, 200), upper=(107, 90, 255),
-                        min_area=3500, max_area=7500, min_verts=4, max_verts=15, max_area_ratio=1.25),  # deal with azure backgrounds
+                        min_area=3500, max_area=7500, min_verts=4, max_verts=15, max_area_ratio=1.25, min_wh_ratio=1),  # deal with azure backgrounds
         ShapeColorRange(ActionShape.MONEY_CHOICE, 'Light Green',  # money green
                         lower=(40, 100, 50), upper=(65, 255, 255),
                         min_area=800, max_area=9000, min_verts=4, max_verts=15),
         ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Gray',  # usually cancel
                         lower=(0, 15, 170), upper=(255, 25, 195),
-                        min_area=2500, max_area=8500, min_verts=4, max_verts=15),
+                        min_area=2500, max_area=8500, min_verts=4, max_verts=15, min_wh_ratio=1),
         ShapeColorRange(ActionShape.TALK_CHOICE, 'Pink',  # flirting
                         lower=(160, 120, 120), upper=(170, 255, 255),
                         min_area=600, max_area=9000, min_verts=4, max_verts=15, max_area_ratio=2.3),
@@ -119,7 +120,8 @@ HEN_OPTIONS = {
                         min_area=12000, max_area=50000, min_verts=4, max_verts=25, max_area_ratio=1.65),
         ShapeColorRange(ActionShape.CONFIRM_OK, 'White',  # white rects with gold / silver perimeter
                         lower=(0, 0, 245), upper=(255, 2, 255),
-                        min_area=900, max_area=3500, min_verts=5, max_verts=18, max_area_ratio=1.45),
+                        min_area=1000, max_area=3500, min_verts=5, max_verts=25, max_area_ratio=2.5,
+                        min_wh_ratio=1.5),
         ShapeColorRange(ActionShape.TALK_CHOICE, 'Orange',
                         lower=(14, 200, 200), upper=(15, 255, 255),
                         min_area=800, max_area=9000, min_verts=4, max_verts=15),
@@ -178,6 +180,7 @@ KEV_OPTIONS = {
         'maxRadius': 30
     },
     'CENTER_Y_OFFSET': 35,
+    'CHROME_ERROR_X_OFFSET': (30, 95),
     'SAFEGUARD_MENU_RECTS': [
         Rect(0, 0, 3000, 100),  # the entire top bar is bad news
         Rect(1300, 940, 600, 200),  # all the buttons in bottom right except checkmark
@@ -274,6 +277,7 @@ IMAGE_PROCESS_SCALE = OPTIONS['IMAGE_PROCESS_SCALE']
 HOUGH_CIRCLES_CONFIG = OPTIONS['HOUGH_CIRCLES_CONFIG']
 SAFEGUARD_MENU_RECTS = OPTIONS['SAFEGUARD_MENU_RECTS']
 CENTER_Y_OFFSET = OPTIONS['CENTER_Y_OFFSET']
+CHROME_ERROR_X_OFFSET = OPTIONS['CHROME_ERROR_X_OFFSET']
 
 """
 REWARD CALCULATION
@@ -346,9 +350,10 @@ ACTION_SHAPE_COLOR_RANGES = OPTIONS['ACTION_SHAPE_COLOR_RANGES']
 # DELAY_AFTER_SWIPE = 0.1
 # ALLOW_RESET_ACTION = False
 
-DELAY_BETWEEN_ACTIONS = 2.2
+DELAY_BETWEEN_ACTIONS = 2.5  # in seconds
 SWIPE_DURATION = 1.0
 DELAY_AFTER_SWIPE = 0.5
+DELAY_BETWEEN_DOUBLE_TAPS = 0.8
 ALLOW_RESET_ACTION = True
 
 SHELL_TAP_PROB = 0.7  # 0 -> 1, prob will choose between two tap types in device_manager
@@ -356,10 +361,11 @@ SHELL_TAP_PROB = 0.7  # 0 -> 1, prob will choose between two tap types in device
 KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 
 MAX_NO_MONEY_READ_TIME = 30  # seconds
-MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS = 5
-MAX_NON_KIM_APP_TIME = 10  # seconds we can not be in the KK:H app. Fallback from no money fixes.
+MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS = 10
+MAX_NON_KIM_APP_TIME = 5  # seconds we can not be in the KK:H app. Fallback from no money fixes.
+MAX_BLACK_SCREEN_TIME = 20
 
-SECONDS_BETWEEN_BACK_BUTTONS = 1.5
+SECONDS_BETWEEN_BACK_BUTTONS = 1
 
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
@@ -372,8 +378,8 @@ SAFEGUARD_MENU_CLICKS_DEFAULT = True
 
 ACTION_WEIGHTS = {
     Action.PASS: 50,
-    Action.SWIPE_LEFT: 3000,  # push forward more than back
-    Action.SWIPE_RIGHT: 2500,
+    Action.SWIPE_LEFT: 3000,
+    Action.SWIPE_RIGHT: 3000,
     Action.TAP_LOCATION: 100,
     Action.DOUBLE_TAP_LOCATION: 10,
     Action.RESET: 40,
@@ -400,7 +406,7 @@ TAP_OBJECT_ACTION_WEIGHTS = {
 DARKNET_SPECIFIC_OBJECT_THRESHOLDS = {
     'person': 0.2,
     'bicycle': 0.07,
-    'clock': 0.12,
+    'clock': 0.1,
     'traffic light': 0.15
 }
 
@@ -423,7 +429,7 @@ HEURISTIC_CONFIG = {
     'same_room_threshold': 500,
     'recent_room_exit_weight': 2000,
     'same_room_exit_weight': 2500,
-    'no_money_exit_weight': 800,
+    'no_money_exit_weight': 200,
     'default_exit_weight': 400,
 
     'blob_dom_color_weights': {
@@ -435,8 +441,8 @@ HEURISTIC_CONFIG = {
         ActionShape.CONFIRM_OK: 10000,
         ActionShape.AREA_ENTRY: 500,
         ActionShape.MONEY_CHOICE: 3000,
-        ActionShape.STRONG_TALK_CHOICE: 6000,
-        ActionShape.TALK_CHOICE: 4000,
+        ActionShape.STRONG_TALK_CHOICE: 6400,
+        ActionShape.TALK_CHOICE: 5000,
         ActionShape.COLLECTABLE: 4000,
         ActionShape.MAYBE_TALK_CHOICE: 3000,
         ActionShape.IMPORTANT_MARKER: 2000,
@@ -546,11 +552,11 @@ IMG_CONFIG_GALAXY10 = ImageConfig(
     width=VYSOR_CAP_AREA[2],
     height=VYSOR_CAP_AREA[3],
     money_item_left=VYSOR_CAP_AREA[2] - 752,
-    stars_item_left=VYSOR_CAP_AREA[2] - 542,
+    stars_item_left=VYSOR_CAP_AREA[2] - 540,
     bolts_item_left=VYSOR_CAP_AREA[2] - 407,
-    top_menu_height=64,
+    top_menu_height=62,
     top_menu_padding=20,
-    top_menu_item_width=120
+    top_menu_item_width=96
 )
 
 CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY10

@@ -13,6 +13,7 @@ var resetEmojisEl = document.getElementById('reset-emojis')
 
 var SHOW_RESET_SCREEN = false;
 var SHOW_NEW_MONEY_ANIMATION = false;
+var PLAY_NEW_MONEY_SOUND = true;
 var MAX_AI_LOG_ELS = 28;
 var FILLED_RECTS = false;
 var FILL_OPACITY_HEX = '22';
@@ -30,9 +31,10 @@ var target_time = 1000 / target_fps;
 
 var sounds = {
   'tap_location': {src:'Rodeo-single-click.wav'},
-  'double_tap_location': {src:'Rodeo-double-click.wav'} ,
-  'swipe': {src:'Rodeo-swipe.wav'} ,
-  'reset': {src:'Rodeo-restart.wav', delay: 3500}
+  'double_tap_location': {src:'Rodeo-double-click.wav'},
+  'swipe': {src:'Rodeo-swipe.wav'},
+  'money': {src: 'Rodeo-money.wav'},
+  'reset': {src:'Rodeo-restart.wav', delay: 6500}
 };
 
 var wsProtocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -60,6 +62,7 @@ var renderState = {
   aiPolicyChoice: null,
   aiRecentActionStepNums: {},
   systemInfo: {},
+  moneyHistory: [],
   // actionHistory: [],
   // aiLogs: [],
   showingResetScreen: false,
@@ -109,8 +112,8 @@ function emoji(emojiName) {
   var mapData = emojiPositions[emojiName] || [[0,0]];
   //make sure we have an array of arrays, in case multiple emojis should be shown
   var emojis = (typeof mapData[0] === "object" ? mapData : [mapData]);
-
-  return emojis.map( emoj => `<span class='emoji' style="background-position: ${(emoj[0]*(emojiSize))} ${emoj[1]*emojiSize};"></span>`).join("");
+  const className = emojiName === "swipe_left" ? " reverse" : ""
+  return emojis.map( emoj => `<span class='emoji ${className}' style="background-position: ${(emoj[0]*(emojiSize))} ${emoj[1]*emojiSize};"></span>`).join("");
 }
 
 /// Image State Rendering
@@ -209,7 +212,7 @@ function initSound(){
 
 function playSound(sound){
   setTimeout(function(){
-    sounds[sound].clip.stop();
+    // sounds[sound].clip.stop();
     sounds[sound].clip.play();
   }, sounds[sound].delay || 0)
 }
@@ -404,11 +407,17 @@ function getAiLogLineElements(log){
       break
     case "Sending":
       var lastCommand = split[2].split("|")
+      var isTap = lastCommand[1] == 'TAP' || lastCommand[0] == 'DOUBLE_TAP'
       lines = [
         emoji("Sending message:"),
-        replaceWithEmojis(lastCommand.slice(0,4).join(" ").replaceAll("-","")) + (lastCommand[4] ? lastCommand[4] : ""),
-        replaceWithEmojis("clock1 clock2 clock3"),
+        isTap 
+          ? replaceWithEmojis(`${lastCommand[0]} ${lastCommand[1]} ${lastCommand[2]} globe ${lastCommand[3]}`)
+          : replaceWithEmojis(lastCommand.slice(0,4).join(" ").replaceAll("-","").replaceAll(".","dot")),
       ]
+      if (isTap) {
+        lines.push(replaceWithEmojis(lastCommand[4]))
+      }
+      lines.push(replaceWithEmojis("clock1 clock2 clock3"))
       break
     case "Step":
       lines = [
@@ -455,7 +464,33 @@ function showResetScreen() {
   }, resetDelay)
 }
 
-function playNewMoneyAnimation() {
+function handleMoneyRead(money) {
+  let hasNewMoney = false
+  if (money > 0 && renderState.moneyHistory.length >= 20) {
+    let foundGreaterOrEqualMoney = false
+    for (var i = 0; i < renderState.moneyHistory.length && !foundGreaterOrEqualMoney; i++) {
+      if (renderState.moneyHistory[i] >= money) {
+        foundGreaterOrEqualMoney = true;
+      }
+    }
+
+    hasNewMoney = !foundGreaterOrEqualMoney;
+  }
+
+  if (hasNewMoney) {
+    if (PLAY_NEW_MONEY_SOUND) {
+      playSound('money')
+    }
+
+    if (SHOW_NEW_MONEY_ANIMATION) {
+      showNewMoneyAnimation()
+    }
+  }
+
+  pushToMaxLengthArray(renderState.moneyHistory, money, 100)
+}
+
+function showNewMoneyAnimation() {
   if (!SHOW_NEW_MONEY_ANIMATION || renderState.playingNewMoneyAnimation) {
     return
   }
@@ -544,8 +579,9 @@ function handleCurStateUpdate(data) {
   renderState.aiPolicyChoice = aiStatus.policy_choice
   renderState.aiRecentActionStepNums = aiStatus.recent_action_step_nums
 
-  if (lastState && lastState.money !== undefined && renderState.imageState && renderState.imageState.money > lastState.money) {
-    playNewMoneyAnimation()
+  const money = renderState.imageState && renderState.imageState.money
+  if (money > 0) {
+    handleMoneyRead(money)
   }
 
   renderImageState(renderState.imageState, renderState.recentTouch);
