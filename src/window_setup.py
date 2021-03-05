@@ -1,6 +1,6 @@
 import sys
 from config import VYSOR_WINDOW_NAME, VYSOR_RECT, FRONTEND_NAME, CHROME_ERROR_X_OFFSET
-from config import NUM_MONITORS, MONITORS, MON_NAMES, DASHBOARD_NAME
+from config import NUM_MONITORS, MONITORS, MON_NAMES, DASHBOARD_NAME, SHOW_FRONTEND
 import window
 
 
@@ -39,6 +39,9 @@ def setup_vysor_window():
 
 def setup_frontend_window():
     # ** Move Chrome to the correct place
+    if not SHOW_FRONTEND:
+        return
+
     fullscreen = NUM_MONITORS >= 2
     mon_name = MON_NAMES[0]
     if fullscreen:

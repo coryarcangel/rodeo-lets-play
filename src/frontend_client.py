@@ -8,7 +8,7 @@ import traceback
 import signal
 import sys
 
-from config import FRONTEND_WEB_URL, NUM_MONITORS
+from config import FRONTEND_WEB_URL, NUM_MONITORS, SHOW_FRONTEND
 import window
 from window_setup import setup_frontend_window
 from kim_logs import get_kim_logger
@@ -43,11 +43,12 @@ def run_frontend_client():
     signal.signal(signal.SIGTERM, signal_handler)
 
     try:
-        window.kill_chrome()
+        if SHOW_FRONTEND:
+            window.kill_chrome()
 
-        log('Opening Chrome to Frontend at {}'.format(FRONTEND_WEB_URL))
-        fullscreen = NUM_MONITORS >= 2
-        chrome_p = window.open_chrome_url(FRONTEND_WEB_URL, fullscreen=fullscreen, bg=True)
+            log('Opening Chrome to Frontend at {}'.format(FRONTEND_WEB_URL))
+            fullscreen = NUM_MONITORS >= 2
+            chrome_p = window.open_chrome_url(FRONTEND_WEB_URL, fullscreen=fullscreen, bg=True)
 
         # ** wait for the chrome to open
         time.sleep(2)
@@ -58,11 +59,12 @@ def run_frontend_client():
         kim_monitor = KimCurrentAppMonitor()
 
         while True:
-            code = chrome_p.poll()
-            if chrome_p and code is not None:
-                # chrome has exited, abort!
-                log('Restarting due to dead Chrome: exit code {}'.format(code))
-                sys.exit()
+            if SHOW_FRONTEND:
+                code = chrome_p.poll()
+                if chrome_p and code is not None:
+                    # chrome has exited, abort!
+                    log('Restarting due to dead Chrome: exit code {}'.format(code))
+                    sys.exit()
 
             kim_monitor.run_monitor_loop()
 

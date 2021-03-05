@@ -159,8 +159,8 @@ KEV_OPTIONS = {
         'gpu': 0.5,
         'threshold': 0.05
     },
-    'TF_DEEPQ_POLICY_SAVE_DIR': 'new4_obs2_tfa3_qnn',
-    'TF_DEEPQ_POLICY_NAME': 'policy_2021_03_03_02_34_60_135500',
+    'TF_DEEPQ_POLICY_SAVE_DIR': 'new5_obs2_tfa3_qnn',
+    'TF_DEEPQ_POLICY_NAME': 'policy_2021_03_04_19_11_50_120600',
     'TF_AI_POLICY_WEIGHTS': {
         'deep_q': 0.5,
         'heuristic': 0.4,
@@ -344,6 +344,8 @@ BEHAVIOR
 
 # NOTE: areas configured to CONTOUR_PROCESS_HEIGHT at 400. Should eventually make this ratio based..
 ACTION_SHAPE_COLOR_RANGES = OPTIONS['ACTION_SHAPE_COLOR_RANGES']
+
+SHOW_FRONTEND = False
 
 DELAY_BETWEEN_ACTIONS = 2.5  # in seconds
 SWIPE_DURATION = 1.0

@@ -160,8 +160,8 @@ class TfAgentDeepQManager(object):
                 self.env.reset()
 
             # swipe around a bit so that we don't always start in same location
-            for _ in range(randint(1, 20)):
-                if randint(0, 100) < 70:
+            for _ in range(randint(1, 30)):
+                if randint(0, 100) < 60:
                     self.env.action_state_manager.perform_swipe_left_action({})
                 else:
                     self.env.action_state_manager.perform_swipe_right_action({})
