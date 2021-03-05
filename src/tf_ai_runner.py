@@ -4,6 +4,7 @@ import traceback
 from tf_agents.environments import tf_py_environment
 
 from config import TF_AI_POLICY_WEIGHTS, TF_DEEPQ_POLICY_SAVE_DIR, TF_DEEPQ_POLICY_NAME
+from config import TRAINING_PARAMS
 from util import kill_process
 from device_client import DeviceClient
 from tf_ai_env import DeviceClientTfEnv
@@ -63,7 +64,9 @@ def run_ai_with_saved_blended_policy(policy_name=TF_DEEPQ_POLICY_NAME,
         return weights[key] if key in weights else 0
 
     # Load Deep Q Policy
-    deep_q_manager = TfAgentDeepQManager(env, {'save_dir': save_dir})
+    params = TRAINING_PARAMS.copy()
+    params['save_dir'] = save_dir
+    deep_q_manager = TfAgentDeepQManager(env, params)
     deep_q_policy = deep_q_manager.load_policy(policy_name)
 
     # Create Blended Policy

@@ -162,8 +162,8 @@ KEV_OPTIONS = {
     'TF_DEEPQ_POLICY_SAVE_DIR': 'new4_obs2_tfa3_qnn',
     'TF_DEEPQ_POLICY_NAME': 'policy_2021_03_03_02_34_60_135500',
     'TF_AI_POLICY_WEIGHTS': {
-        'deep_q': 0.5,
-        'heuristic': 0.4,
+        'deep_q': 0.25,
+        'heuristic': 0.65,
         'random': 0.1
     },
     'VYSOR_RECT': KEV_VYSOR_RECT,
@@ -193,7 +193,7 @@ KEV_OPTIONS = {
         ShapeColorRange(ActionShape.ROOM_EXIT, 'Red',
                         lower=(-2, 25, 200), upper=(1, 255, 255),
                         min_area=1200, max_area=4500, min_verts=11, max_verts=30),
-        ShapeColorRange(ActionShape.TALK_CHOICE, 'Light Blue',  # most common action
+        ShapeColorRange(ActionShape.STRONG_TALK_CHOICE, 'Light Blue',  # most common action
                         lower=(100, 160, 50), upper=(120, 255, 255),
                         min_area=600, max_area=9000, min_verts=4, max_verts=15),
         ShapeColorRange(ActionShape.TALK_CHOICE, 'Azure',
@@ -345,25 +345,29 @@ BEHAVIOR
 # NOTE: areas configured to CONTOUR_PROCESS_HEIGHT at 400. Should eventually make this ratio based..
 ACTION_SHAPE_COLOR_RANGES = OPTIONS['ACTION_SHAPE_COLOR_RANGES']
 
-# DELAY_BETWEEN_ACTIONS = 0.2  # in seconds
-# SWIPE_DURATION = 0.15
-# DELAY_AFTER_SWIPE = 0.1
-# ALLOW_RESET_ACTION = False
-
+SHOW_FRONTEND = True
 DELAY_BETWEEN_ACTIONS = 2.5  # in seconds
 SWIPE_DURATION = 1.0
 DELAY_AFTER_SWIPE = 0.5
 DELAY_BETWEEN_DOUBLE_TAPS = 0.8
 ALLOW_RESET_ACTION = True
 
+# SHOW_FRONTEND = False
+# DELAY_BETWEEN_ACTIONS = 0.2  # in seconds
+# SWIPE_DURATION = 0.15
+# DELAY_AFTER_SWIPE = 0.1
+# DELAY_BETWEEN_DOUBLE_TAPS = 0.8
+# ALLOW_RESET_ACTION = False
+
 SHELL_TAP_PROB = 0.7  # 0 -> 1, prob will choose between two tap types in device_manager
 
 KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 
-MAX_NO_MONEY_READ_TIME = 30  # seconds
-MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS = 10
+MAX_NO_IMAGE_FEATURES_TIME = 30  # seconds
+MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS = 10
 MAX_NON_KIM_APP_TIME = 5  # seconds we can not be in the KK:H app. Fallback from no money fixes.
 MAX_BLACK_SCREEN_TIME = 20
+MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS = 2
 
 SECONDS_BETWEEN_BACK_BUTTONS = 1
 
@@ -441,7 +445,7 @@ HEURISTIC_CONFIG = {
         ActionShape.CONFIRM_OK: 10000,
         ActionShape.AREA_ENTRY: 500,
         ActionShape.MONEY_CHOICE: 3000,
-        ActionShape.STRONG_TALK_CHOICE: 6400,
+        ActionShape.STRONG_TALK_CHOICE: 7500,
         ActionShape.TALK_CHOICE: 5000,
         ActionShape.COLLECTABLE: 4000,
         ActionShape.MAYBE_TALK_CHOICE: 3000,
@@ -513,6 +517,7 @@ ImageConfig = collections.namedtuple("ImageConfig", [
     "money_item_left",
     "stars_item_left",
     "bolts_item_left",
+    "blankspace_rect",
 ])
 
 IMG_CONFIG_IPHONE7PLUS = ImageConfig(
@@ -521,6 +526,7 @@ IMG_CONFIG_IPHONE7PLUS = ImageConfig(
     money_item_left=1170,
     stars_item_left=1568,
     bolts_item_left=0,
+    blankspace_rect=(15, 13, 20, 13),
     top_menu_height=115,
     top_menu_padding=30,
     top_menu_item_width=240
@@ -532,6 +538,7 @@ IMG_CONFIG_STUDIOBLU = ImageConfig(
     money_item_left=680,
     stars_item_left=884,
     bolts_item_left=0,
+    blankspace_rect=(15, 13, 20, 13),
     top_menu_height=60,
     top_menu_padding=10,
     top_menu_item_width=120
@@ -543,6 +550,7 @@ IMG_CONFIG_GALAXY8 = ImageConfig(
     money_item_left=VYSOR_CAP_AREA[2] - 308,
     stars_item_left=VYSOR_CAP_AREA[2] - 201,
     bolts_item_left=VYSOR_CAP_AREA[2] - 403,
+    blankspace_rect=(15, 13, 20, 13),
     top_menu_height=38,
     top_menu_padding=12,
     top_menu_item_width=55
@@ -554,6 +562,7 @@ IMG_CONFIG_GALAXY10 = ImageConfig(
     money_item_left=VYSOR_CAP_AREA[2] - 752,
     stars_item_left=VYSOR_CAP_AREA[2] - 540,
     bolts_item_left=VYSOR_CAP_AREA[2] - 407,
+    blankspace_rect=(15, 13, 20, 13),
     top_menu_height=62,
     top_menu_padding=20,
     top_menu_item_width=96

@@ -29,6 +29,7 @@ class DeviceClient(AsyncchatKim):
                  safeguard_menu_clicks=SAFEGUARD_MENU_CLICKS_DEFAULT,
                  on_connection_fail=None,
                  superlong_timeout_seconds=60,
+                 restart_delay=20,
                  on_superlong_timeout=None):
         AsyncchatKim.__init__(self, py2=False, logger_name='DeviceClient')
         self.phone_game_rect = phone_game_rect
@@ -37,6 +38,7 @@ class DeviceClient(AsyncchatKim):
         self.on_connection_fail = on_connection_fail
         self.superlong_timeout_seconds = superlong_timeout_seconds
         self.on_superlong_timeout = on_superlong_timeout
+        self.restart_delay = restart_delay
         self.ai_info_publisher = get_ai_info_publisher()
         self.is_closed = False
 
@@ -72,10 +74,10 @@ class DeviceClient(AsyncchatKim):
     def handle_close(self):
         if not self.is_closed:
             self.logger.debug('Disconnected from %s:%d', self.host, self.port)
-            self.logger.debug('Will Attempt Connect in 20 seconds')
+            self.logger.debug('Will Attempt Connect in %d seconds', self.restart_delay)
             self.close()
             self.is_closed = True
-            time.sleep(20)
+            time.sleep(self.restart_delay)
             self.start()
         pass
 
