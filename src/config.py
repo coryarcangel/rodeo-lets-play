@@ -292,13 +292,13 @@ REWARD_PARAMS = {
     'color_sig_memory': 15,
     'max_repeat_swipes_in_memory': 4,
     'max_repeat_object_taps_in_memory': 4,
-    'repeat_tap_distance_threshold': 24,
-    'swipe_reward': 2,
+    'repeat_tap_distance_threshold': 100,
+    'swipe_reward': 6,
     'object_type_tap_rewards': [('action_shape', 4), ('circle', 1.5)],
     'default_object_tap_reward': 0.05,
     'color_sig_change_reward': 3,
-    'repeat_tap_penalty': -8,
-    'repeat_swipe_penalty': -5,
+    'repeat_tap_penalty': -16,
+    'repeat_swipe_penalty': -8,
     'tap_safeguard_penalty': -1,
     'do_nothing_penalty': -0.5,
     'reset_penalty': -100,
@@ -310,32 +310,32 @@ TRAINING PARAMS
 
 TFENV_ACTION_SPEC_MODE = 3  # 1 (matrix) or 2 (vector) or 3 (vector, just single tap)
 TFENV_OBS_SPEC_MODE = 2  # 1 for list of objects, 2 for grid with obj int
-TFENV_GRID_WIDTH = 30
-TFENV_GRID_HEIGHT = 20
+TFENV_GRID_WIDTH = 15
+TFENV_GRID_HEIGHT = 10
 TFENV_REWARD_DISCOUNT = 0.9
 TFENV_OBS2_OVERWRITE_PROB = 0.5
 TFENV_AS3_ACTIONS_PER_SWIPE = 2
 
 TRAINING_PARAMS = {
-    'save_dir': 'new5_obs2_tfa3_qnn',
-    'num_iterations': 10000,
-    'collect_steps_per_iteration': 100,
+    'save_dir': 'new7_obs2_tfa3_qnn',
+    'num_iterations': 1200,
+    'collect_steps_per_iteration': 80,
     'checkpoint_save_interval': 50,
     'policy_save_interval': 50,
     'max_checkpoints': 8,
-    'learning_rate': 0.02,
-    'epsilon_greedy': 0.25,
-    'fc_layer_params': (200, 40),
+    'learning_rate': 0.04,
+    'epsilon_greedy': 0.35,
+    'fc_layer_params': (256, 40),
     'conv_layer_params': None,
     'gamma': 0.9,
     'replay_buffer_capacity': 100000,
     'train_log_interval': 1,
     'replay_batch_size': 64,
     'train_eval_interval': 40,
-    'train_reset_interval': 2,
+    'train_reset_interval': 5,
     'num_eval_steps': 50,
     'adam_epsilon': 1e-5,
-    'assumed_start_steps': 25100
+    'assumed_start_steps': 0
 }
 
 """
