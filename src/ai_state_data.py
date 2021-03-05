@@ -38,6 +38,7 @@ class AIState(object):
     """
 
     def __init__(self,
+                 pil_features=None,
                  image_shape=None,
                  money=0,
                  stars=0,
@@ -47,10 +48,17 @@ class AIState(object):
                  blobs=[],
                  shapes=[]):
         self.logger = get_kim_logger('AIState')
-        self.image_shape = image_shape
-        self.money = money
-        self.stars = stars
         # self.image = tf.placeholder(shape=image_shape, dtype=tf.uint8)
+
+        self.pil_features = pil_features
+        if pil_features:
+            self.image_shape = pil_features['image_shape']
+            self.money = pil_features['money']['value']
+            self.stars = pil_features['stars']['value']
+        else:
+            self.image_shape = image_shape
+            self.money = money
+            self.stars = stars
         self.color_features = color_features
         self.color_sig = color_features['color_sig'] if color_features is not None and 'color_sig' in color_features else 'none'  # rough idea of colors in room
         self.image_sig = color_features['image_sig'] if color_features is not None and 'image_sig' in color_features else 'none'  # hard idea of exact image -- should change frame to frame
@@ -133,6 +141,11 @@ class AIState(object):
             'stars': self.stars,
         }
 
+    def _get_pil_features(self):
+        if self.pil_features is not None:
+            return self.pil_features
+        return {'image_shape': self.image_shape, 'money': {'value': self.money}, 'stars': {'value': self.stars}}
+
     def serialize(self):
         ''' serializes AIState into json '''
 
@@ -146,6 +159,7 @@ class AIState(object):
         return json.dumps({
             'money': self.money,
             'stars': self.stars,
+            'pil_features': self._get_pil_features(),
             'color_features': self.color_features,
             'image_objects': [clean_img_obj(o) for o in self.image_objects],
             'image_shape': self.image_shape

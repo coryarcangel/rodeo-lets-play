@@ -2,11 +2,14 @@
 
 import tesserocr
 import time
+import numpy as np
 from PIL import Image, ImageEnhance
 from concurrent import futures
+from image_color import get_image_color_sig
 
 
 TESTING = False
+TESTING_BLANKSPACE = False
 
 
 def read_num_from_img(image):
@@ -44,6 +47,26 @@ class ImageOCRProcessor(object):
             time.sleep(10)
         return value
 
+    def _get_blankspace_is_black(self, image, left):
+        left_pad, top, width, height = self.image_config.blankspace_rect
+        item_crop_box = (left + left_pad, top, left + width, top + height)
+        cropped_image = image.crop(item_crop_box)
+        np_cropped_image = np.array(cropped_image)
+        blankspace_color_sig = get_image_color_sig(np_cropped_image[:, :, :3], k=1)
+        black = '0-0-0'
+        blankspace_is_black = black in blankspace_color_sig and blankspace_color_sig.index(black) == 0
+        if TESTING_BLANKSPACE:
+            print(np_cropped_image.shape)
+            print(left, blankspace_color_sig, blankspace_is_black)
+            cropped_image.show()
+            time.sleep(10)
+        return blankspace_is_black
+
+    def get_hud_features(self, image, left):
+        value = self._read_hud_value(image, left)
+        blankspace_is_black = self._get_blankspace_is_black(image, left)
+        return {'value': value, 'blankspace_is_black': blankspace_is_black}
+
     def process_image(self, image):
         '''
             FPS with no text reading: ~7.5
@@ -59,8 +82,8 @@ class ImageOCRProcessor(object):
 
         with futures.ThreadPoolExecutor() as executor:
             future_to_key = {
-                executor.submit(self._read_hud_value, image, self.image_config.money_item_left): 'money',
-                executor.submit(self._read_hud_value, image, self.image_config.stars_item_left): 'stars',
+                executor.submit(self.get_hud_features, image, self.image_config.money_item_left): 'money',
+                executor.submit(self.get_hud_features, image, self.image_config.stars_item_left): 'stars',
                 # executor.submit(self._read_hud_value, image, self.image_config.bolts_item_left): 'bolts',
             }
             for future in futures.as_completed(future_to_key):

@@ -72,17 +72,21 @@ def get_image_color_sig_component(color,
     return sig_comp
 
 
+def get_image_color_sig(image, k=COLOR_SIG_K, image_processing_size=None):
+    """ get color sig !! """
+    dom_colors = get_img_dom_colors(image, k, image_processing_size)
+
+    sig_components = [get_image_color_sig_component(color, pct) for color, pct, _ in dom_colors]
+    sig_components.sort()
+    return '__'.join(sig_components)
+
+
 def get_image_color_features(image, k=COLOR_SIG_K, image_processing_size=None):
     """
     get color features !!
     """
 
-    dom_colors = get_img_dom_colors(image, k, image_processing_size)
-
-    sig_components = [get_image_color_sig_component(color, pct) for color, pct, _ in dom_colors]
-    sig_components.sort()
-    color_sig = '__'.join(sig_components)
-
+    color_sig = get_image_color_sig(image, k, image_processing_size)
     image_sig = get_img_hash(image)
 
     return {
