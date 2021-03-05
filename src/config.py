@@ -57,8 +57,8 @@ HEN_OPTIONS = {
     'TF_DEEPQ_POLICY_SAVE_DIR': 'new4_obs2_tfa3_qnn',
     'TF_DEEPQ_POLICY_NAME': 'policy_2021_03_03_02_34_60_135500',
     'TF_AI_POLICY_WEIGHTS': {
-        'deep_q': 0.3,
-        'heuristic': 0.6,
+        'deep_q': 0.25,
+        'heuristic': 0.65,
         'random': 0.1
     },
     'VYSOR_RECT': HEN_VYSOR_RECT,
