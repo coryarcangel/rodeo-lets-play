@@ -52,7 +52,7 @@ class ImageOCRProcessor(object):
         item_crop_box = (left + left_pad, top, left + width, top + height)
         cropped_image = image.crop(item_crop_box)
         np_cropped_image = np.array(cropped_image)
-        blankspace_color_sig = get_image_color_sig(np_cropped_image[:, :, :3], k=1)
+        blankspace_color_sig = get_image_color_sig(np_cropped_image[:, :, :3], k=1, squash_factor=0.15)
         black = '0-0-0'
         blankspace_is_black = black in blankspace_color_sig and blankspace_color_sig.index(black) == 0
         if TESTING_BLANKSPACE:

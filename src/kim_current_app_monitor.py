@@ -151,14 +151,15 @@ class KimCurrentAppMonitor(object):
         elif out_of_game_too_long or out_of_app_too_long:
             # press back N times. if still no image features, reset
             back_attempts = 0
-            while not is_in_game and back_attempts < MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS:
+            while (not is_in_game or not is_kim) and back_attempts < MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS:
                 self.logger.info('NO IMAGE FEATURES: Pressing back button x%d' % (back_attempts + 1))
                 self.client.send_back_button_command()
                 sleep(SECONDS_BETWEEN_BACK_BUTTONS)
                 is_in_game = self._get_image_state_info()['is_in_game']
+                is_kim, _ = self._get_app_info() if not is_kim else (True, True)
                 back_attempts += 1
 
-            if not is_in_game:
+            if not is_in_game or not is_kim:
                 self.logger.info('NO IMAGE FEATURES: Resetting to KK:Hollywood.')
                 self.client.reset_game()
 

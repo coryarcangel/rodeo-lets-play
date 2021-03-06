@@ -367,9 +367,9 @@ MAX_NO_IMAGE_FEATURES_TIME = 30  # seconds
 MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS = 10
 MAX_NON_KIM_APP_TIME = 5  # seconds we can not be in the KK:H app. Fallback from no money fixes.
 MAX_BLACK_SCREEN_TIME = 20
-MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS = 2
+MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS = 3
 
-SECONDS_BETWEEN_BACK_BUTTONS = 1
+SECONDS_BETWEEN_BACK_BUTTONS = 0.5
 
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 
@@ -444,7 +444,7 @@ HEURISTIC_CONFIG = {
         ActionShape.MENU_EXIT: 100000,
         ActionShape.CONFIRM_OK: 10000,
         ActionShape.AREA_ENTRY: 1000,
-        ActionShape.MONEY_CHOICE: 3600,
+        ActionShape.MONEY_CHOICE: 3000,
         ActionShape.STRONG_TALK_CHOICE: 7500,
         ActionShape.TALK_CHOICE: 5000,
         ActionShape.COLLECTABLE: 4000,

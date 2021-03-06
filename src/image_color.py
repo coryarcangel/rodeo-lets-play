@@ -72,11 +72,15 @@ def get_image_color_sig_component(color,
     return sig_comp
 
 
-def get_image_color_sig(image, k=COLOR_SIG_K, image_processing_size=None):
+def get_image_color_sig(image,
+                        k=COLOR_SIG_K,
+                        image_processing_size=None,
+                        pct_factor=COLOR_SIG_PCT_FACTOR,
+                        squash_factor=COLOR_SIG_SQUASH_FACTOR):
     """ get color sig !! """
     dom_colors = get_img_dom_colors(image, k, image_processing_size)
 
-    sig_components = [get_image_color_sig_component(color, pct) for color, pct, _ in dom_colors]
+    sig_components = [get_image_color_sig_component(color, pct, pct_factor, squash_factor) for color, pct, _ in dom_colors]
     sig_components.sort()
     return '__'.join(sig_components)
 
