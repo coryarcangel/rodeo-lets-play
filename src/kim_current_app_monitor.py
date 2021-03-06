@@ -4,12 +4,16 @@ from datetime import datetime
 from time import sleep
 from config import REDIS_HOST, REDIS_PORT, SECONDS_BETWEEN_BACK_BUTTONS
 from config import MAX_NON_KIM_APP_TIME, KK_HOLLYWOOD_PACKAGE
-from config import MAX_NO_MONEY_READ_TIME, MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS, MAX_BLACK_SCREEN_TIME
+from config import MAX_NO_IMAGE_FEATURES_TIME, MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS
+from config import MAX_BLACK_SCREEN_TIME, MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS
 from kim_logs import get_kim_logger
 from device_client import DeviceClient
 
 
-LAUNCHER_PACKAGE = 'com.sec.android.app.launcher'
+LAUNCHER_PACKAGES = (
+    'com.sec.android.app.launcher',
+    'com.sec.android.app.sbrowser'
+)
 
 
 class KimCurrentAppMonitor(object):
@@ -28,20 +32,16 @@ class KimCurrentAppMonitor(object):
         self.logger = get_kim_logger('AppMonitor')
         self.last_ping_time = datetime.now()
         self.last_kim_process_time = datetime.now()
-        self.last_money_time = datetime.now()
+        self.last_in_game_time = datetime.now()
         self.last_non_black_screen_time = datetime.now()
-        self.max_non_kim_time = MAX_NON_KIM_APP_TIME
-        self.max_no_money_time = MAX_NO_MONEY_READ_TIME
-        self.max_back_attempts = MAX_NO_MONEY_READ_BACK_BUTTON_ATTEMPTS
-        self.max_black_screen_time = MAX_BLACK_SCREEN_TIME
 
         self.r = redis.StrictRedis(
             host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
 
-        self.client = DeviceClient()
+        self.client = DeviceClient(restart_delay=30)
         self.client.start()
 
-    def _get_app_is_kim(self):
+    def _get_app_info(self):
         # check if current app is kim
         app_name = ''
         try:
@@ -52,10 +52,10 @@ class KimCurrentAppMonitor(object):
             pass
 
         is_kim = app_name is None or app_name == '' or app_name == KK_HOLLYWOOD_PACKAGE
-        is_launcher = app_name == LAUNCHER_PACKAGE
+        is_launcher = app_name in LAUNCHER_PACKAGES
         return (is_kim, is_launcher)
 
-    def _get_money(self):
+    def _get_image_state_info(self):
         # decode current image state
         image_state_data_str = self.r.get('cur-phone-image-state')
         image_state_data = json.loads(image_state_data_str) if image_state_data_str is not None else None
@@ -64,41 +64,69 @@ class KimCurrentAppMonitor(object):
             self.logger.debug('no image state...')
             return 0
 
-        money = image_state['money']
-        self.logger.info('read money: %d' % money)
+        pil_features = image_state['pil_features']
+
+        def get_pil_features_info(key):
+            f = pil_features[key]
+            value = f['value']
+            blankspace_is_black = f['blankspace_is_black'] if 'blankspace_is_black' in f else True
+            return value, blankspace_is_black
+
+        money, money_blankspace_black = get_pil_features_info('money')
+        stars, stars_blankspace_black = get_pil_features_info('stars')
 
         color_sig = image_state['color_features']['color_sig']
         black_color_sig_str = '0-0-0'
-        black_is_dom_color = black_color_sig_str in color_sig and color_sig.index(black_color_sig_str) == 0
-        self.logger.info('read color_sig: %s' % color_sig)
+        screen_is_black = black_color_sig_str in color_sig and color_sig.index(black_color_sig_str) == 0
 
-        return (money, color_sig, black_is_dom_color)
+        has_money = money >= 0
+        has_stars = stars >= 0
+        is_in_game = has_money or has_stars or (money_blankspace_black and stars_blankspace_black)
+
+        self.logger.info('read money, stars, color_sig: %d, %d, %s' % (money, stars, color_sig))
+
+        return {
+            'money': money,
+            'money_blankspace_black': money_blankspace_black,
+            'stars': stars,
+            'stars_blankspace_black': stars_blankspace_black,
+            'color_sig': color_sig,
+            'screen_is_black': screen_is_black,
+            'is_in_game': is_in_game
+        }
+
+    def _reset_time_counters(self):
+        now = datetime.now()
+        self.last_in_game_time = now
+        self.last_kim_process_time = now
+        self.last_non_black_screen_time = now
 
     def run_monitor_loop(self):
         now = datetime.now()
 
-        money, color_sig, black_is_dom_color = self._get_money()
-        if money >= 0:
-            self.last_money_time = now
-        if not black_is_dom_color:
+        image_state_info = self._get_image_state_info()
+        is_in_game, screen_is_black = image_state_info['is_in_game'], image_state_info['screen_is_black']
+        if is_in_game:
+            self.last_in_game_time = now
+        if not screen_is_black:
             self.last_non_black_screen_time = now
 
-        is_kim, is_launcher = self._get_app_is_kim()
+        is_kim, is_launcher = self._get_app_info()
         if is_kim:
             self.last_kim_process_time = now
 
-        money_diff = (now - self.last_money_time).seconds
-        money_too_long = money_diff >= self.max_no_money_time
-        if money_diff > 0:
-            self.logger.info('Seconds without money: %d' % money_diff)
+        in_game_diff = (now - self.last_in_game_time).seconds
+        out_of_game_too_long = in_game_diff >= MAX_NO_IMAGE_FEATURES_TIME
+        if in_game_diff > 0:
+            self.logger.info('Seconds without image_features: %d' % in_game_diff)
 
         black_screen_diff = (now - self.last_non_black_screen_time).seconds
-        black_screen_too_long = black_screen_diff >= self.max_black_screen_time
+        black_screen_too_long = black_screen_diff >= MAX_BLACK_SCREEN_TIME
         if black_screen_diff > 0:
             self.logger.info('Seconds on unknown screen: %d' % black_screen_diff)
 
         kim_app_diff = (now - self.last_kim_process_time).seconds
-        kim_too_long = kim_app_diff >= self.max_non_kim_time
+        out_of_app_too_long = kim_app_diff >= MAX_NON_KIM_APP_TIME
         if kim_app_diff > 0:
             self.logger.info('Seconds outside app: %d' % kim_app_diff)
 
@@ -106,26 +134,35 @@ class KimCurrentAppMonitor(object):
             self.logger.info('IN LAUNCHER: GOING TO HOLLYWOOD.')
             self.client.reset_game()
         elif black_screen_too_long:
-            self.logger.info('ON UNKNOWN SCREEN: GOING TO HOLLYWOOD.')
-            self.client.reset_game()
-        elif money_too_long or kim_too_long:
-            # press back N times. if still no money, reset
+            # press back N times. if still on black screen, reset
             back_attempts = 0
-            while money < 0 and back_attempts < self.max_back_attempts:
-                self.logger.info('NO MONEY: Pressing back button x%d' % (back_attempts + 1))
+            while black_screen_too_long and back_attempts < MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS:
+                self.logger.info('ON UNKNOWN SCREEN: Pressing back button x%d' % (back_attempts + 1))
                 self.client.send_back_button_command()
                 sleep(SECONDS_BETWEEN_BACK_BUTTONS)
-                money, _, _ = self._get_money()
+                black_screen_too_long = self._get_image_state_info()['screen_is_black']
                 back_attempts += 1
 
-            if money < 0:
-                self.logger.info('NO MONEY: Resetting to KK:Hollywood.')
+            if black_screen_too_long:
+                self.logger.info('ON UNKNOWN SCREEN: GOING TO HOLLYWOOD.')
                 self.client.reset_game()
 
-            # restart counter
-            self.last_money_time = now
-            self.last_kim_process_time = now
-            self.last_non_black_screen_time = now
+            self._reset_time_counters()
+        elif out_of_game_too_long or out_of_app_too_long:
+            # press back N times. if still no image features, reset
+            back_attempts = 0
+            while not is_in_game and back_attempts < MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS:
+                self.logger.info('NO IMAGE FEATURES: Pressing back button x%d' % (back_attempts + 1))
+                self.client.send_back_button_command()
+                sleep(SECONDS_BETWEEN_BACK_BUTTONS)
+                is_in_game = self._get_image_state_info()['is_in_game']
+                back_attempts += 1
+
+            if not is_in_game:
+                self.logger.info('NO IMAGE FEATURES: Resetting to KK:Hollywood.')
+                self.client.reset_game()
+
+            self._reset_time_counters()
 
         # set last ping time
-        self.last_ping_time = now
+        self.last_ping_time = datetime.now()

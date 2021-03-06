@@ -167,7 +167,8 @@ class DeviceManager(object):
 
     def get_cur_app_name(self):
         """ Return name of active package for MonkeyDevice """
-        return self.get_property('am.current.package')
+        app_name = self.get_property('am.current.package')
+        return app_name
 
     def get_cur_action(self):
         """ android.intent.action.MAIN """

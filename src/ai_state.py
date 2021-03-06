@@ -63,17 +63,6 @@ class AIStateProcessor(object):
         self.tfnet = TFNet(TFNET_CONFIG)
         self.blob_detector = BlobDetector()
 
-    def process_from_file(self, sess, filename):
-        """
-        Args:
-            sess: A Tensorflow session object
-            filename: A string filepath to a png image of KK:H gameplay
-        Returns:
-            A processed AIState object.
-        """
-
-        return AIState(**self.ocr_processor.process_filename(filename))
-
     def process_from_np_img(self, sess, np_img, scale=1):
         """
         Args:
@@ -98,7 +87,8 @@ class AIStateProcessor(object):
 
         # Reads text via OCR, etc
         def get_pil_state():
-            return self.ocr_processor.process_np_img(np_img)
+            pil_features = self.ocr_processor.process_np_img(np_img)
+            return {'pil_features': pil_features}
 
         # Gets the very valuable yolo objects
         def get_yolo_state():

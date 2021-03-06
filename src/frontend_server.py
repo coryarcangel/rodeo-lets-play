@@ -103,10 +103,10 @@ class FrontendRedisStream:
 
     def get_jpeg_image_bytes(self):
         image_data = self.r.get('phone-image-data')
-        if not image_data or not self.phone_image_state_obj:
+        shape = self.phone_image_state_obj.image_shape if self.phone_image_state_obj else None
+        if not image_data or not shape:
             return None
 
-        shape = self.phone_image_state_obj.image_shape
         decoded = Image.frombytes('RGB', (shape[0], shape[1]), image_data)
         pimg = decoded.resize(self.size, Image.ANTIALIAS)
 

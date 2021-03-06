@@ -54,6 +54,7 @@ def run_frontend_client():
 
         setup_frontend_window()
 
+        log('Starting Monitor Loop in 20 seconds...')
         time.sleep(20)
         kim_monitor = KimCurrentAppMonitor()
 

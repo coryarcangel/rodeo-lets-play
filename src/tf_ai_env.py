@@ -17,6 +17,9 @@ from env_action_state_manager import DeviceClientEnvActionStateManager
 from reward_calc import RewardCalculator
 from object_name_values import get_object_name_int_values
 from config import REDIS_HOST, REDIS_PORT, ACTION_WEIGHTS, ALLOW_RESET_ACTION
+from config import TFENV_GRID_WIDTH, TFENV_GRID_HEIGHT, TFENV_AS3_ACTIONS_PER_SWIPE
+from config import TFENV_ACTION_SPEC_MODE, TFENV_OBS_SPEC_MODE, TFENV_REWARD_DISCOUNT
+from config import TFENV_OBS2_OVERWRITE_PROB
 from util import get_rect_center
 
 
@@ -30,22 +33,22 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         self.client = client
         self.action_state_manager = DeviceClientEnvActionStateManager(
             client, host, port)
-        self.action_spec_mode = 3  # 1 (matrix) or 2 (vector) or 3 (vector, just single tap)
-        self.obs_spec_mode = 2  # 1 for list of objects, 2 for grid with obj int
+        self.action_spec_mode = TFENV_ACTION_SPEC_MODE
+        self.obs_spec_mode = TFENV_OBS_SPEC_MODE
 
         # [0,1] domain, lower makes next step reward less important
-        self.std_discount = 0.5
+        self.std_discount = TFENV_REWARD_DISCOUNT
         self.reward_calculator = RewardCalculator(client=client)
 
         self.num_observation_objects = 100
         self.step_num_obs_mod = 110
         self.obj_name_int_vals, self.obj_int_val_names, self.obj_name_int_max_val = get_object_name_int_values()
 
-        grid_width = self.grid_width = 30
-        grid_height = self.grid_height = 20
+        grid_width = self.grid_width = TFENV_GRID_WIDTH
+        grid_height = self.grid_height = TFENV_GRID_HEIGHT
         grid_area = self.grid_area = grid_width * grid_height
 
-        self.os2_overwrite_prob = 0.5
+        self.os2_overwrite_prob = TFENV_OBS2_OVERWRITE_PROB
 
         tap_weight = float(ACTION_WEIGHTS[Action.TAP_LOCATION])
         dtap_weight = float(ACTION_WEIGHTS[Action.DOUBLE_TAP_LOCATION])
@@ -63,7 +66,7 @@ class DeviceClientTfEnv(py_environment.PyEnvironment):
         # discover value of swiping
         self.num_as2_actions_per_swipe = 50
         self.total_as2_swipe_actions = self.num_as2_actions_per_swipe * 2
-        self.num_as3_actions_per_swipe = 10
+        self.num_as3_actions_per_swipe = TFENV_AS3_ACTIONS_PER_SWIPE
         self.total_as3_swipe_actions = self.num_as3_actions_per_swipe * 2
 
         # 1 is for reset and pass, then count swipes, then grid_area * 2
