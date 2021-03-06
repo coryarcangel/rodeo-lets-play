@@ -369,7 +369,7 @@ MAX_NON_KIM_APP_TIME = 5  # seconds we can not be in the KK:H app. Fallback from
 MAX_BLACK_SCREEN_TIME = 20
 MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS = 3
 
-SECONDS_BETWEEN_BACK_BUTTONS = 0.5
+SECONDS_BETWEEN_BACK_BUTTONS = 0.8
 
 CONTOUR_PROCESS_HEIGHT = 400  # height of images processed in image_contours
 

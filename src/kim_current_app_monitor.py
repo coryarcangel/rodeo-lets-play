@@ -155,8 +155,8 @@ class KimCurrentAppMonitor(object):
                 self.logger.info('NO IMAGE FEATURES: Pressing back button x%d' % (back_attempts + 1))
                 self.client.send_back_button_command()
                 sleep(SECONDS_BETWEEN_BACK_BUTTONS)
-                is_in_game = self._get_image_state_info()['is_in_game']
                 is_kim, _ = self._get_app_info() if not is_kim else (True, True)
+                is_in_game = self._get_image_state_info()['is_in_game']
                 back_attempts += 1
 
             if not is_in_game or not is_kim:
