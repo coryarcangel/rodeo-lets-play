@@ -58,13 +58,13 @@ class ImageOCRProcessor(object):
         if TESTING_BLANKSPACE:
             print(np_cropped_image.shape)
             print(left, blankspace_color_sig, blankspace_is_black)
-            cropped_image.show()
+            cropped_image.resize((200, 130)).show()
             time.sleep(10)
         return blankspace_is_black
 
-    def get_hud_features(self, image, left):
+    def get_hud_features(self, image, left, calc_blankspace):
         value = self._read_hud_value(image, left)
-        blankspace_is_black = self._get_blankspace_is_black(image, left)
+        blankspace_is_black = self._get_blankspace_is_black(image, left) if calc_blankspace else True
         return {'value': value, 'blankspace_is_black': blankspace_is_black}
 
     def process_image(self, image):
@@ -82,8 +82,8 @@ class ImageOCRProcessor(object):
 
         with futures.ThreadPoolExecutor() as executor:
             future_to_key = {
-                executor.submit(self.get_hud_features, image, self.image_config.money_item_left): 'money',
-                executor.submit(self.get_hud_features, image, self.image_config.stars_item_left): 'stars',
+                executor.submit(self.get_hud_features, image, self.image_config.money_item_left, True): 'money',
+                executor.submit(self.get_hud_features, image, self.image_config.stars_item_left, False): 'stars',
                 # executor.submit(self._read_hud_value, image, self.image_config.bolts_item_left): 'bolts',
             }
             for future in futures.as_completed(future_to_key):

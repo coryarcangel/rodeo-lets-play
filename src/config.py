@@ -443,8 +443,8 @@ HEURISTIC_CONFIG = {
     'action_shape_tap_weights': {
         ActionShape.MENU_EXIT: 100000,
         ActionShape.CONFIRM_OK: 10000,
-        ActionShape.AREA_ENTRY: 500,
-        ActionShape.MONEY_CHOICE: 3000,
+        ActionShape.AREA_ENTRY: 1000,
+        ActionShape.MONEY_CHOICE: 3600,
         ActionShape.STRONG_TALK_CHOICE: 7500,
         ActionShape.TALK_CHOICE: 5000,
         ActionShape.COLLECTABLE: 4000,
@@ -562,10 +562,10 @@ IMG_CONFIG_GALAXY10 = ImageConfig(
     money_item_left=VYSOR_CAP_AREA[2] - 752,
     stars_item_left=VYSOR_CAP_AREA[2] - 540,
     bolts_item_left=VYSOR_CAP_AREA[2] - 407,
-    blankspace_rect=(15, 13, 20, 13),
+    blankspace_rect=(15, 33, 20, 13),
     top_menu_height=62,
     top_menu_padding=20,
-    top_menu_item_width=96
+    top_menu_item_width=116
 )
 
 CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY10
