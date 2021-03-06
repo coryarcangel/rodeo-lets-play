@@ -88,7 +88,7 @@ class AIStateProcessor(object):
         # Reads text via OCR, etc
         def get_pil_state():
             pil_features = self.ocr_processor.process_np_img(np_img)
-            return {'pil_features': pil_features}
+            return pil_features
 
         # Gets the very valuable yolo objects
         def get_yolo_state():
@@ -119,6 +119,23 @@ class AIStateProcessor(object):
             color_features = get_image_color_features(np_img_3chan)
             return {'color_features': color_features}
 
+        # check for white pixels next to money reader to determine if on menubar
+        def check_on_menubar():
+            left = self.image_config.money_item_left
+            left_pad, top, width, height = self.image_config.blankspace_rect
+            base = (left + left_pad, top + int(height / 2))
+            black_pixel = (base[0] + int(width / 2), base[1])
+            whitespace_pixels = [(base[0] + x, base[1] + y) for x, y in self.image_config.money_white_pixel_offsets]
+
+            black_pixel_color = np_img_3chan[black_pixel[1], black_pixel[0]]
+            white_pixel_colors = [np_img_3chan[y, x] for x, y in whitespace_pixels]
+
+            black_is_black = black_pixel_color[0] < 10 and black_pixel_color[1] < 10 and black_pixel_color[2] < 10
+            whites_are_white = [p[0] > 228 and p[1] > 228 and p[2] > 228 for p in white_pixel_colors]
+            on_menubar = black_is_black and False not in whites_are_white
+
+            return {'on_menubar': 1 if on_menubar else 0}
+
         state_data = {}
         with futures.ThreadPoolExecutor() as executor:
             state_components = [
@@ -127,6 +144,7 @@ class AIStateProcessor(object):
                 ('circles_state', get_circles_state),
                 # ('blobs_state', get_blobs),
                 ('shapes_state', get_shapes),
+                ('menubar_state', check_on_menubar),
                 ('color_state', get_color_features)
             ]
 

@@ -368,6 +368,7 @@ MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS = 10
 MAX_NON_KIM_APP_TIME = 5  # seconds we can not be in the KK:H app. Fallback from no money fixes.
 MAX_BLACK_SCREEN_TIME = 20
 MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS = 3
+MIN_BACK_BUTTON_ATTEMPTS = 2
 
 SECONDS_BETWEEN_BACK_BUTTONS = 0.8
 
@@ -382,8 +383,8 @@ SAFEGUARD_MENU_CLICKS_DEFAULT = True
 
 ACTION_WEIGHTS = {
     Action.PASS: 50,
-    Action.SWIPE_LEFT: 3000,
-    Action.SWIPE_RIGHT: 3000,
+    Action.SWIPE_LEFT: 2500,
+    Action.SWIPE_RIGHT: 3500,
     Action.TAP_LOCATION: 100,
     Action.DOUBLE_TAP_LOCATION: 10,
     Action.RESET: 40,
@@ -518,6 +519,7 @@ ImageConfig = collections.namedtuple("ImageConfig", [
     "stars_item_left",
     "bolts_item_left",
     "blankspace_rect",
+    "money_white_pixel_offsets",
 ])
 
 IMG_CONFIG_IPHONE7PLUS = ImageConfig(
@@ -527,6 +529,7 @@ IMG_CONFIG_IPHONE7PLUS = ImageConfig(
     stars_item_left=1568,
     bolts_item_left=0,
     blankspace_rect=(15, 13, 20, 13),
+    money_white_pixel_offsets=[(-44, 0), (-46, 0), (-45, 0)],
     top_menu_height=115,
     top_menu_padding=30,
     top_menu_item_width=240
@@ -539,6 +542,7 @@ IMG_CONFIG_STUDIOBLU = ImageConfig(
     stars_item_left=884,
     bolts_item_left=0,
     blankspace_rect=(15, 13, 20, 13),
+    money_white_pixel_offsets=[(-44, 0), (-46, 0), (-45, 0)],
     top_menu_height=60,
     top_menu_padding=10,
     top_menu_item_width=120
@@ -551,6 +555,7 @@ IMG_CONFIG_GALAXY8 = ImageConfig(
     stars_item_left=VYSOR_CAP_AREA[2] - 201,
     bolts_item_left=VYSOR_CAP_AREA[2] - 403,
     blankspace_rect=(15, 13, 20, 13),
+    money_white_pixel_offsets=[(-44, 0), (-46, 0), (-45, 0)],
     top_menu_height=38,
     top_menu_padding=12,
     top_menu_item_width=55
@@ -563,6 +568,7 @@ IMG_CONFIG_GALAXY10 = ImageConfig(
     stars_item_left=VYSOR_CAP_AREA[2] - 540,
     bolts_item_left=VYSOR_CAP_AREA[2] - 407,
     blankspace_rect=(15, 33, 20, 13),
+    money_white_pixel_offsets=[(-44, 0), (-46, 0), (-45, 0)],
     top_menu_height=62,
     top_menu_padding=20,
     top_menu_item_width=116

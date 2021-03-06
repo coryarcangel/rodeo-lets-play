@@ -5,7 +5,7 @@ from time import sleep
 from config import REDIS_HOST, REDIS_PORT, SECONDS_BETWEEN_BACK_BUTTONS
 from config import MAX_NON_KIM_APP_TIME, KK_HOLLYWOOD_PACKAGE
 from config import MAX_NO_IMAGE_FEATURES_TIME, MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS
-from config import MAX_BLACK_SCREEN_TIME, MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS
+from config import MAX_BLACK_SCREEN_TIME, MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS, MIN_BACK_BUTTON_ATTEMPTS
 from kim_logs import get_kim_logger
 from device_client import DeviceClient
 
@@ -64,16 +64,9 @@ class KimCurrentAppMonitor(object):
             self.logger.debug('no image state...')
             return 0
 
-        pil_features = image_state['pil_features']
-
-        def get_pil_features_info(key):
-            f = pil_features[key]
-            value = f['value']
-            blankspace_is_black = f['blankspace_is_black'] if 'blankspace_is_black' in f else True
-            return value, blankspace_is_black
-
-        money, money_blankspace_black = get_pil_features_info('money')
-        stars, stars_blankspace_black = get_pil_features_info('stars')
+        money = image_state['money']
+        stars = image_state['stars']
+        on_menubar = image_state['on_menubar']
 
         color_sig = image_state['color_features']['color_sig']
         black_color_sig_str = '0-0-0'
@@ -81,15 +74,14 @@ class KimCurrentAppMonitor(object):
 
         has_money = money >= 0
         has_stars = stars >= 0
-        is_in_game = has_money or has_stars or (money_blankspace_black and stars_blankspace_black)
+        is_in_game = has_money or has_stars or on_menubar
 
-        self.logger.info('read money, stars, color_sig: %d, %d, %s' % (money, stars, color_sig))
+        self.logger.info('read money, stars, on menu, color_sig: %d, %d, %d, %s' % (money, stars, on_menubar, color_sig))
 
         return {
             'money': money,
-            'money_blankspace_black': money_blankspace_black,
             'stars': stars,
-            'stars_blankspace_black': stars_blankspace_black,
+            'on_menubar': on_menubar,
             'color_sig': color_sig,
             'screen_is_black': screen_is_black,
             'is_in_game': is_in_game
@@ -151,12 +143,13 @@ class KimCurrentAppMonitor(object):
         elif out_of_game_too_long or out_of_app_too_long:
             # press back N times. if still no image features, reset
             back_attempts = 0
-            while (not is_in_game or not is_kim) and back_attempts < MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS:
+            while (not is_in_game or not is_kim or back_attempts < MIN_BACK_BUTTON_ATTEMPTS) and back_attempts < MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS:
                 self.logger.info('NO IMAGE FEATURES: Pressing back button x%d' % (back_attempts + 1))
                 self.client.send_back_button_command()
                 sleep(SECONDS_BETWEEN_BACK_BUTTONS)
-                is_kim, _ = self._get_app_info() if not is_kim else (True, True)
-                is_in_game = self._get_image_state_info()['is_in_game']
+                if back_attempts >= MIN_BACK_BUTTON_ATTEMPTS - 1:
+                    is_kim, _ = self._get_app_info() if not is_kim else (True, True)
+                    is_in_game = self._get_image_state_info()['is_in_game']
                 back_attempts += 1
 
             if not is_in_game or not is_kim:

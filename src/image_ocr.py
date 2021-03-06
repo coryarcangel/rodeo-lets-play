@@ -64,8 +64,7 @@ class ImageOCRProcessor(object):
 
     def get_hud_features(self, image, left, calc_blankspace):
         value = self._read_hud_value(image, left)
-        blankspace_is_black = self._get_blankspace_is_black(image, left) if calc_blankspace else True
-        return {'value': value, 'blankspace_is_black': blankspace_is_black}
+        return value
 
     def process_image(self, image):
         '''
