@@ -85,6 +85,10 @@ HEN_OPTIONS = {
         ShapeColorRange(ActionShape.MENU_EXIT, 'Red',
                         lower=(-2, 125, 200), upper=(1, 255, 255),
                         min_area=200, max_area=600, min_verts=4, max_verts=9, max_area_ratio=2),
+        ShapeColorRange(ActionShape.MENU_EXIT, 'Red', 
+            #new exit color: 179 176 220
+                        lower=(0, 160, 200), upper=(255, 185, 255),
+                        min_area=100, max_area=600, min_verts=0, max_verts=20, max_area_ratio=4),
         ShapeColorRange(ActionShape.ROOM_EXIT, 'Red',
                         lower=(-4, 25, 180), upper=(4, 255, 255),
                         min_area=1200, max_area=4500, min_verts=9, max_verts=30, max_area_ratio=2),
@@ -366,7 +370,7 @@ KILL_ADB_ON_DEVICE_SERVER_EXIT = False
 MAX_NO_IMAGE_FEATURES_TIME = 30  # seconds
 MAX_NO_IMAGE_FEATURES_BACK_BUTTON_ATTEMPTS = 10
 MAX_NON_KIM_APP_TIME = 5  # seconds we can not be in the KK:H app. Fallback from no money fixes.
-MAX_BLACK_SCREEN_TIME = 20
+MAX_BLACK_SCREEN_TIME = 10
 MAX_BLACK_SCREEN_BACK_BUTTON_ATTEMPTS = 3
 MIN_BACK_BUTTON_ATTEMPTS = 2
 
@@ -560,18 +564,18 @@ IMG_CONFIG_GALAXY8 = ImageConfig(
     top_menu_padding=12,
     top_menu_item_width=55
 )
-
+# HUD_LEFT_FIX = 120
 IMG_CONFIG_GALAXY10 = ImageConfig(
     width=VYSOR_CAP_AREA[2],
     height=VYSOR_CAP_AREA[3],
-    money_item_left=VYSOR_CAP_AREA[2] - 752,
-    stars_item_left=VYSOR_CAP_AREA[2] - 540,
+    money_item_left=VYSOR_CAP_AREA[2] - 872,
+    stars_item_left=VYSOR_CAP_AREA[2] - 672,
     bolts_item_left=VYSOR_CAP_AREA[2] - 407,
     blankspace_rect=(15, 33, 20, 13),
     money_white_pixel_offsets=[(-44, 0), (-46, 0), (-45, 0)],
     top_menu_height=62,
-    top_menu_padding=20,
-    top_menu_item_width=116
+    top_menu_padding=16,
+    top_menu_item_width=75
 )
 
 CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY10

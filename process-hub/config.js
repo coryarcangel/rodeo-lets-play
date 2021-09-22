@@ -24,6 +24,7 @@ const modes = {
 }
 
 let mode = modes.TF_AGENTS
+mode = modes.TF_AGENTS
 if (argv.dummy !== undefined) {
   mode = mode.DUMMY
 } else if (argv.train !== undefined) {
