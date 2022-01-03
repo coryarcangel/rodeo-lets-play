@@ -55,6 +55,7 @@ class DeviceMessageHandler(AsyncchatKim):
         runtime.gc()
         mem_post = runtime.freeMemory()
         self.logger.debug("free memory PRE GC: %d || POST GC: %d" % (mem_pre, mem_post))
+        self.logger.debug("Kill limit: %d" % (self.gc_memory_kill_limit))
         if mem_post < self.gc_memory_kill_limit:
             self.logger.info("Killing device server due to low memory.")
             kill_process()

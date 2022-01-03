@@ -85,13 +85,28 @@ HEN_OPTIONS = {
         ShapeColorRange(ActionShape.MENU_EXIT, 'Red',
                         lower=(-2, 125, 200), upper=(1, 255, 255),
                         min_area=200, max_area=600, min_verts=4, max_verts=9, max_area_ratio=2),
+
+
         ShapeColorRange(ActionShape.MENU_EXIT, 'Red', 
             #new exit color: 179 176 220
-                        lower=(0, 160, 200), upper=(255, 185, 255),
-                        min_area=100, max_area=600, min_verts=0, max_verts=20, max_area_ratio=4),
+                        lower=(-.9, 160, 205), upper=(-.5, 178, 225),
+                        min_area=100, max_area=600, min_verts=10, max_verts=20, max_area_ratio=1.75),
+
+        #new ones
+        ShapeColorRange(ActionShape.MENU_EXIT, 'Red', 
+        lower=(0, 160, 205), upper=(200, 180, 225),
+        min_area=200, max_area=400, min_verts=2, max_verts=20, max_area_ratio=5),
+        #end new ones
+
+        # original room exit:
         ShapeColorRange(ActionShape.ROOM_EXIT, 'Red',
                         lower=(-4, 25, 180), upper=(4, 255, 255),
                         min_area=1200, max_area=4500, min_verts=9, max_verts=30, max_area_ratio=2),
+        ShapeColorRange(ActionShape.ROOM_EXIT, 'Red',
+                        lower=(-4, 25, 180), upper=(4, 105, 255),
+                        min_area=800, max_area=4500, min_verts=9, max_verts=30, max_area_ratio=2),
+
+
         ShapeColorRange(ActionShape.AREA_ENTRY, 'Gold',  # gold perimeters
                         lower=(20, 25, 180), upper=(30, 255, 255),
                         min_area=800, max_area=4500, min_verts=8, max_verts=30, min_area_ratio=1.4, max_area_ratio=6),
@@ -569,13 +584,13 @@ IMG_CONFIG_GALAXY10 = ImageConfig(
     width=VYSOR_CAP_AREA[2],
     height=VYSOR_CAP_AREA[3],
     money_item_left=VYSOR_CAP_AREA[2] - 872,
-    stars_item_left=VYSOR_CAP_AREA[2] - 672,
+    stars_item_left=VYSOR_CAP_AREA[2] - 674,
     bolts_item_left=VYSOR_CAP_AREA[2] - 407,
     blankspace_rect=(15, 33, 20, 13),
     money_white_pixel_offsets=[(-44, 0), (-46, 0), (-45, 0)],
-    top_menu_height=62,
-    top_menu_padding=16,
-    top_menu_item_width=75
+    top_menu_height=56,
+    top_menu_padding=10,
+    top_menu_item_width=65
 )
 
 CURRENT_IMG_CONFIG = IMG_CONFIG_GALAXY10

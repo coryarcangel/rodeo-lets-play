@@ -3,9 +3,10 @@
 import tesserocr
 import time
 import numpy as np
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 from concurrent import futures
 from image_color import get_image_color_sig
+from tess_test import detect
 
 
 TESTING = False
@@ -14,7 +15,8 @@ TESTING_BLANKSPACE = False
 
 def read_num_from_img(image):
     """ Performs OCR on image and converts text to number """
-    text = tesserocr.image_to_text(image).strip()
+    # text = tesserocr.image_to_text(image).strip()
+    text = detect( np.array(image.convert('RGB')) )
     try:
         f = filter(str.isdigit, text.encode('ascii', 'ignore').decode('utf-8'))
         t = ''.join(f)
@@ -38,11 +40,14 @@ class ImageOCRProcessor(object):
         width = self.image_config.top_menu_item_width
         item_crop_box = (left, padding, left + width, height - padding)
         hud_image = image.crop(item_crop_box)
-        hud_image = ImageEnhance.Contrast(hud_image).enhance(2)
-        hud_image = hud_image.resize((162, 100), Image.ANTIALIAS)
+        # hud_image = ImageEnhance.Contrast(hud_image).enhance(2)
+        # hud_image = ImageEnhance.Sharpness(hud_image).enhance(4)
+        # hud_image = ImageOps.grayscale(hud_image)
+        # hud_image = hud_image.resize((width*2, (height-padding*2)*2), Image.ANTIALIAS)
+        # hud_image = hud_image.resize((162,100), Image.ANTIALIAS)
         value = read_num_from_img(hud_image)
         if TESTING:
-            hud_image.show()
+            new_im.show()
             print(value)
             time.sleep(10)
         return value
@@ -59,7 +64,7 @@ class ImageOCRProcessor(object):
             print(np_cropped_image.shape)
             print(left, blankspace_color_sig, blankspace_is_black)
             cropped_image.resize((200, 130)).show()
-            time.sleep(10)
+            time.sleep(20)
         return blankspace_is_black
 
     def get_hud_features(self, image, left, calc_blankspace):

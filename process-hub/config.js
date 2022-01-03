@@ -4,7 +4,7 @@ const OPTIONS = {
   IS_PROD: process.env.NODE_ENV === 'production' || argv.prod == 't' || argv.prod == 'true',
   START_ALL: argv.startAll != 'f' && argv.startAll != 'false',
   WIN_TITLE: 'AI_DASHBOARD',
-  KILL_ADB_ON_DEVICE_SERVER_EXIT: false,
+  KILL_ADB_ON_DEVICE_SERVER_EXIT: true,
   SYSTEM_INFO_PUBLISH_INTERVAL: 15000,
   SCREEN_SETUP_INTERVAL: 5 * 60000,
   DEVICE_SERVER_MAX_TIME_BETWEEN_LOGS: 30000,

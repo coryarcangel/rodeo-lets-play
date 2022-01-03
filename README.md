@@ -2,6 +2,8 @@
 
 A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 
+ab32902641a8a08aa6392eb715c655abf0d0b2c2
+
 ## Environment
 
 1. Python environment managed with [pipenv](https://docs.pipenv.org/).

@@ -56,26 +56,26 @@ async function getSystemInfoObject() {
       fsStats: 'rx_sec, wx_sec, tx_sec',
       networkStats: '*',
     }),
+    
+    // runCommand('nvidia-smi stats -d pwrDraw,temp,gpuUtil,memUtil,encUtil,decUtil,procClk,memClk -c 1').then(lines => {
+    //   const gpuStats = {}
+    //   lines.forEach(l => {
+    //     const [device, key, _, value] = l.split(',').map(p => p.trim())
+    //     if (!device) return
 
-    runCommand('nvidia-smi stats -d pwrDraw,temp,gpuUtil,memUtil,encUtil,decUtil,procClk,memClk -c 1').then(lines => {
-      const gpuStats = {}
-      lines.forEach(l => {
-        const [device, key, _, value] = l.split(',').map(p => p.trim())
-        if (!device) return
+    //     const deviceKey = `gpu${device}`
+    //     if (!gpuStats[deviceKey]) {
+    //       gpuStats[deviceKey] = {}
+    //     }
 
-        const deviceKey = `gpu${device}`
-        if (!gpuStats[deviceKey]) {
-          gpuStats[deviceKey] = {}
-        }
+    //     const obj = gpuStats[deviceKey]
+    //     if (!obj[key] || Number(value) > obj[key]) {
+    //       obj[key] = Number(value) || null
+    //     }
+    //   })
 
-        const obj = gpuStats[deviceKey]
-        if (!obj[key] || Number(value) > obj[key]) {
-          obj[key] = Number(value) || null
-        }
-      })
-
-      return gpuStats
-    }),
+    //   return gpuStats
+    // }),
 
     // runCommand('nvidia-smi -q --display=POWER,TEMPERATURE,MEMORY,PIDS'),
 
