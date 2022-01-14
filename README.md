@@ -1,4 +1,4 @@
-# watson-hollywood
+# /roʊˈdeɪoʊ/ Let's Play
 
 A deep-q-learning trained bot that plays *Kim Kardashian: Hollywood*.
 
